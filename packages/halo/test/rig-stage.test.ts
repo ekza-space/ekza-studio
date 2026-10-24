@@ -1,13 +1,11 @@
-// The Rig stage's words and pure parts (STUDIO-TOUCH-SPEC §1.3, §12; T9): the vocabulary lint over `i18n/rig.ts` (the
-// shell's rules: no DCC jargon at L0 or L1, *Animation* only for clips, the selection meanings stay the Thumb key's);
-// the bend test's swing and its edits; search's phrases for *Rig it for me* and *Fix where it bends badly*; the finger
+// The Rig stage's pure parts (STUDIO-TOUCH-SPEC §12; T9; the vocabulary lint over `i18n/rig.ts` is `rules.test.ts`'s
+// since T12): the bend test's swing and its edits; search's phrases for *Rig it for me* and *Fix where it bends badly*; the finger
 // detail of a destination; the Rig stage in the stage-parts seam; and, on Polybot (a bound VRM character), the bones a
 // skin spot follows, the bone list and the bend test's controls.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { QUICK_RIG_LABELS } from '@ekza-studio/editor-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { rigWords } from '../src/i18n/rig';
 import { BUILT_OWNERS, SHEET_OWNER } from '../src/manifest/types';
 import { SHEET_SECTIONS } from '../src/manifest/sheets';
 import { bendAt, bendEdits } from '../src/recipes/fixBend';
@@ -18,31 +16,6 @@ import { STAGE_MODULES } from '../src/shell/stageParts';
 import { RIG_DOT_LABELS } from '../src/stages/rig/dotLabels';
 import { bendTargets, bodyPartLabel, bonesAt, boneRows } from '../src/stages/rig/model';
 import { riggedCubeLad, staticFetch } from './support-rig';
-
-function strings(node: unknown, path: string[] = []): { readonly path: string; readonly text: string }[] {
-  if (typeof node === 'string') return [{ path: path.join('.'), text: node }];
-  if (typeof node === 'function') return [{ path: path.join('.'), text: String((node as (v: unknown) => unknown)(2)) }];
-  if (Array.isArray(node)) return node.flatMap((v, i) => strings(v, [...path, String(i)]));
-  if (typeof node === 'object' && node !== null)
-    return Object.entries(node).flatMap(([k, v]) => strings(v, [...path, k]));
-  return [];
-}
-
-describe('the Rig stage’s vocabulary (§1.3)', () => {
-  const all = strings(rigWords);
-  it('no DCC jargon at L0 or L1 (no influence, bind pose, IK / FK, …)', () => {
-    const jargon =
-      /\b(extrude|tween|breakdown|ripple|euler|tangents?|IK|FK|influences?|bind pose|lambert|blinn|tris|keyframes?)\b/i;
-    expect(all.filter((s) => jargon.test(s.text)).map((s) => `${s.path}: ${s.text}`)).toEqual([]);
-  });
-  it('“Animation” is a clip: only the card’s starter set speaks of animations', () => {
-    for (const s of all.filter((x) => /\banimations?\b/i.test(x.text))) expect(s.path).toMatch(/^card\.addAnimations$/);
-  });
-  it('the selection meanings stay the Thumb key’s; “Move” is never a clip', () => {
-    expect(all.filter((s) => /\bselect more\b|\bpick or unpick\b|\bunselect\b/i.test(s.text))).toEqual([]);
-    expect(all.filter((s) => /\bmoves?\b/i.test(s.text) && /animation|clip/i.test(s.text))).toEqual([]);
-  });
-});
 
 describe('the bend test (§12.4 step 1)', () => {
   it('swings 0 → the deepest bend → 0 over its period', () => {

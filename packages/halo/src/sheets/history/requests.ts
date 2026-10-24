@@ -1,11 +1,10 @@
 // What the Ask sheet remembers per project page (STUDIO-TOUCH-SPEC §14; T10): the requests sent to the AI agent (the
-// History titles its group of steps with the request they answer) and the project as it was before the agent's first
-// change of a pairing (*Restore the project as it was before the AI*). Session memory only, never the document.
-import type { DocSnapshot } from '@ekza-studio/doc';
+// History titles its group of steps with the request they answer). Session memory only, never the document. The
+// project as it was before the agent's first change is the agent session's own since T12 (P-T10-4,
+// `AgentSession.beforeAgentSnapshot`).
 import type { AskRequest } from './model';
 
 const requests = new WeakMap<object, AskRequest[]>();
-const before = new WeakMap<object, { readonly snapshot: DocSnapshot; readonly at: number }>();
 
 /** Remembers a request (the newest last). */
 export function recordRequest(app: object, text: string, at = Date.now()): void {
@@ -19,13 +18,4 @@ export function recordRequest(app: object, text: string, at = Date.now()): void 
 
 export function requestsOf(app: object): readonly AskRequest[] {
   return requests.get(app) ?? [];
-}
-
-/** Keeps the project as it is now, as the state before the AI (a pairing's first Allow). */
-export function keepBeforeAgent(app: object, snapshot: DocSnapshot): void {
-  before.set(app, { snapshot, at: Date.now() });
-}
-
-export function beforeAgentOf(app: object): { readonly snapshot: DocSnapshot; readonly at: number } | null {
-  return before.get(app) ?? null;
 }

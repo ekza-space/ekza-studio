@@ -16,7 +16,8 @@ import { matchRecipes, SEARCH_RECIPES } from '../../recipes';
 import { revertSteps, type Run } from '../history/actions';
 import { AiGroupCard } from '../history/AiGroupCard';
 import { type HistoryRow, historyRows } from '../history/model';
-import { beforeAgentOf, keepBeforeAgent, recordRequest, requestsOf } from '../history/requests';
+import { recordRequest, requestsOf } from '../history/requests';
+import { activityView, watchAgentActivity } from './activity';
 
 const a = en.ask;
 
@@ -73,6 +74,8 @@ export default function AskSheet({ ctx, args }: HaloSheetProps): JSX.Element {
     let alive = true;
     void import('@ekza-studio/editor/agent').then(
       (loaded) => {
+        // T12 (P-T10-3): the top bar's live activity line follows the agent from now on, with the sheet open or not
+        watchAgentActivity(app, loaded);
         if (alive) setModule(loaded);
       },
       () => setNote(en.toast.chunkFailed),
@@ -80,7 +83,7 @@ export default function AskSheet({ ctx, args }: HaloSheetProps): JSX.Element {
     return () => {
       alive = false;
     };
-  }, [onComputer]);
+  }, [app, onComputer]);
   useEffect(() => app.history.subscribe(() => setHistoryTick((n) => n + 1)), [app]);
   const { runtime, session, state } = useAgent(app, module);
 
@@ -98,12 +101,7 @@ export default function AskSheet({ ctx, args }: HaloSheetProps): JSX.Element {
 
   const activity = (): string => {
     if (state === null || module === null) return a.idle;
-    const view = module.pillView(state, {
-      activeClipOf: (character) =>
-        (app.session.getState().activeClip as Record<string, string | undefined>)[character] ?? null,
-      clipName: (clip) => app.store.get('clips', clip as never)?.name ?? null,
-      userRedoSteps: 0,
-    });
+    const view = activityView(app, module, state);
     return view.tone === 'busy' ? view.text : status === 'paired' ? a.idle : view.text;
   };
 
@@ -223,8 +221,6 @@ export default function AskSheet({ ctx, args }: HaloSheetProps): JSX.Element {
                 disabled={session.accept === undefined}
                 onClick={() => {
                   touch();
-                  // the project as it is now: *Restore the project as it was before the AI* returns to it
-                  keepBeforeAgent(app, app.store.snapshot());
                   session.accept?.({ ...grants, read: true, workspace: grants.files && grants.workspace });
                 }}
               >
@@ -246,7 +242,8 @@ export default function AskSheet({ ctx, args }: HaloSheetProps): JSX.Element {
       case 'paired':
       case 'paused': {
         const paused = status === 'paused';
-        const before = beforeAgentOf(app);
+        // T12 (P-T10-4): the session keeps the project as it was before the agent's first edit of this pairing
+        const before = session.beforeAgentSnapshot?.() ?? null;
         const confirm = state?.confirm ?? null;
         return (
           <div className="flex flex-col gap-2" data-testid="halo-ask-connected">
@@ -308,7 +305,7 @@ export default function AskSheet({ ctx, args }: HaloSheetProps): JSX.Element {
               onClick={() => {
                 if (before === null) return;
                 touch();
-                void run('edit.restoreDocument', { snapshot: before.snapshot, label: a.restoreLabel });
+                void run('edit.restoreDocument', { snapshot: before, label: a.restoreLabel });
               }}
             />
           </div>

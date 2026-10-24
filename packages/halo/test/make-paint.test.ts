@@ -4,7 +4,7 @@
 import type { MeshId } from '@ekza-studio/doc';
 import { type EditorApp, extrudeManipulatorFrame, loadExtrudeEngine } from '@ekza-studio/editor-core';
 import { describe, expect, it } from 'vitest';
-import { makeWords, paintWords } from '../src/i18n/make';
+import { paintWords } from '../src/i18n/make';
 import { aiShown, checkAi, setGenerationGateway } from '../src/stages/make/ai/availability';
 import {
   CHARACTER_BUDGET,
@@ -252,30 +252,11 @@ describe('Create with AI shows where a generation gateway answers (ADR 0017 §2,
 });
 
 /** Every string of a catalogue with its key path (functions called with a sample value). */
-function strings(node: unknown, path: string[] = []): { readonly path: string; readonly text: string }[] {
-  if (typeof node === 'string') return [{ path: path.join('.'), text: node }];
-  if (typeof node === 'function') return [{ path: path.join('.'), text: String((node as (v: unknown) => unknown)(2)) }];
-  if (typeof node === 'object' && node !== null) {
-    return Object.entries(node).flatMap(([k, v]) => strings(v, [...path, k]));
-  }
-  return [];
-}
-
-describe('the Make and Paint words (§1.3, ST-32)', { timeout: 60_000 }, () => {
-  const all = [...strings(makeWords, ['make']), ...strings(paintWords, ['paint'])];
-  it('no DCC jargon at L0 or L1; Finish is Matte · Shiny', () => {
-    const jargon =
-      /\b(extrude|tween|breakdown|ripple|euler|tangents?|IK|FK|influences?|bind pose|lambert|blinn|tris|decimate|retopo\w*)\b/i;
-    expect(all.filter((s) => jargon.test(s.text)).map((s) => `${s.path}: ${s.text}`)).toEqual([]);
+describe('the Make and Paint words (§1.3, ST-32)', () => {
+  // the vocabulary lint over `i18n/make.ts` (one word, one kind of thing; no DCC jargon) is `rules.test.ts`'s (T12,
+  // P-T8-5); here only what the stage promises by name
+  it('Finish is Matte · Shiny', () => {
     expect(paintWords.tray.matte).toBe('Matte');
     expect(paintWords.tray.shiny).toBe('Shiny');
-  });
-  it('“Move” is translation, never a clip; the selection meanings stay the Thumb key’s', () => {
-    expect(all.filter((s) => /\bmoves?\b/i.test(s.text) && /animation|clip/i.test(s.text))).toEqual([]);
-    expect(all.filter((s) => /\bselect more\b|\bpick or unpick\b|\bunselect\b/i.test(s.text))).toEqual([]);
-  });
-  it('“New shape” is only a primitive; “Animation” never appears here', () => {
-    expect(all.filter((s) => /\bnew shape\b/i.test(s.text)).map((s) => s.path)).toEqual(['make.tray.newShape']);
-    expect(all.filter((s) => /\banimations?\b/i.test(s.text))).toEqual([]);
   });
 });

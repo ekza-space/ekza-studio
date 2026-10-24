@@ -3,7 +3,7 @@
 // Path on a second row; Compact ones move it to a bottom tab bar, fold ▤ Pro layout into the project menu and show ↶
 // here. The Path with its readiness glyphs is T6b's (`path/Path.tsx`, through `./PathParts`).
 import { Cluster, TouchButton, TouchIconButton } from '@ekza-studio/ui/touch';
-import type { JSX } from 'react';
+import { type JSX, useSyncExternalStore } from 'react';
 import { Icon } from '../halo/icons';
 import { commitSession } from '../session/sessions';
 import { en } from '../i18n/en';
@@ -11,6 +11,7 @@ import { destinationOf } from '../path/destinations';
 import type { HaloController } from './controller';
 import { useSessionValue, type SizeClass } from './hooks';
 import { FramePath } from './PathParts';
+import { aiActivity, subscribeAiActivity } from '../history/activity';
 import { useUndoPress } from '../history/undoPress';
 import { useHaloStore } from './store';
 
@@ -30,6 +31,12 @@ export function TopBar({
   const badge = destinationOf(useHaloStore(store, (s) => s.destination)).badge;
   const compact = size === 'compact';
   const name = project.trim() === '' ? en.top.untitled : project;
+  // §14 (T12, P-T10-3): the live AI activity line under the search pill while a paired agent works
+  const activity = useSyncExternalStore(
+    (listener) => subscribeAiActivity(app, listener),
+    () => aiActivity(app),
+    () => aiActivity(app),
+  );
   return (
     <header
       data-halo-chrome=""
@@ -57,27 +64,53 @@ export function TopBar({
           </div>
         ) : null}
         <span className="flex-1" />
-        <Cluster className="pointer-events-auto flex">
-          {compact ? (
-            <TouchIconButton
-              label={en.top.search}
-              icon={<Icon name="search" />}
-              className="border-0 bg-transparent shadow-none"
-              data-testid="halo-search"
-              onClick={() => store.set((ui) => ({ palette: true, touches: ui.touches + 1 }))}
-            />
-          ) : (
-            <TouchButton
-              variant="ghost"
-              className="min-w-[200px] justify-start gap-2 font-normal text-fg-2"
-              data-testid="halo-search"
-              onClick={() => store.set((ui) => ({ palette: true, touches: ui.touches + 1 }))}
+        <div className="relative flex">
+          <Cluster className="pointer-events-auto flex">
+            {compact ? (
+              <TouchIconButton
+                label={en.top.search}
+                icon={<Icon name="search" />}
+                className="border-0 bg-transparent shadow-none"
+                data-testid="halo-search"
+                onClick={() => store.set((ui) => ({ palette: true, touches: ui.touches + 1 }))}
+              />
+            ) : (
+              <TouchButton
+                variant="ghost"
+                className="min-w-[200px] justify-start gap-2 font-normal text-fg-2"
+                data-testid="halo-search"
+                onClick={() => store.set((ui) => ({ palette: true, touches: ui.touches + 1 }))}
+              >
+                <Icon name="search" />
+                {en.top.search}
+              </TouchButton>
+            )}
+          </Cluster>
+          {activity === null ? null : (
+            <button
+              type="button"
+              className="pointer-events-auto absolute top-[calc(100%+6px)] right-0 max-w-[min(360px,calc(100vw-32px))] truncate rounded-full border border-accent/50 bg-touch-surface px-3 py-1 text-left text-touch-label text-fg shadow-touch backdrop-blur-md"
+              aria-live="polite"
+              data-halo-chrome=""
+              data-testid="halo-ai-activity"
+              onClick={() =>
+                store.set((s) => ({
+                  sheet: 'ask',
+                  sheetArgs: {},
+                  sheetNoun: null,
+                  halo: null,
+                  touches: s.touches + 1,
+                }))
+              }
             >
-              <Icon name="search" />
-              {en.top.search}
-            </TouchButton>
+              <span
+                aria-hidden="true"
+                className="mr-1.5 inline-block size-2 rounded-full motion-safe:animate-pulse bg-accent"
+              />
+              {activity.text}
+            </button>
           )}
-        </Cluster>
+        </div>
         <Cluster className="pointer-events-auto flex">
           <TouchButton
             variant="ghost"
