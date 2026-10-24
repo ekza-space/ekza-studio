@@ -255,23 +255,9 @@ describe('the Recovery prompt is the host’s; the mounted shell offers the slot
 });
 
 describe('Pro’s switch to the Simple layout (§16.1)', () => {
-  it('Help › and File › hide the switch until Halo ships, unless the page asks for it (?simple=1)', () => {
-    const { app, host } = setup();
-    mountPro(host);
-    expect(app.operators.get('shell.halo')).toBeDefined();
-    expect(app.menus.get('shell.help.halo')).toBeUndefined();
-    expect(app.menus.get('shell.file.halo')).toBeUndefined();
-  });
-
-  it('shell.halo navigates on the same page with the workspace; Help › and File › list it', async () => {
-    const search = window.location.search;
-    window.history.replaceState(null, '', '?simple=1');
+  it('shell.halo navigates on the same page with the workspace; Help › and File › list it on every page (T12)', async () => {
     const { app, host, pushed } = setup();
-    try {
-      mountPro(host);
-    } finally {
-      window.history.replaceState(null, '', search === '' ? window.location.pathname : search);
-    }
+    mountPro(host);
     expect(app.operators.get('shell.halo')).toMatchObject({
       label: 'Switch to the Simple Layout',
       flags: { internal: true },
@@ -279,20 +265,39 @@ describe('Pro’s switch to the Simple layout (§16.1)', () => {
     expect(app.menus.get('shell.help.halo')).toMatchObject({ menu: 'help', op: 'shell.halo' });
     expect(app.menus.get('shell.file.halo')).toMatchObject({ menu: 'file', op: 'shell.halo' });
     enter(app, 'rig');
-    // a remembered Pro stays while HALO_ENTRY is off (a stored 'halo' would read as Ask before T12)
+    // §1.2: using the layout switch updates the remembered entry — a remembered Pro becomes Ekza Studio (HALO_ENTRY on)
     localStorage.setItem('ekza-studio:entry:v1', JSON.stringify({ choice: 'studio', at: 1 }));
     try {
       await expect(app.runUntyped('shell.halo')).resolves.toMatchObject({ status: 'finished' });
       expect(pushed).toEqual(['/app?ws=rig&from=studio']);
       expect(host.navigation.takeWorkspace()).toBe('rig');
-      expect(JSON.parse(localStorage.getItem('ekza-studio:entry:v1') ?? 'null')).toMatchObject({ choice: 'studio' });
+      await waitFor(
+        () =>
+          (JSON.parse(localStorage.getItem('ekza-studio:entry:v1') ?? 'null') as { choice?: string } | null)?.choice ===
+          'halo',
+      );
     } finally {
       localStorage.removeItem('ekza-studio:entry:v1');
     }
   });
 
-  it('Pro keeps its shipped name until T12 turns the title on (ST-30)', () => {
-    expect([PRO_TITLE, PRO_NAME]).toEqual([false, 'Ekza Studio']);
+  it('a remembered Auto-Rig or Ask stays as it is when the switch is used (§1.2)', async () => {
+    const { app, host } = setup();
+    mountPro(host);
+    localStorage.setItem('ekza-studio:entry:v1', JSON.stringify({ choice: 'autorig', at: 1 }));
+    try {
+      await expect(app.runUntyped('shell.halo')).resolves.toMatchObject({ status: 'finished' });
+      expect(JSON.parse(localStorage.getItem('ekza-studio:entry:v1') ?? 'null')).toMatchObject({ choice: 'autorig' });
+      localStorage.removeItem('ekza-studio:entry:v1');
+      await expect(app.runUntyped('shell.halo')).resolves.toMatchObject({ status: 'finished' });
+      expect(localStorage.getItem('ekza-studio:entry:v1')).toBeNull();
+    } finally {
+      localStorage.removeItem('ekza-studio:entry:v1');
+    }
+  });
+
+  it('Pro is titled "Ekza Studio Pro" since T12 (ST-30)', () => {
+    expect([PRO_TITLE, PRO_NAME]).toEqual([true, 'Ekza Studio Pro']);
   });
 });
 

@@ -14,14 +14,15 @@
 // STUDIO-TOUCH-SPEC §1.2 (T2; ST-2, ST-30): the choice gains `'halo'` (Ekza Studio's Simple layout, `/app`) and, behind
 // `HALO_ENTRY`, a new default: a first visit (nothing remembered, a malformed record, blocked storage) opens `/app`
 // instead of the chooser; a remembered `'studio'` or `'autorig'` still wins; `/?chooser=1` shows three rows with Ekza
-// Studio first. While the flag is false (until T12) the landing is exactly today's: two cards, the same script, and a
-// stored `'halo'` reads as nothing (Ask). Studio's copy of the flag (`dialogs/entryChoice.ts`) must match.
+// Studio first. T12 turned the flag on (ST-INT-1). Off, the landing would be the v0.6 one: two cards, the shipped
+// script byte for byte, and a stored `'halo'` read as nothing (Ask). Studio Pro's copy (`dialogs/entryChoice.ts`) and
+// Halo's (`packages/halo/src/shell/entry.ts`) must match; `test/entry-contract.test.ts` pins all three.
 
 /** The storage key (a new `ekza-studio:` key; the shipped `ekza-animator:` keys keep their names, GLOSSARY). */
 export const ENTRY_KEY = 'ekza-studio:entry:v1';
 
-/** Ekza Studio (Halo) as the front door (ST-2); T12 turns it on with the "Ekza Studio Pro" title (ST-30). */
-export const HALO_ENTRY: boolean = false;
+/** Ekza Studio (Halo) as the front door (ST-2); on since T12, with the "Ekza Studio Pro" title (ST-30, ST-INT-1). */
+export const HALO_ENTRY: boolean = true;
 
 export type EntryChoice = 'autorig' | 'studio' | 'halo';
 

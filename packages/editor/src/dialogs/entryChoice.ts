@@ -5,15 +5,15 @@
 // `apps/web/test/entry-contract.test.ts` holds both to one key, one record and one `HALO_ENTRY` flag. Blocked storage
 // = Ask.
 //
-// STUDIO-TOUCH-SPEC §1.2 (T2): the choice gains `'halo'` (Ekza Studio's Simple layout, `/app`) behind `HALO_ENTRY`.
-// While the flag is false (until T12, ST-30) a stored `'halo'` reads as nothing (Ask) and Start in offers today's
-// three rows, so nothing changes for users; the landing's copy follows the same flag.
+// STUDIO-TOUCH-SPEC §1.2 (T2): the choice gains `'halo'` (Ekza Studio's Simple layout, `/app`) behind `HALO_ENTRY`,
+// on since T12 (ST-30, ST-INT-1): nothing remembered opens Ekza Studio and Start in can pin it. Off, a stored `'halo'`
+// would read as nothing (Ask) and Start in would offer the v0.6 rows; the landing's and Halo's copies follow the flag.
 
 /** `localStorage` key of the landing's remembered choice: `{"choice": "autorig" | "studio" | "halo", "at": <ms>}`. */
 export const ENTRY_KEY = 'ekza-studio:entry:v1';
 
-/** STUDIO-TOUCH-SPEC ST-2, ST-30: Ekza Studio (Halo) as the front door; T12 turns it on with the landing's copy. */
-export const HALO_ENTRY = false;
+/** STUDIO-TOUCH-SPEC ST-2, ST-30: Ekza Studio (Halo) as the front door; on since T12, with the landing's copy. */
+export const HALO_ENTRY = true;
 
 export type EntryChoice = 'autorig' | 'studio' | 'halo';
 

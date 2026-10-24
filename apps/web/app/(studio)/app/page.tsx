@@ -9,8 +9,8 @@ export const metadata: Metadata = {
 
 /**
  * `/app` (STUDIO-TOUCH-SPEC §20.1; T2): Ekza Studio's Simple layout. Its entry registers the host and the Halo shell
- * with the `(studio)` layout, so a switch to `/editor` or `/autorig` keeps the document and its undo history. Reached
- * by URL only until T12 turns on the new entry (ST-30).
+ * with the `(studio)` layout, so a switch to `/editor` or `/autorig` keeps the document and its undo history. Since T12
+ * a first visit to `/` opens it (ST-2, ST-30).
  */
 export default function HaloPage(): JSX.Element {
   return <HaloEntryIsland />;

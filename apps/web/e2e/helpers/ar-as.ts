@@ -31,9 +31,12 @@ export function foreignRequests(page: Page, log: { readonly requests: { method: 
     .map((request) => `${request.method} ${request.url}`);
 }
 
-/** AS-AR-1 step 1: `/` → *Start Auto-Rig* (the landing card, a plain link) → `/autorig` with the test API. */
+/**
+ * AS-AR-1 step 1: the landing's chooser → *Rig a model for me* (a plain link) → `/autorig` with the test API. Since
+ * T12 a first visit to `/` opens Ekza Studio (STUDIO-TOUCH-SPEC §1.2), so the chooser is `/?chooser=1`.
+ */
 export async function startFromLanding(page: Page): Promise<void> {
-  await page.goto('/?e2e=1');
+  await page.goto('/?chooser=1&e2e=1');
   await expect(page.getByTestId('entry-autorig')).toHaveAttribute('href', '/autorig?e2e=1');
   await page.getByTestId('entry-autorig').click();
   await expect(page).toHaveURL(/\/autorig\?e2e=1$/);

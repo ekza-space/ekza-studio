@@ -114,11 +114,18 @@ describe('stages and the arrival (§7.1, §16.1, P-T3-4)', () => {
 });
 
 describe('the remembered entry (§1.2)', () => {
-  it('writes nothing while HALO_ENTRY is off', () => {
+  it('▤ Pro layout turns a remembered Ekza Studio into Pro (HALO_ENTRY on since T12); Auto-Rig and Ask stay', () => {
+    expect(HALO_ENTRY).toBe(true);
     const storage = memoryStorage();
     storage.setItem(ENTRY_KEY, JSON.stringify({ choice: 'halo', at: 1 }));
     rememberProLayout(storage);
-    const choice = (JSON.parse(storage.getItem(ENTRY_KEY) ?? '{}') as { choice?: string }).choice;
-    expect(choice).toBe(HALO_ENTRY ? 'studio' : 'halo');
+    const choice = (raw: string | null) => (JSON.parse(raw ?? '{}') as { choice?: string }).choice;
+    expect(choice(storage.getItem(ENTRY_KEY))).toBe('studio');
+    storage.setItem(ENTRY_KEY, JSON.stringify({ choice: 'autorig', at: 1 }));
+    rememberProLayout(storage);
+    expect(choice(storage.getItem(ENTRY_KEY))).toBe('autorig');
+    storage.data.delete(ENTRY_KEY);
+    rememberProLayout(storage);
+    expect(storage.getItem(ENTRY_KEY)).toBeNull();
   });
 });

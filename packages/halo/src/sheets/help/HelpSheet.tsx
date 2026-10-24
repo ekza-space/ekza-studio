@@ -208,6 +208,9 @@ function About(): JSX.Element {
         </p>
         <p className="text-fg-2">{about.positioning}</p>
         <p className="text-fg-2" data-testid="halo-help-beta">
+          <span className="mr-1.5 inline-flex items-center rounded-full border border-accent/60 bg-accent-soft px-2 text-touch-label font-semibold text-fg">
+            Beta
+          </span>
           {about.beta}
         </p>
         <p className="text-touch-label text-fg-3">{about.licence} licence</p>
