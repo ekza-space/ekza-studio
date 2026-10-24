@@ -3,12 +3,13 @@
 Spec references:
 - [STUDIO-TOUCH-SPEC](../STUDIO-TOUCH-SPEC.md) §4.2 B, §4.8, §5.5, §6.2, §7.1, §9 J2 / J6, §11, §13.1, §21 (T8 row) and
   §22 (AS-ST-4, AS-ST-5, AS-ST-17).
-- [ADR 0023](../adr/0023-studio-touch-ui.md); [DECISIONS-OPEN §P](../DECISIONS-OPEN.md) rows `ST-T8-1` … `ST-T8-17`.
+- [ADR 0023](../adr/0023-studio-touch-ui.md); [DECISIONS-OPEN §P](../DECISIONS-OPEN.md) rows `ST-T8-1` … `ST-T8-18`.
 
 Branch history:
 - Branched from `dev` `582aa335` (T6-INT).
 - Parked as a WIP commit when animation became the priority.
-- Resumed on 2026-10-24 with `dev` `22b007b6` (T7) merged in, then `b045af2f` (T11).
+- Resumed on 2026-10-24 with `dev` `22b007b6` (T7) merged in, then `b045af2f` (T11), then `b8fc6a32` (the M7
+  gateway G-b/G-c and T10).
 
 **The owner's focus (2026-10-24).** The focus is a turnkey AI pipeline on iPad, for characters and props alike:
 1. A prompt or a photo goes to a 3D generator.
@@ -18,7 +19,7 @@ Branch history:
 
 So T8 builds, in this order:
 - **Make** as the clean-up stage for an imported or generated model (J2 as specced).
-- **Create with AI**: an entry and a placeholder sheet.
+- **Create with AI**: an entry and a placeholder sheet, shown where a generation gateway is enabled.
 - **Paint**: the palette and colour as specced (J6).
 
 ## What landed
@@ -35,7 +36,7 @@ So T8 builds, in this order:
 | Select area | `stages/make/install.ts` (an `addHaloClaim`) | Drags on the canvas go to the select tool, which marquees, even over the model. The camera does not move. |
 | Mirror edits on for character templates | `stages/make/install.ts` | After `mesh.create.template` with `humanoidBody` / `humanoid`, `model.symmetry.set {object-x}` runs on the new meshes (§11 "on by default for templates"). This is U state, never a step. |
 | Reference image planes as a canvas noun | kernel: `editor-core` `select.imagePlane`, `model.imagePlane`, `select.objects` clears it; viewport `imagePlaneAt`; Halo: `verbs/nouns.ts`, `halo/grammar.ts` (tap hook), `sheets/scene/model.ts` | A tap on a reference in the view that shows it selects it. So does its Scene row. The plane's Halo opens Opacity and Size in Numbers, and runs Lock / Unlock, Hide and Delete on it. |
-| *Create with AI* | `stages/make/ai/**`; Home's starts (`home/Home.tsx`, one `<li>`) | A lazy sheet with:<ul><li>a 16 px prompt;</li><li>*Attach a photo* (PNG, JPEG, WebP, HEIC: the iPad offers the camera, the library and Files);</li><li>the size presets.</li></ul>It says plainly that AI generation is not connected on this build, and *Create* stays off until `services.generation` exists (G-d wires `gen.*` through G-b/G-c's `GenerationClient`). Entries: Make's tray, the empty Make stage, and Home › Make a character as a 4th start. |
+| *Create with AI* | `stages/make/ai/**`; Home's starts (`home/Home.tsx`, one `<li>`) | A lazy sheet with:<ul><li>a 16 px prompt;</li><li>*Attach a photo* (PNG, JPEG, WebP, HEIC: the iPad offers the camera, the library and Files);</li><li>the size presets.</li></ul>The entries show only where a generation gateway is configured and enabled (`ai/availability.ts`, ST-T8-18):<ul><li>the client is the host's `EditorServices.generation`, else gen-core's `createGenerationClient` over the build's `NEXT_PUBLIC_EKZA_GEN_GATEWAY` (handed over by `/app`'s entry);</li><li>no URL, the host's `null`, or `providers()` answering 404: hidden;</li><li>a gateway that does not answer (network, 5xx) or wants its token (401): the sheet says AI generation is not connected;</li><li>a gateway that answers: the sheet names its providers.</li></ul>*Create* stays off in every state until G-d's Generate flow. Entries: Make's tray, the empty Make stage, and Home › Make a character as a 4th start. |
 | Paint's tray | `stages/paint/Tray.tsx`, `model.ts` | Controls:<ul><li>up to five swatches with the active one kept in view;</li><li>`+n` (the palette sheet) or *New swatch* and the palette chip;</li><li>*Pick*, the Thumb key's *Pick colour* for one tap, which claims the press so the brush never starts;</li><li>*Fill part*, the Thumb key's lock (one state, §5.5);</li><li>⋯.</li></ul>When no target can be coloured, the tray says plainly: *"Painting imported meshes arrives later"* (the kernel refuses, §3 P12). It offers *Use the starter colours* when there is no palette. |
 | The swatch noun | `stages/paint/install.ts` (`bindNoun('swatch', {docked})`) | The first tap makes a swatch active and opens its Halo. A long-press opens the Halo without changing the active swatch. The Halo docks as a verb bar above the tray, between the off-hand column and the puck, and outlasts strokes and taps on the model. Its verbs:<ul><li>*Edit colour* and *Rename*: the palette sheet at that swatch;</li><li>*Finish ▾*: Matte · Shiny;</li><li>*Select faces* (`select.mesh.bySwatch {slot}`);</li><li>*Replace with active* (`mesh.paint.remap`).</li></ul> |
 | The palette sheet | `sheets/palette/**` | The swatch being edited:<ul><li>the system colour picker;</li><li>hex and name fields;</li><li>Finish, with Gloss for Shiny;</li><li>Select its faces;</li><li>Colour the selection with a new swatch;</li><li>Remove;</li><li>Replace with the active swatch.</li></ul>Then every swatch (a tap makes one active; *New swatch*), the palettes (New, Duplicate as a variant, Rename, Use for the selected shapes) and *Colours as*. |
@@ -89,8 +90,8 @@ manipulator.
 | J6 ≤ 8 + strokes | **8** (`ha-J6`): 7 in the browser + iOS's *Save*.<ul><li>Path › Paint (1);</li><li>a swatch (1);</li><li>strokes (not counted);</li><li>Finish ▾ › Shiny (2);</li><li>Share › Game engine › Export (3).</li></ul> |
 | J6 finger-only ≤ 10 | **10** (`ha-J6f`): 9 + iOS's *Save*.<ul><li>Path › Paint;</li><li>a swatch;</li><li>Fill part;</li><li>a tap on the part;</li><li>Finish ▾ › Shiny;</li><li>Share › Game engine › Export.</li></ul> |
 | The operator sequences Halo emits export bytes equal to Pro's (§22) | Each journey replays, in Studio Pro on a fresh project, the operators Halo ran, then exports the same static GLB request. **Byte-equal**:<ul><li>J2 `57bad5610d48…`: the template, Mirror edits, the face selection, `mesh.extrude` with the cap's and chip's final arguments, `mesh.bevel` with the handle's;</li><li>J6 `0e6e55827817…`: the stroke's `mesh.paint`, then `palette.setSwatch {shader: 'blinn'}`;</li><li>J6f `3330e620f200…`: `mesh.paint.fillShell`, then the finish.</li></ul> |
-| ha-08 / ha-09 green on `chrome-touch`, boot on `webkit-ipad` | `ha-08`: 5 tests on chrome-touch:<ul><li>the tray and a part's Halo on the Cube Lad: G-a's Reduce greyed with its reason, Move by finger on the ring, Delete;</li><li>Select area by finger, and Multi-cut's session;</li><li>the cap handle;</li><li>the reference plane;</li><li>Create with AI.</li></ul>`ha-09`: 4 tests:<ul><li>the swatch row and its docked Halo, Fill part = Thumb lock, Pick;</li><li>the palette sheet;</li><li>the imported-model refusal;</li><li>WebKit boot.</li></ul>On webkit-ipad, Create with AI and Paint's swatch Halo pass. |
-| `searchOnly` to the T8 target | **58 → 42** (T8 removed its 16 items). `live` 353 (`select.imagePlane` added), `reachable` 302. `BUILT_OWNERS` + T8 (P-T6B-5). |
+| ha-08 / ha-09 green on `chrome-touch`, boot on `webkit-ipad` | `ha-08`: 7 tests on chrome-touch:<ul><li>the tray and a part's Halo on the Cube Lad: G-a's Reduce greyed with its reason, Move by finger on the ring, Delete;</li><li>Select area by finger, and Multi-cut's session;</li><li>the cap handle;</li><li>the reference plane;</li><li>Create with AI: hidden while the build's gateway is off (404, every project), "not connected" with a gateway that answers 503 (photo attached), the providers named with one that answers.</li></ul>`ha-09`: 4 tests:<ul><li>the swatch row and its docked Halo, Fill part = Thumb lock, Pick;</li><li>the palette sheet;</li><li>the imported-model refusal;</li><li>WebKit boot.</li></ul>On webkit-ipad, Create with AI and Paint's swatch Halo pass. |
+| `searchOnly` to the T8 target | **58 → 42** (T8 removed its 16 items) before the T10 merge; after merging `dev` `b8fc6a32` (at 41): **41 → 25**. `live` 353 (`select.imagePlane` added), `reachable` 316. `BUILT_OWNERS` + T8 (P-T6B-5). |
 
 **Visible targets** (`halo().visibleTargets`, iPad landscape 1194 × 834, §4.8):
 
@@ -151,9 +152,12 @@ All are additive. Studio Pro never asks for them.
 | `halo/src/manifest/{types,disclosure,sheets}.ts`, `searchOnly.baseline.json` (T6b) | `BUILT_OWNERS` + T8; `PENDING_OPERATORS`; `SHEET_OWNER.createAi`; the clean-up surfaces; `select.imagePlane`; the baseline | P-T6B-5 |
 | `halo/src/sheets/scene/model.ts` (T6b) | A reference's row selects it | Planes |
 | `halo/src/sheets/share/model.ts` (T11) | Game engine without a character exports the scene's static GLB (Pro's Static request, `local/generic`) instead of "no character" | J6 "Game engine › Export Cube Lad.glb" on a model made in Make |
-| `halo/src/home/Home.tsx` (T11) | *Create with AI* as a 4th start of Make a character | The coordinator's request |
+| `halo/src/home/Home.tsx` (T11) | *Create with AI* as a 4th start of Make a character, shown where a gateway is enabled | The coordinator's request |
+| `halo/src/index.ts`, `halo/package.json`, `halo/src/tsconfig.json`, `pnpm-lock.yaml` (T2) | `setGenerationGateway` exported; `@ekza-studio/gen-core` a dependency (lazy `import()` only) with its project reference | Create with AI's availability (ST-T8-18) |
+| `apps/web/app/(studio)/app/HaloEntry.tsx` (T2) | `setGenerationGateway(process.env.NEXT_PUBLIC_EKZA_GEN_GATEWAY)` at module scope | The build's gateway URL reaches the shell |
+| `.oxlintrc.json`, `tooling/check-deps.mjs` (WP-0a) | Halo may import `@ekza-studio/gen-core` (lazy) | Same |
 | `halo/test/{manifest/manifest,verbs/derive,sheets/scene}.test.ts` | Pending operators skipped; the mesh's Move row; the plane row's select | Follow the curated rows |
-| `apps/web/e2e/ha-01-home-intake.spec.ts` (T11), `ha-02-grammar.spec.ts` (T6a) | ha-01: *Make a character* shows four buttons (the starts and *Create with AI*); ha-02: the part Halo's clean-up row has *Separate* where *Duplicate* was | Follow the Home start and ST-T8-4 |
+| `apps/web/e2e/ha-01-home-intake.spec.ts` (T11), `ha-02-grammar.spec.ts` (T6a) | ha-01: *Make a character* shows three starts while the gateway is off, four with one (a new test: the AI start opens the sheet in Make); ha-02: the part Halo's clean-up row has *Separate* where *Duplicate* was | Follow the Home start and ST-T8-4 |
 
 ## Patches for other packages
 
@@ -182,11 +186,12 @@ All are additive. Studio Pro never asks for them.
 | ST-T8-10 | **Paint says plainly that painting imported meshes arrives later**: the kernel refuses them, made-editable ones included | §3 P12 (the spec's *Make editable to paint* would promise a stroke that cannot land) |
 | ST-T8-11 | **Reference planes are selected through `select.imagePlane` and `model.imagePlane`** (U state, a scene pick clears it), from a canvas tap (Make's tap hook over `imagePlaneAt`) or the Scene row | P-T6B-7: a plane is not a scene object |
 | ST-T8-12 | **Clean-up calls G-a's operators by id with the final contract** (M7-GA-CONTRACT-1…6). Until they are in the build they stay greyed with *Not in this build yet*; `PENDING_OPERATORS` lets the verb table name them | The coordinator: no stubs; disabled with the reason |
-| ST-T8-13 | ***Create with AI* is a placeholder sheet behind its entry flag** (`CREATE_WITH_AI_ENTRY`, on). It says AI generation is not connected and keeps *Create* off until `services.generation` exists (ADR 0017); G-d wires `gen.*` | The owner sees the pipeline's door; nothing pretends to generate |
+| ST-T8-13 | ***Create with AI* is a placeholder sheet behind its entry flag** (`CREATE_WITH_AI_ENTRY`, on). It says whether the gateway answers and keeps *Create* off until G-d's Generate flow (ADR 0017); G-d wires `gen.*` | The owner sees the pipeline's door; nothing pretends to generate |
 | ST-T8-14 | **Game engine on a model without a character** exports the scene's static GLB (Pro's Static request, `local/generic`) | J6 on a model made in Make; the same call as More formats › Static model |
 | ST-T8-15 | **Journey touches**: a Path tab and every Echo chip change count one touch (a numpad value is one: J4's rule). The off-canvas handles and the tray count their own | AS-ST-4 counts; the counter was missing them |
 | ST-T8-16 | **Stage claims run before the brush check** in `claimOf` | Paint's *Pick* must reach the tool as a tap; handles are the stage's whatever the tool |
-| ST-T8-17 | **Parity and bytes after T8**: `searchOnly` 58 → 42, `live` 353, reachable 302; J2, J6 and J6f byte-equal to Studio Pro's replay | The T8 exit test |
+| ST-T8-17 | **Parity and bytes after T8**: `searchOnly` 58 → 42 (41 → 25 after the T10 merge), `live` 353, reachable 316; J2, J6 and J6f byte-equal to Studio Pro's replay | The T8 exit test |
+| ST-T8-18 | ***Create with AI* shows where a generation gateway is enabled** (the coordinator, 2026-10-24; `m7-gbc.md` "Availability"): the host's `EditorServices.generation`, else gen-core's `createGenerationClient` over the build's `NEXT_PUBLIC_EKZA_GEN_GATEWAY`. No URL, the host's null or a 404 from `providers()` hide every entry; a configured gateway that does not answer (or wants its token) keeps the sheet's "not connected" state; one that answers names its providers. *Create* stays off until G-d | Server builds without `GEN_GATEWAY_ENABLED=1` (the default, the e2e build) hide the door; the sheet never promises a stroke that cannot land (P12) |
 
 ## Gate
 
