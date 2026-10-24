@@ -26,8 +26,9 @@ export function ChoiceRow({
   const choices = verb.choices ?? [];
   const rowHeight = 56;
   const below = box === null ? height - insetBottom - rowHeight - 72 : box.bottom + 12;
-  const top =
-    below + rowHeight < height - insetBottom ? below : Math.max(80, (box?.top ?? height / 2) - rowHeight - 64);
+  // above the selection otherwise, clear of a verb bar docked over the tray (a tray swatch's Halo, §4.4)
+  const above = Math.min(box?.top ?? height / 2, height - insetBottom - 60) - rowHeight - 72;
+  const top = below + rowHeight < height - insetBottom ? below : Math.max(80, above);
   const left = Math.min(Math.max(16, box === null ? width / 2 - 160 : (box.left + box.right) / 2 - 160), width - 336);
   return (
     <div

@@ -1,7 +1,7 @@
 import { expect, test, type TestInfo } from '@playwright/test';
 import { centre, fingerPath, makeSlice, meshIds, paneCentre, touches } from './helpers/halo-make';
 import { halo, haloMenu, openHalo, PANE, petal } from './helpers/halo';
-import { call, runOk } from './helpers/test-api';
+import { call, expectKernelStarted, lastExport, openEditor, runOk } from './helpers/test-api';
 import { fingerDrag, fingerTap } from './helpers/touch';
 
 // ha-J2 Model a low-poly character from a template (STUDIO-TOUCH-SPEC §9 J2, §22 AS-ST-4; T8 exit test), `chrome-touch`,
@@ -37,6 +37,8 @@ test('ha-J2: model a low-poly character from a template in ≤ 9 touches', async
   await runOk(page, 'view.frame', { what: 'all', paneId: PANE });
   await fingerTap(page, await paneCentre(page));
   await expect.poll(async () => (await halo(page)).noun?.kind).toBe('faces');
+  const faces = [...((await call(page, 'model')).selected[mesh]?.face ?? [])];
+  expect(faces.length).toBeGreaterThan(0);
   const pull = await petal(page, 'Pull').boundingBox();
   if (pull === null) throw new Error('no Pull');
   await fingerTap(page, { x: pull.x + pull.width / 2, y: pull.y + pull.height / 2 });
@@ -66,6 +68,8 @@ test('ha-J2: model a low-poly character from a template in ≤ 9 touches', async
   ]);
   await expect.poll(async () => (await call(page, 'lastOp'))?.args['divisions']).toBe(2);
 
+  const extrudeArgs = (await call(page, 'lastOp'))?.args ?? {};
+
   // 3. Bevel in the reduced Halo beside the chips (1) → drag the bevel handle (1)
   const bevel = haloMenu(page).getByRole('menuitem', { name: /^Bevel/ });
   await expect(bevel).toBeVisible();
@@ -81,9 +85,37 @@ test('ha-J2: model a low-poly character from a template in ≤ 9 touches', async
   await expect.poll(async () => Number((await call(page, 'lastOp'))?.args['fraction'] ?? 0)).not.toBe(before);
   expect((await call(page, 'history')).undo.length).toBe(steps);
 
+  const bevelArgs = (await call(page, 'lastOp'))?.args ?? {};
   const used = (await touches(page)) - base;
   testInfo.annotations.push({ type: 'touches', description: String(used) });
   expect(used).toBeLessThanOrEqual(9);
   // the journey made two document steps after the template: the extrude and the bevel (selection steps aside)
   expect(steps).toBeGreaterThan(startSteps);
+
+  // §22 AS-ST-5: the operator sequence Halo emitted, run in Studio Pro on a fresh project, exports the same bytes
+  const exportOf = async (id: string): Promise<string> => {
+    await runOk(page, 'file.exportModel', { objects: [id], fileName: 'j2.glb', profile: 'local/generic' });
+    await expect.poll(async () => (await lastExport(page))?.fileName).toBe('j2.glb');
+    return (await lastExport(page))?.sha256 ?? '';
+  };
+  const halos = await exportOf(mesh);
+  await openEditor(page);
+  await expectKernelStarted(page);
+  await runOk(page, 'workspace.set', { workspace: 'model' });
+  const made = await runOk<{ created: string[] }>(page, 'mesh.create.template', {
+    template: 'humanoidBody',
+    style: 'smooth',
+  });
+  const proMesh = made.created.find((id) => id.startsWith('msh_')) ?? '';
+  await expect
+    .poll(async () => (await call(page, 'meshes')).find((row) => row.id === proMesh)?.runtime, { timeout: 30_000 })
+    .toBe('ready');
+  await runOk(page, 'model.symmetry.set', { meshes: [proMesh], mode: 'object-x' });
+  await runOk(page, 'select.mode', { mode: 'face' });
+  await runOk(page, 'select.components', { mesh: proMesh, kind: 'face', indices: faces, mode: 'replace' });
+  await runOk(page, 'mesh.extrude', extrudeArgs);
+  await runOk(page, 'mesh.bevel', bevelArgs);
+  const pros = await exportOf(proMesh);
+  testInfo.annotations.push({ type: 'bytes', description: `${halos.slice(0, 12)} = ${pros.slice(0, 12)}` });
+  expect(pros).toBe(halos);
 });

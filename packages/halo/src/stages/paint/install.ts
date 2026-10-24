@@ -55,6 +55,7 @@ export function installPaint(controller: HaloController): () => void {
   const disposers: (() => void)[] = [];
   disposers.push(
     bindNoun('swatch', {
+      docked: true,
       focus(bound, id): KindNoun | null {
         if (id === null) return null;
         const swatch = bound.store.get('swatches', id as SwatchId);

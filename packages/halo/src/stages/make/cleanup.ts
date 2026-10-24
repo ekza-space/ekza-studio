@@ -1,43 +1,46 @@
-// Cleaning up an imported or generated model (the owner's AI pipeline, 2026-10-24; MODELING-PLAN §7.2 G-a; T8):
-// the Make stage's *Clean up ▾* and the mesh Halo's *Reduce* call the intake operators of package G-a **by id** —
-// `mesh.reduce` (an exact triangle target), `mesh.normalize` (+Z forward, metres, origin bottom centre, a height) and
-// `mesh.paletteBake` (base colours → swatches) — beside the existing `mesh.cleanup`, `mesh.mergeByDistance` and
-// `mesh.separate`. Halo never stubs them: until G-a registers them they show greyed with the reason (*Not in this build
-// yet*), and once they are live their own polls, forms and Echo chips apply. The Reduce budgets are the generation
-// presets (§7.2 G-d: Prop ≤ 500, Character ≤ 3k, Hero ≤ 10k); the triangle target goes to the operator's integer
-// parameter whose name says target, triangles, budget or count (G-a's names are not frozen yet — ST-T8-12).
-import type { ParamDef } from '@ekza-studio/anim-core';
+// Cleaning up an imported or generated model (the owner's AI pipeline, 2026-10-24; MODELING-PLAN §7.2 G-a; T8): the
+// Make stage's *Clean up ▾* and the mesh Halo's *Reduce ▾* call the intake operators of package G-a **by id**, with
+// G-a's final contract (DECISIONS M7-GA-CONTRACT-1…6): `mesh.intake {preset = 'character', height = null,
+// colours = 16, meshes?}` (normalize → reduce → quadrangulate → palette bake, one undo step), `mesh.reduce {preset,
+// triangles = null, meshes?}` (null: the preset's 500 / 3,000 / 10,000), `mesh.normalize {height = null, meshes?}`,
+// `mesh.paletteBake {colours = 16, meshes?}` and `mesh.textureDownsize {size = 1024, meshes?}`; without `meshes` they
+// act on the selected mesh objects — beside the existing `mesh.cleanup`, `mesh.mergeByDistance` and `mesh.separate`. Halo never stubs them: until G-a registers them they show greyed with the reason (*Not in this build
+// yet*); once they are live their own polls apply (ST-T8-12).
 import type { EditorApp, OperatorId } from '@ekza-studio/editor-core';
 
 /** G-a's operator ids (MODELING-PLAN §7.2), not in `OperatorMap` until G-a lands. */
 export const GA_OPS = {
+  intake: 'mesh.intake',
   reduce: 'mesh.reduce',
   normalize: 'mesh.normalize',
   paletteBake: 'mesh.paletteBake',
+  textureDownsize: 'mesh.textureDownsize',
 } as const;
 
-/** The Reduce budgets (triangles), the generation presets of §7.2 G-d. */
-export const REDUCE_BUDGETS = [
+export type BudgetPreset = 'prop' | 'character' | 'hero';
+
+/** The budgets (triangles): the generation presets of §7.2 G-d, G-a's `preset` values. */
+export const REDUCE_BUDGETS: readonly { readonly id: BudgetPreset; readonly triangles: number }[] = [
   { id: 'prop', triangles: 500 },
   { id: 'character', triangles: 3000 },
   { id: 'hero', triangles: 10_000 },
-] as const;
+];
 
-/** The integer parameter of `mesh.reduce` that takes the triangle target, or null (not registered, no such param). */
-export function reduceTargetParam(app: EditorApp): string | null {
-  const def = app.operators.get(GA_OPS.reduce as OperatorId) as { readonly params?: readonly ParamDef[] } | undefined;
-  const params = def?.params ?? [];
-  const named = params.find(
-    (p) => (p.kind === 'int' || p.kind === 'number') && /target|triangle|budget|count/i.test(p.name),
-  );
-  return named?.name ?? null;
-}
+/** The default budget (a character, §7.2 G-d). */
+export const CHARACTER_BUDGET = { id: 'character', triangles: 3000 } as const;
 
-/** The arguments of a Reduce to `triangles` (null: the operator is not live, so the verb stays greyed). */
-export function reduceArgs(app: EditorApp, triangles: number): Readonly<Record<string, number>> | null {
-  const param = reduceTargetParam(app);
-  return param === null ? null : { [param]: triangles };
-}
+/** `mesh.reduce`'s arguments for a budget (`triangles` left to the preset). */
+export const reduceArgs = (budget: { readonly id: BudgetPreset }) => ({ preset: budget.id }) as const;
+
+/** `mesh.intake`'s arguments for a budget (height and colours: G-a's defaults). */
+export const intakeArgs = (budget: { readonly id: BudgetPreset }) => ({ preset: budget.id }) as const;
+
+/** `mesh.normalize` keeping the model's own size (stand up, metres, origin at the bottom centre). */
+export const NORMALIZE_ARGS = { height: null } as const;
+/** `mesh.paletteBake` into the default 16 swatches. */
+export const PALETTE_BAKE_ARGS = { colours: 16 } as const;
+/** `mesh.textureDownsize` to 1,024 px. */
+export const TEXTURE_ARGS = { size: 1024 } as const;
 
 /** True when the operator is registered in this build. */
 export const isLive = (app: EditorApp, op: string): boolean => app.operators.get(op as OperatorId) !== undefined;

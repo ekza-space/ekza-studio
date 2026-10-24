@@ -3,7 +3,7 @@
 import type { EditorApp } from '@ekza-studio/editor-core';
 import { useSyncExternalStore } from 'react';
 
-export type MakeMenu = 'drag' | 'cut' | 'cleanUp' | 'newShape' | 'reduce' | null;
+export type MakeMenu = 'drag' | 'cut' | 'cleanUp' | 'newShape' | 'reduce' | 'intake' | null;
 
 export interface MakeUi {
   readonly menu: MakeMenu;

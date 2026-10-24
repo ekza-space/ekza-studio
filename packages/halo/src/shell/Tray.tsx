@@ -32,7 +32,7 @@ export function Tray({
   const Own = stageTray(stage);
   if (Own === null) return <StandInTray controller={controller} compact={compact} />;
   return (
-    <Suspense fallback={<StandInTray controller={controller} compact={compact} />}>
+    <Suspense key={stage} fallback={<StandInTray controller={controller} compact={compact} />}>
       <Own controller={controller} compact={compact} />
     </Suspense>
   );

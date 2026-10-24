@@ -73,6 +73,12 @@ export interface NounBinding {
   verb?(app: EditorApp, noun: Noun, petal: PetalDef, verb: Verb, stage: HaloStage): Verb;
   /** The Halo's anchor box in pane px, when the noun is not on the canvas (else the selection's box). */
   box?(app: EditorApp, noun: Noun): Box | null;
+  /**
+   * A noun that lives in the tray (a swatch): its Halo docks as a verb bar above the tray (as on Compact, §4.4), it
+   * has no breadcrumb, and its focus outlasts selection changes (strokes, taps on the model), §6.1 "the first tap is
+   * enough on every noun, including list items".
+   */
+  readonly docked?: boolean;
 }
 
 const bindings = new Map<NounKind, NounBinding>();

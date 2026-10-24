@@ -132,13 +132,17 @@ export function HaloLayer({
       style={breathing ? { opacity: 0.15 } : undefined}
       data-halo-layer=""
     >
-      {noun !== null && halo?.mode !== 'ring' ? (
+      {noun !== null && halo?.mode !== 'ring' && nounBinding(noun.kind)?.docked !== true ? (
         <Breadcrumb controller={controller} noun={noun} box={box} width={width} above={insetTop} />
       ) : null}
-      {halo !== null && haloNoun !== null && compact && halo.mode === 'arc' ? (
+      {halo !== null &&
+      haloNoun !== null &&
+      (compact || nounBinding(haloNoun.kind)?.docked === true) &&
+      halo.mode === 'arc' ? (
         <div
           className="pointer-events-auto absolute inset-x-(--touch-inset-left)"
-          style={{ bottom: insetBottom + 8 }}
+          // a tray noun's bar (not Compact) stays between the off-hand column and the puck (T8)
+          style={compact ? { bottom: insetBottom + 8 } : { bottom: insetBottom + 8, left: 300, right: 190 }}
           data-halo-chrome=""
         >
           <VerbBar

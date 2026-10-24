@@ -5,7 +5,7 @@
 //   build, `./cleanup`);
 // - *Mirror edits* on for a new character body or guides (§11 "on by default for templates"): U state, never a step;
 // - the test API's `make` slice.
-import { type EditorApp, VIEWPORT_TOOL } from '@ekza-studio/editor-core';
+import { VIEWPORT_TOOL } from '@ekza-studio/editor-core';
 import type { Box } from '@ekza-studio/ui/touch';
 import { makeWords } from '../../i18n/make';
 import { addHaloClaim } from '../../input/claims';
@@ -39,19 +39,18 @@ function mirrorTemplates(controller: HaloController): () => void {
   });
 }
 
-/** The Reduce petal's choices: one per budget, each greyed until G-a's operator is in the build. */
-function reduceVerb(app: EditorApp, verb: Verb): Verb {
+/** The Reduce petal's choices: one per budget (`mesh.reduce {triangles, preset}`), greyed until G-a is in the build. */
+function reduceVerb(verb: Verb): Verb {
   return {
     ...verb,
     hasMenu: true,
-    choices: REDUCE_BUDGETS.map((budget): Verb => {
-      const args = reduceArgs(app, budget.triangles);
-      return {
+    choices: REDUCE_BUDGETS.map(
+      (budget): Verb => ({
         id: `${GA_OPS.reduce}:${budget.id}`,
         label: makeWords.ai[budget.id],
-        run: args === null ? { op: GA_OPS.reduce as never } : { op: GA_OPS.reduce as never, args },
-      };
-    }),
+        run: { op: GA_OPS.reduce as never, args: reduceArgs(budget) },
+      }),
+    ),
   };
 }
 
@@ -71,7 +70,7 @@ export function installMake(controller: HaloController): () => void {
   );
   disposers.push(
     bindNoun('mesh', {
-      verb: (bound, _noun, petal, verb) => (petal.id === 'reduce' ? reduceVerb(bound, verb) : verb),
+      verb: (_app, _noun, petal, verb) => (petal.id === 'reduce' ? reduceVerb(verb) : verb),
     }),
   );
   // the component nouns' Halo, breadcrumb and chips sit beside the selected components and Make's handles, never

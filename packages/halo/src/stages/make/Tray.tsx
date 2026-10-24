@@ -17,7 +17,17 @@ import type { StageTrayProps } from '../../shell/stageParts';
 import { startCall, type StartChoice } from '../../home/model';
 import { EMPTY_NOUN } from '../../verbs/nouns';
 import { VERB_TABLE } from '../../verbs/table';
-import { GA_OPS, isLive, REDUCE_BUDGETS, reduceArgs } from './cleanup';
+import {
+  CHARACTER_BUDGET,
+  GA_OPS,
+  intakeArgs,
+  isLive,
+  NORMALIZE_ARGS,
+  PALETTE_BAKE_ARGS,
+  REDUCE_BUDGETS,
+  reduceArgs,
+  TEXTURE_ARGS,
+} from './cleanup';
 import { type MenuItem, Sparkle, TrayChip, TrayMenu, touch } from './kit';
 import { openCreateWithAi } from './ai/open';
 import { makeStore, useMakeState } from './state';
@@ -148,35 +158,30 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
     item('slide', w.slide, 'view.tool', { panel: PANEL.viewport, tool: VIEWPORT_TOOL.slide }),
     item('last', w.lastTool, 'tool.last'),
   ];
-  const reduceReady = reduceArgs(app, 3000) !== null;
-  const cleanItems: MenuItem[] = [
-    {
-      id: 'reduce',
-      label: w.reduce,
-      reason: reduceReady ? poll(GA_OPS.reduce, reduceArgs(app, 3000)) : poll(GA_OPS.reduce),
-      run: () => {
-        touch(ctx);
-        ms.set({ menu: 'reduce' });
-      },
+  // a budget row's arguments are the same for the readiness poll and the run (`./cleanup`, G-a's contract)
+  const budgetRow = (menuId: 'intake' | 'reduce', op: string, label: string): MenuItem => ({
+    id: menuId,
+    label,
+    reason: poll(op, menuId === 'intake' ? intakeArgs(CHARACTER_BUDGET) : reduceArgs(CHARACTER_BUDGET)),
+    run: () => {
+      touch(ctx);
+      ms.set({ menu: menuId });
     },
-    item('normalize', w.normalize, GA_OPS.normalize),
-    item('paletteBake', w.paletteBake, GA_OPS.paletteBake),
+  });
+  const cleanItems: MenuItem[] = [
+    budgetRow('intake', GA_OPS.intake, w.intake),
+    budgetRow('reduce', GA_OPS.reduce, w.reduce),
+    item('normalize', w.normalize, GA_OPS.normalize, NORMALIZE_ARGS),
+    item('paletteBake', w.paletteBake, GA_OPS.paletteBake, PALETTE_BAKE_ARGS),
+    item('textures', w.textures, GA_OPS.textureDownsize, TEXTURE_ARGS),
     item('tidy', w.tidy, 'mesh.cleanup'),
     item('mergeClose', w.mergeClose, 'mesh.mergeByDistance'),
     item('separate', w.separate, 'mesh.separate'),
   ];
-  const reduceItems: MenuItem[] = REDUCE_BUDGETS.map((budget) => {
-    const args = reduceArgs(app, budget.triangles);
-    return {
-      id: budget.id,
-      label: makeWords.ai[budget.id],
-      reason: args === null ? en.verbs.notInBuild : poll(GA_OPS.reduce, args),
-      run: () => {
-        touch(ctx);
-        if (args !== null) run(GA_OPS.reduce, args);
-      },
-    };
-  });
+  const budgetItems = (op: string, args: (b: (typeof REDUCE_BUDGETS)[number]) => unknown): MenuItem[] =>
+    REDUCE_BUDGETS.map((budget) => item(budget.id, makeWords.ai[budget.id], op, args(budget)));
+  const reduceItems = budgetItems(GA_OPS.reduce, reduceArgs);
+  const intakeItems = budgetItems(GA_OPS.intake, intakeArgs);
   const shapeItems: MenuItem[] = [
     // the primitives in the verb table's words (empty space's *New shape ▾*, §6.2)
     ...(VERB_TABLE.empty.find((p) => p.id === 'newShape')?.menu ?? []).map((c) => item(c.op, c.plain, c.op, c.args)),
@@ -192,6 +197,7 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
     cut: { label: w.cutTitle, items: cutItems },
     cleanUp: { label: w.cleanUpTitle, items: cleanItems },
     reduce: { label: w.reduce, items: reduceItems },
+    intake: { label: w.intake, items: intakeItems },
     newShape: { label: w.newShape, items: shapeItems },
   };
   const open = menu === null ? null : menus[menu];
@@ -242,7 +248,7 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
           testId="halo-make-cleanup"
           label={w.cleanUp}
           menu
-          open={menu === 'cleanUp' || menu === 'reduce'}
+          open={menu === 'cleanUp' || menu === 'reduce' || menu === 'intake'}
           onPress={() => toggleMenu('cleanUp')}
         />
         {compact ? null : (

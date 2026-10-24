@@ -159,11 +159,17 @@ export type ChromePart = keyof typeof CHROME_OWNER;
 export const TARGET_OPS: ReadonlySet<string> = new Set<string>(['scene.parent']);
 
 /**
- * Operators other packages register later (T8: G-a's intake operators, MODELING-PLAN §7.2 — `mesh.reduce`,
- * `mesh.normalize`, `mesh.paletteBake`). A petal or a tray may name one: it stays greyed with its reason until the
+ * Operators other packages register later (T8: G-a's intake operators, MODELING-PLAN §7.2 — `mesh.intake`,
+ * `mesh.reduce`, `mesh.normalize`, `mesh.paletteBake`, `mesh.textureDownsize`; M7-GA-CONTRACT-1…6). A petal or a tray may name one: it stays greyed with its reason until the
  * operator is in the build, and its manifest entry lands with the operator (parity test 1 then asks for it).
  */
-export const PENDING_OPERATORS: ReadonlySet<string> = new Set(['mesh.reduce', 'mesh.normalize', 'mesh.paletteBake']);
+export const PENDING_OPERATORS: ReadonlySet<string> = new Set([
+  'mesh.intake',
+  'mesh.reduce',
+  'mesh.normalize',
+  'mesh.paletteBake',
+  'mesh.textureDownsize',
+]);
 
 /** Stage trays (§7.1): owned by the stage packages. */
 export const TRAY_OWNER: Readonly<Record<Stage, Owner>> = { make: 'T8', paint: 'T8', rig: 'T9', animate: 'T7' };

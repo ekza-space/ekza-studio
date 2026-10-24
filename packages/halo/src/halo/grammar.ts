@@ -12,7 +12,7 @@ import { en } from '../i18n/en';
 import type { ShellContext } from '../shell/context';
 import { PANE } from '../shell/stage';
 import { EMPTY_NOUN, type Noun as KindNoun } from '../verbs/nouns';
-import { type Noun, pollVerb, spaceNoun, type Verb, type VerbSource } from './verbSource';
+import { type Noun, nounBinding, pollVerb, spaceNoun, type Verb, type VerbSource } from './verbSource';
 
 /** How long a tap waits for the tool's selection change before it reads the selection as it is (ms). */
 const SETTLE_MS = 90;
@@ -396,8 +396,13 @@ export function createGrammar(deps: GrammarDeps): Grammar {
         const next = selectionKey(app);
         if (next === key) return;
         key = next;
-        // a focused noun (the character, the manipulator) and a sheet's own noun give way to the new selection
-        if (store.get().focus !== null || store.get().sheetNoun !== null) store.set({ focus: null, sheetNoun: null });
+        // a focused noun (the character, the manipulator) and a sheet's own noun give way to the new selection; a
+        // docked noun (a tray swatch, T8) stays while strokes and taps change the model's selection
+        const focus = store.get().focus;
+        const docked = focus !== null && nounBinding(focus.kind)?.docked === true;
+        if ((focus !== null && !docked) || store.get().sheetNoun !== null) {
+          store.set({ ...(docked ? {} : { focus: null }), sheetNoun: null });
+        }
         if (pending !== null) {
           // the tool's click changed the selection: settle on the next task (several runs may follow)
           if (settle !== null) clearTimeout(settle);
