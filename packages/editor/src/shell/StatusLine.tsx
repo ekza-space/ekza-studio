@@ -374,7 +374,7 @@ export function StatusLine(): JSX.Element {
         <Tip text="The same project in Ekza Studio's Simple layout, one thing at a time">
           <button
             type="button"
-            className="rounded px-1.5 text-ui text-fg-3 hover:bg-hover hover:text-fg"
+            className="whitespace-nowrap rounded px-1.5 text-ui text-fg-3 hover:bg-hover hover:text-fg"
             data-testid="status-halo"
             onClick={() => run('shell.halo')}
           >
