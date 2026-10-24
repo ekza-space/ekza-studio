@@ -122,6 +122,26 @@ export class ImagePlaneLayer {
     return this.entries.size;
   }
 
+  /**
+   * The world corners of a plane's quad (the four corners of its image, in drawing order), or null for an unknown or
+   * undrawn plane (Halo T8: the canvas picks a reference by them, `ViewportManager.imagePlaneAt`).
+   */
+  corners(id: string): readonly (readonly [number, number, number])[] | null {
+    const entry = this.entries.get(id);
+    if (entry === undefined || entry.spec.image === null) return null;
+    return (
+      [
+        [-0.5, -0.5],
+        [0.5, -0.5],
+        [0.5, 0.5],
+        [-0.5, 0.5],
+      ] as const
+    ).map(([x, y]) => {
+      const v = new Vector3(x, y, 0).applyMatrix4(entry.mesh.matrix);
+      return [v.x, v.y, v.z] as const;
+    });
+  }
+
   dispose(): void {
     for (const entry of this.entries.values()) this.remove(entry);
     this.entries.clear();

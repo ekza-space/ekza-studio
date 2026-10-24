@@ -116,6 +116,9 @@ export const VERB_TABLE: Readonly<Record<NounKind, readonly PetalDef[]>> = {
     { id: 'allControls', plain: 'All controls', op: 'select.all', stages: ['animate'], icon: 'scan' },
     { id: 'resetPose', plain: 'Reset pose', op: 'pose.resetToRest', stages: ['animate'], icon: 'rotate-ccw' },
   ],
+  // T8 (the owner's clean-up focus, 2026-10-24): a mesh object's first layer cleans an imported or generated model —
+  // Move (the ring), Separate, Delete, Reduce ▾ (G-a's `mesh.reduce`, greyed until it is in the build) — and goes on
+  // to Rig it; Duplicate, Mirror and Paint are in its More (ST-T8-4)
   mesh: [
     {
       id: 'editShape',
@@ -125,9 +128,19 @@ export const VERB_TABLE: Readonly<Record<NounKind, readonly PetalDef[]>> = {
       stages: ['make'],
       icon: 'square-dashed',
     },
-    { id: 'duplicate', plain: 'Duplicate', op: 'scene.duplicate', stages: ['make'], icon: 'copy' },
-    { id: 'mirror', plain: 'Mirror', op: 'mesh.mirror', stages: ['make'], icon: 'flip-horizontal' },
-    { id: 'paint', plain: 'Paint', go: { stage: 'paint' }, stages: ['make'], icon: 'brush' },
+    // the Move ring (Turn and Scale: the tray's *Drag ▾* and More)
+    {
+      id: 'move',
+      plain: 'Move',
+      op: 'view.tool',
+      args: { panel: 'viewport', tool: 'move' },
+      stages: ['make'],
+      icon: 'move-horizontal',
+    },
+    { id: 'separate', plain: 'Separate', op: 'mesh.separate', stages: ['make'], icon: 'scissors' },
+    { id: 'delete', plain: 'Delete', op: 'scene.delete', stages: ['make'], icon: 'trash' },
+    // G-a's operator (MODELING-PLAN §7.2); its budgets are the binding's ▾ choices (`stages/make/install.ts`)
+    { id: 'reduce', plain: 'Reduce', op: 'mesh.reduce', stages: ['make'], icon: 'minimize' },
     { id: 'rigIt', plain: 'Rig it', go: { stage: 'rig' }, stages: ['make'], icon: 'bone' },
     { id: 'makeCharacter', plain: 'Make a character', op: 'char.fromModel', stages: ['rig'], icon: 'person-standing' },
     { id: 'checks', plain: 'Checks', go: { sheet: 'checks' }, stages: ['rig'], icon: 'stethoscope' },
@@ -138,6 +151,8 @@ export const VERB_TABLE: Readonly<Record<NounKind, readonly PetalDef[]>> = {
     { id: 'bevel', plain: 'Bevel', op: 'mesh.bevel', icon: 'square-round-corner' },
     { id: 'colour', plain: 'Colour', op: 'mesh.paint', icon: 'paintbrush' },
     { id: 'delete', plain: 'Delete', op: 'mesh.delete', icon: 'trash' },
+    // T8: the faces become a part of their own (Extract), the clean-up of a fused model
+    { id: 'separate', plain: 'Separate', op: 'mesh.extract', icon: 'scissors' },
   ],
   edges: [
     { id: 'loopCut', plain: 'Loop cut', op: 'mesh.insertLoop', icon: 'scissors' },
@@ -155,6 +170,8 @@ export const VERB_TABLE: Readonly<Record<NounKind, readonly PetalDef[]>> = {
     },
     { id: 'slide', plain: 'Slide', op: 'mesh.slide', icon: 'move-horizontal' },
     { id: 'bridge', plain: 'Bridge', op: 'mesh.bridge', icon: 'spline', target: true },
+    // T8: the clean-up's delete on edges (Pro's Delete Edge & Vertices: no hole is left)
+    { id: 'delete', plain: 'Delete', op: 'mesh.deleteEdgeVertex', icon: 'trash' },
   ],
   vertices: [
     {

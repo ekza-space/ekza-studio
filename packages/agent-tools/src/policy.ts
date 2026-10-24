@@ -302,6 +302,8 @@ export const OPERATOR_POLICY: Readonly<Record<string, OperatorAgentPolicy>> = nu
   'select.mesh.convert': denied(DENIED_USER_STATE),
   'select.mesh.matching': denied(DENIED_USER_STATE),
   'select.objects': denied(DENIED_USER_STATE),
+  // Halo T8 (STUDIO-TOUCH-SPEC §6.2): the selected reference image plane, the user's selection like `select.objects`
+  'select.imagePlane': denied(DENIED_USER_STATE),
   'select.mesh.pickWalk': denied(DENIED_USER_STATE),
   'view.hide': denied(DENIED_USER_STATE),
   'view.showAll': denied(DENIED_USER_STATE),

@@ -16,7 +16,8 @@ import { BREADCRUMB_ROW, breadcrumbTop, selectionBox } from './geometry';
 import { Icon } from './icons';
 import { TargetLine } from './TargetMode';
 import { FACE_OPS } from './run';
-import { opOf, type Verb } from './verbSource';
+import { ChoiceRow } from './ChoiceRow';
+import { nounBinding, opOf, type Verb } from './verbSource';
 
 const FormChips = lazy(() => import('../chips/FormChips'));
 
@@ -78,7 +79,11 @@ export function HaloLayer({
     [verbs, app, stage, focus, selection, components, version],
   );
   const box: Box | null = useMemo(
-    () => (noun === null ? null : selectionBox(app, ctx.vm(), anchor)),
+    () =>
+      noun === null
+        ? null
+        : // a noun off the canvas (a tray swatch) docks its Halo where its binding says (T8 seam)
+          (nounBinding(noun.kind)?.box?.(app, noun) ?? selectionBox(app, ctx.vm(), anchor)),
     // measured per frame tick (`frame`) as well as on selection changes
     // oxlint-disable-next-line react/exhaustive-deps
     [app, ctx, anchor, noun, frame],
@@ -105,6 +110,12 @@ export function HaloLayer({
     ctx.toasts.push({ key: 'reason', text });
   };
   const more = (): void => grammar.more();
+  // a ▾ petal's choices (§6.2), shown beside the Halo while it is open
+  const sub = useHaloStore(store, (s) => s.sub);
+  const choices = halo === null || sub === null ? null : (shown.find((p) => p.verb.id === sub)?.verb ?? null);
+  useEffect(() => {
+    if (sub !== null && choices === null) store.set({ sub: null });
+  }, [sub, choices, store]);
   const hot = halo?.mode === 'ring' && halo.hot !== null && halo.hot !== undefined ? halo.hot : null;
   const hotVerb =
     hot === null
@@ -121,7 +132,7 @@ export function HaloLayer({
       style={breathing ? { opacity: 0.15 } : undefined}
       data-halo-layer=""
     >
-      {noun !== null && halo?.mode !== 'ring' ? (
+      {noun !== null && halo?.mode !== 'ring' && nounBinding(noun.kind)?.docked !== true ? (
         // the chip stays above the tray (T10: Keys and Curves unfold over the feet a selection may sit on)
         <Breadcrumb
           controller={controller}
@@ -131,10 +142,14 @@ export function HaloLayer({
           above={insetTop}
         />
       ) : null}
-      {halo !== null && haloNoun !== null && compact && halo.mode === 'arc' ? (
+      {halo !== null &&
+      haloNoun !== null &&
+      (compact || nounBinding(haloNoun.kind)?.docked === true) &&
+      halo.mode === 'arc' ? (
         <div
           className="pointer-events-auto absolute inset-x-(--touch-inset-left)"
-          style={{ bottom: insetBottom + 8 }}
+          // a tray noun's bar (not Compact) stays between the off-hand column and the puck (T8)
+          style={compact ? { bottom: insetBottom + 8 } : { bottom: insetBottom + 8, left: 300, right: 190 }}
           data-halo-chrome=""
         >
           <VerbBar
@@ -172,6 +187,16 @@ export function HaloLayer({
           />
         </div>
       ) : null}
+      {choices?.choices === undefined ? null : (
+        <ChoiceRow
+          controller={controller}
+          verb={choices}
+          box={box}
+          width={width}
+          height={height}
+          insetBottom={insetBottom}
+        />
+      )}
       {noun !== null && form === null && halo?.mode !== 'ring' ? (
         <EchoChips controller={controller} box={box} width={width} height={height} insetBottom={insetBottom} />
       ) : null}

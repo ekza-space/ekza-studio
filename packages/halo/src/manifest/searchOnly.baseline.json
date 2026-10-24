@@ -1,37 +1,25 @@
 {
   "note": "STUDIO-TOUCH-SPEC §20.5 test 5: the searchOnly ratchet. Regenerate with EKZA_HALO_PARITY_WRITE=1 (ha-parity).",
-  "total": 41,
+  "total": 25,
   "explicit": 4,
-  "pending": 37,
+  "pending": 21,
   "byStage": {
-    "make": 1,
-    "paint": 12,
+    "make": 0,
+    "paint": 0,
     "rig": 18,
     "animate": 2,
-    "all": 8
+    "all": 5
   },
   "targets": {
-    "T8": 25,
-    "T9": 20
+    "T9": 4
   },
-  "live": 352,
-  "reachable": 303,
+  "live": 358,
+  "reachable": 321,
   "items": [
     "autorig.cancel",
     "file.saveJson",
     "key.delete",
     "key.write",
-    "mesh.paint.remap",
-    "palette.addSwatch",
-    "palette.assign",
-    "palette.assignMaterial",
-    "palette.duplicate",
-    "palette.ensureDefault",
-    "palette.removeSwatch",
-    "palette.rename",
-    "palette.replaceSwatch",
-    "palette.setActive",
-    "palette.setSwatch",
     "rig.pose.view",
     "skel.quickRig.clear",
     "skel.quickRig.commit",
@@ -48,15 +36,10 @@
     "skin.paint.mode",
     "skin.testRotate.toggle",
     "skin.weights.flood",
-    "tool.last",
     "ui.commandPalette",
-    "ui.open {\"dialog\":[\"makeEditableReport\"]}",
-    "view.tool {\"panel\":\"viewport\",\"tool\":\"paint\"}",
     "view.tool {\"panel\":\"viewport\",\"tool\":[\"jointTool\",\"insertJoint\",\"quickRigMarker\",\"socket\",\"shapeCv\",\"*\"]}",
     "workspace.showPanel {\"panel\":\"paintWeights\"}",
-    "workspace.showPanel {\"panel\":\"palette\"}",
     "workspace.showPanel {\"panel\":\"quickRig\"}",
-    "workspace.showPanel {\"panel\":\"rigToolkit\"}",
-    "workspace.showPanel {\"panel\":\"toolkit\"}"
+    "workspace.showPanel {\"panel\":\"rigToolkit\"}"
   ]
 }

@@ -273,8 +273,9 @@ export const ALLOWED = {
   // STUDIO-TOUCH-SPEC §20.1 (T2): the Halo shell — anim-core, doc, editor-core, viewport, curve-editor (lazy imports
   // only, oxlint), ui, React and the editor through its `./host` (and the measured T5c) subpaths only; never autorig,
   // mesh-core, rig, io, mesh-view or dockview. Node unit tests; its browser tests are the app's `ha-*` e2e.
+  // T8 (ADR 0017 §2): gen-core's `createGenerationClient` for *Create with AI*'s availability (a lazy import).
   [HALO]: {
-    dependencies: [ANIM_CORE, DOC, EDITOR_CORE, VIEWPORT, CURVE_EDITOR, UI, EDITOR, 'react'],
+    dependencies: [ANIM_CORE, DOC, EDITOR_CORE, VIEWPORT, CURVE_EDITOR, UI, EDITOR, GEN_CORE, 'react'],
     devDependencies: [...VITEST, '@types/react'],
   },
   web: {

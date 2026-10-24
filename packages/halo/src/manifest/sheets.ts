@@ -55,6 +55,8 @@ export const SHEET_SECTIONS: Readonly<Record<SheetId, readonly string[] | null>>
   library: ['search', 'kinds', 'starterSet', 'fromFile', 'cards'],
   palette: null,
   makeEditableReport: null,
+  createAi: null,
+  // T9 (§12.1, §12.4): Checks before rigging and the rig's rows; the bone list; the weight fixes, brush, Set weight…
   checks: ['before', 'rig', 'fixBend'],
   bones: ['list'],
   weights: ['fix', 'brush', 'setWeight'],

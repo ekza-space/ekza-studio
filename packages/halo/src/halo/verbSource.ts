@@ -5,7 +5,7 @@
 // `petals`, `more`). This module adapts T6b's data to the grammar's shapes: the breadcrumb's crumbs, the petal's icon
 // and action (an operator run, a stage switch, a sheet), ⟳ Again and Paste in place, and verb → target (§6.4).
 import type { EditorApp, HaloStage, OperatorId, PollResult } from '@ekza-studio/editor-core';
-import type { CompassSlot } from '@ekza-studio/ui/touch';
+import type { Box, CompassSlot } from '@ekza-studio/ui/touch';
 import { en } from '../i18n/en';
 import { type NounKind, type SheetId, TARGET_OPS } from '../manifest/types';
 import { PANE } from '../shell/stage';
@@ -57,6 +57,43 @@ export interface Verb {
   readonly changed?: boolean;
   /** §6.4: the verb needs a second thing — it waits for a tap on the target, then runs with the target as `parent`. */
   readonly target?: boolean;
+  /** A ▾ petal's choices (§6.2): a tap shows them beside the Halo, a choice runs (Finish ▾ › Shiny is two touches). */
+  readonly choices?: readonly Verb[];
+}
+
+/**
+ * What a stage package adds to a noun kind it owns (T8 seam; `bindNoun`): the noun a focus of that kind stands for
+ * (a tray swatch), each petal's verb as the noun needs it (its ids as arguments, a ▾ menu's choices, a sheet), and
+ * where the Halo docks when the noun is not on the canvas (beside the swatch in the tray).
+ */
+export interface NounBinding {
+  /** The noun a focus of this kind stands for now, or null (it is gone: the selection's noun shows). */
+  focus?(app: EditorApp, id: string | null, stage: HaloStage): KindNoun | null;
+  /** A petal's verb on this noun (`petal`: the table's slot definition). */
+  verb?(app: EditorApp, noun: Noun, petal: PetalDef, verb: Verb, stage: HaloStage): Verb;
+  /** The Halo's anchor box in pane px, when the noun is not on the canvas (else the selection's box). */
+  box?(app: EditorApp, noun: Noun): Box | null;
+  /**
+   * A noun that lives in the tray (a swatch): its Halo docks as a verb bar above the tray (as on Compact, §4.4), it
+   * has no breadcrumb, and its focus outlasts selection changes (strokes, taps on the model), §6.1 "the first tap is
+   * enough on every noun, including list items".
+   */
+  readonly docked?: boolean;
+}
+
+const bindings = new Map<NounKind, NounBinding>();
+
+/** A stage package's binding of a noun kind (the disposer removes it). */
+export function bindNoun(kind: NounKind, binding: NounBinding): () => void {
+  bindings.set(kind, binding);
+  return () => {
+    if (bindings.get(kind) === binding) bindings.delete(kind);
+  };
+}
+
+/** The binding of a noun kind, if a stage package made one. */
+export function nounBinding(kind: NounKind): NounBinding | undefined {
+  return bindings.get(kind);
 }
 
 export interface VerbSource {
@@ -139,6 +176,9 @@ export function resolveNoun(app: EditorApp, stage: HaloStage, focus: NounFocus |
     source = characterNoun(app, focus.id);
   } else if (focus?.kind === 'manipulator') {
     source = MANIPULATOR;
+  } else if (focus !== null && focus.kind !== 'character') {
+    // a stage package's own noun (a swatch from the Paint tray): its binding resolves it
+    source = bindings.get(focus.kind)?.focus?.(app, focus.id, stage) ?? resolveKindNoun(app, stage);
   } else {
     source = resolveKindNoun(app, stage);
   }
@@ -230,12 +270,23 @@ function verbOf(petal: PetalDef, changed = false): Verb {
           ? { sheet: petal.go.sheet }
           : null;
   const icon = PETAL_ICON[petal.id] ?? (petal.icon === undefined ? undefined : ICONS[petal.icon]);
+  const id = verbId(petal);
+  const choices =
+    petal.menu !== undefined && petal.menu.length > 1
+      ? petal.menu.map(
+          (choice): Verb => ({
+            id: `${id}›${choice.plain}`,
+            label: choice.plain,
+            run: choice.args === undefined ? { op: choice.op } : { op: choice.op, args: choice.args },
+          }),
+        )
+      : null;
   return {
-    id: verbId(petal),
+    id,
     label: petal.plain,
     run: action ?? { sheet: 'more' },
     ...(icon === undefined ? {} : { icon }),
-    ...(petal.menu !== undefined && petal.menu.length > 1 ? { hasMenu: true } : {}),
+    ...(choices === null ? {} : { hasMenu: true, choices }),
     ...(changed ? { changed: true } : {}),
     ...(petal.target === true && petal.op !== undefined && TARGET_OPS.has(petal.op) ? { target: true } : {}),
   };
@@ -263,7 +314,7 @@ function variantHolds(app: EditorApp, variant: PetalVariant, petals: readonly Pe
 }
 
 function pollOp(app: EditorApp, op: OperatorId, args: unknown): PollResult {
-  if (app.operators.get(op) === undefined) return { ok: false, reason: en.sheet.soon };
+  if (app.operators.get(op) === undefined) return { ok: false, reason: en.verbs.notInBuild };
   try {
     return app.operators.poll(op, { panel: 'viewport', paneId: PANE }, args);
   } catch {
@@ -319,7 +370,16 @@ export function petalVerbs(app: EditorApp, kind: NounKind, stage: HaloStage): Ve
 /** The verb source over T6b's nouns, verb table and derived More (the grammar's one seam). */
 export const haloVerbs: VerbSource = {
   noun: resolveNoun,
-  petals: (app, noun, stage) => petalVerbs(app, noun.kind, stage),
+  petals(app, noun, stage) {
+    const verbs = petalVerbs(app, noun.kind, stage);
+    const binding = bindings.get(noun.kind);
+    if (binding?.verb === undefined) return verbs;
+    const defs = petalsFor(noun.kind, stage);
+    return verbs.map((verb, i) => {
+      const def = defs[i];
+      return def === undefined || binding.verb === undefined ? verb : binding.verb(app, noun, def, verb, stage);
+    });
+  },
   async more(app, noun, stage) {
     const { moreFor } = await import('../verbs/derive');
     return moreFor(app, noun.source, stage)
@@ -347,7 +407,12 @@ export function pollVerb(app: EditorApp, verb: Verb): PollResult {
   if (!('op' in verb.run)) return true;
   // a verb → target cannot be polled before its target is tapped (§6.4); its run is
   if (verb.target === true)
-    return app.operators.get(verb.run.op) === undefined ? { ok: false, reason: en.sheet.soon } : true;
+    return app.operators.get(verb.run.op) === undefined ? { ok: false, reason: en.verbs.notInBuild } : true;
+  // a ▾ petal opens its choices: it is live while one of them is
+  if (verb.choices !== undefined && verb.choices.length > 0) {
+    const polls = verb.choices.map((choice) => pollVerb(app, choice));
+    return polls.find((p) => p === true) ?? polls[0] ?? true;
+  }
   return pollOp(app, verb.run.op, verb.run.args);
 }
 

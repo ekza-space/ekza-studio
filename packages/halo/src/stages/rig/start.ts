@@ -21,6 +21,9 @@ import { registerSession } from '../../session/sessions';
 import type { HaloController } from '../../shell/controller';
 import { registerNextAction } from '../../shell/PathParts';
 import { registerHaloSheet } from '../../shell/Sheets';
+import { registerHaloSlice } from '../../shell/stageParts';
+import { registerVerbAction } from '../../halo/run';
+import { rigSlice } from './slice';
 import { PANE, STAGE_BASICS } from '../../shell/stage';
 import { type RigUiStore, rigUi } from './ui';
 
@@ -34,8 +37,11 @@ export interface RigStage {
   recipe(): Promise<RigIt>;
   /** The recipe if it was made already. */
   readonly loaded: RigIt | null;
-  /** Opens the Rig-it card (switching to Rig first): the Next chip, the tray, search. */
-  openCard(): Promise<void>;
+  /**
+   * Opens the Rig-it card (switching to Rig first): the Next chip, the tray, search; `selection`: on the scene meshes
+   * selected now (the Make part's *Rig it*).
+   */
+  openCard(opts?: { readonly selection?: boolean }): Promise<void>;
   /** Starts the bend test from search (*Fix where it bends badly*). */
   fixBend(): Promise<void>;
   /** A journey's touch (AS-ST-4). */
@@ -74,14 +80,23 @@ export function rigStage(controller: HaloController): RigStage {
       );
       return made;
     },
-    async openCard() {
+    async openCard(opts = {}) {
+      const scene = new Set(
+        ctx.app.store
+          .list('meshes')
+          .filter((mesh) => mesh.deleted === null && 'scene' in mesh.owner)
+          .map((mesh) => mesh.id as string),
+      );
+      const picked =
+        opts.selection === true ? ctx.app.session.getState().selection.objects.filter((id) => scene.has(id)) : [];
       if (ctx.store.get().stage !== 'rig') await controller.enterStage('rig');
       ui.set({ card: true, spot: null });
       ctx.store.set({ halo: null, sheet: null, sheetArgs: null, sheetNoun: null });
       const recipe = await stage.recipe();
       const phase = recipe.get().phase;
       // an open card keeps its place (a rigged character's card, a running build)
-      if (phase === 'none' || phase === 'failed' || phase === 'added' || phase === 'checks') await recipe.open();
+      if (picked.length > 0) await recipe.open({ character: null, meshes: picked as never });
+      else if (phase === 'none' || phase === 'failed' || phase === 'added' || phase === 'checks') await recipe.open();
       else if (quickRigOf(ctx.app) === null && phase === 'dots') await recipe.open();
     },
     async fixBend() {
@@ -132,7 +147,7 @@ function dotAt(app: EditorApp, paneId: string, x: number, y: number): boolean {
 }
 
 /** Starts the Rig stage's parts for a mounted shell; the disposer ends them. */
-export function startRig(controller: HaloController): () => void {
+export function installRig(controller: HaloController): () => void {
   const { ctx } = controller;
   const { app, store } = ctx;
   const stage = rigStage(controller);
@@ -146,6 +161,16 @@ export function startRig(controller: HaloController): () => void {
   offs.push(registerHaloSheet('checks', sheetHost(stage, ChecksSheet)));
   offs.push(registerHaloSheet('bones', sheetHost(stage, BonesSheet)));
   offs.push(registerHaloSheet('weights', sheetHost(stage, WeightsSheet)));
+
+  // ---- the test API's `halo().slices.rig` (§20.7) ----
+  offs.push(registerHaloSlice('rig', () => rigSlice(controller)));
+
+  // ---- a petal that goes to Rig (the Make part's *Rig it*) opens the card on what is selected (§9 J1) ----
+  offs.push(
+    registerVerbAction(app, 'stage:rig', () => {
+      void stage.openCard({ selection: true });
+    }),
+  );
 
   // ---- search's *Rig it for me* and *Fix where it bends badly* (§9.11) ----
   offs.push(provideRigOpeners(app, { rigIt: () => stage.openCard(), fixBend: () => stage.fixBend() }));

@@ -591,6 +591,40 @@ export class ViewportManager {
     return [...this.planes.planesFor(preset, 'behind'), ...this.planes.planesFor(preset, 'front')];
   }
 
+  /**
+   * The reference image plane drawn under a pane point (pane CSS px), the topmost first, or null (STUDIO-TOUCH-SPEC
+   * §6.2 "Image plane", Halo T8: Ekza Studio's canvas selects a plane with a tap; Studio Pro never asks).
+   */
+  imagePlaneAt(paneId: string, x: number, y: number): string | null {
+    const view = this.queryView(paneId);
+    const planes = this.planes;
+    if (view === null || planes === null || !view.pane.display.imagePlanes) return null;
+    const resolved = this.resolve(view.pane);
+    const preset = resolved.kind === 'view' ? resolved.view.preset : null;
+    const order = [...planes.planesFor(preset, 'front')]
+      .reverse()
+      .concat([...planes.planesFor(preset, 'behind')].reverse());
+    const out = [0, 0, 0];
+    for (const id of order) {
+      const corners = planes.corners(id);
+      if (corners === null) continue;
+      const screen: { x: number; y: number }[] = [];
+      for (const c of corners) {
+        if (!view.projector.project(c[0], c[1], c[2], out)) break;
+        screen.push({ x: out[0] as number, y: out[1] as number });
+      }
+      if (screen.length !== 4) continue;
+      let inside = false;
+      for (let i = 0, j = 3; i < 4; j = i++) {
+        const a = screen[i] as { x: number; y: number };
+        const b = screen[j] as { x: number; y: number };
+        if (a.y > y !== b.y > y && x < ((b.x - a.x) * (y - a.y)) / (b.y - a.y) + a.x) inside = !inside;
+      }
+      if (inside) return id;
+    }
+    return null;
+  }
+
   /** Sets the handler of marking-menu presses (the shell's marking menus), or null. */
   setPointerMenus(handler: PanePointerMenus | null): void {
     this.pointerMenus = handler;

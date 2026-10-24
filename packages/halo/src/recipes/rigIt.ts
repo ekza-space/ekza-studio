@@ -139,6 +139,9 @@ export function importedCharacter(app: EditorApp, host: AutoRigFlowHost): Charac
   return character !== null && character.source.kind !== 'model' ? character.id : null;
 }
 
+const sameSubject = (a: AutoRigSubject, b: AutoRigSubject): boolean =>
+  a.character === b.character && a.meshes.length === b.meshes.length && a.meshes.every((id) => b.meshes.includes(id));
+
 /** Whether the flow's subject still stands for something in the document. */
 function subjectLive(host: AutoRigFlowHost): boolean {
   const subject = host.state.get().subject;
@@ -153,7 +156,8 @@ export interface RigIt {
   subscribe(listener: () => void): () => void;
   readonly host: AutoRigFlowHost;
   /** Opens the card: the subject, then Quick Rig with the guess (§12.2 step 2). */
-  open(): Promise<void>;
+  /** `subject`: rig these scene meshes (a part tapped in Make) rather than the flow's subject. */
+  open(subject?: AutoRigSubject): Promise<void>;
   /** The card's first line (§7.3): the destination; the finger detail follows it. */
   destination(id: string): Promise<void>;
   /** The finger chip: Mittens · Thumb · All fingers. */
@@ -236,10 +240,14 @@ export function createRigIt(deps: RigItDeps): RigIt {
         listeners.delete(listener);
       };
     },
-    async open() {
+    async open(subject) {
       await stopMotion();
       const quick = quickRigOf(app);
       set({ ...RIG_IT_CLOSED, phase: 'opening', fingers: fingersOfPreset(quick?.preset) });
+      // a part chosen in Make: the card rigs it (its own report: Auto-Rig's *From Studio*)
+      if (subject !== undefined && !sameSubject(host.state.get().subject, subject)) {
+        await takeHandedSubject(host, subject);
+      }
       // the subject: Home's intake set it on this host; else the document's (§16.3 *From Studio*)
       if (!subjectLive(host)) {
         const subject = subjectOfDocument(app);
