@@ -10,7 +10,7 @@ import {
   createAgentToolRuntime,
   type Grants,
 } from '@ekza-studio/agent-tools';
-import type { CharacterId, ClipId } from '@ekza-studio/doc';
+import type { CharacterId, ClipId, DocSnapshot } from '@ekza-studio/doc';
 import type { EditorApp, RunActor } from '@ekza-studio/editor-core';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import type { AgentAuditRow, AgentSessionState, AgentStatus } from '../types';
@@ -33,6 +33,8 @@ export interface FakeAgentSession extends AgentSession, Required<AgentSessionCon
   /** Runs a tool as the paired agent (status must be `paired`). */
   call(tool: string, args: unknown): Promise<AgentToolResult<unknown>>;
   setState(patch: Partial<AgentSessionState>): void;
+  /** The document before this pairing's first edit (§5.13; T12, P-T10-4), as the live session keeps it. */
+  beforeAgentSnapshot(): DocSnapshot | null;
 }
 
 const AUDIT_MAX = 500;
