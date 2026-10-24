@@ -10,70 +10,33 @@
 //   ①–③ (`editor-core/test/autorigFlow/logs`) equal Halo's first three steps too;
 // - ⑤: Share exports with Studio Pro's `file.exportCharacter` (ST-T9-…): its bytes equal `autorig.export`'s for the
 //   same document (the author and the licence set the same way on both).
-import { existsSync, readFileSync } from 'node:fs';
-import { seededIdSource } from '@ekza-studio/doc';
+import { readFileSync } from 'node:fs';
 import {
   type AutoRigExportResult,
   type AutoRigFlowLogEntry,
   autoRigFlowHost,
-  createEditorApp,
-  createMemoryBlobStore,
-  type EditorApp,
-  type ExportArtifact,
   intakeFileArgs,
   intakeModel,
   intakeSampleArgs,
-  type KernelMeshRuntimes,
-  loadMeshKernel,
   prepareExport,
   recordAutoRigFlow,
   runAutoRigJourney,
 } from '@ekza-studio/editor-core';
-import { createFakeServices } from '@ekza-studio/editor-core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { haloFlowHost } from '../src/intake/flowHost';
 import { STARTER_SET } from '../src/recipes/addAnimations';
 import { createRigIt, fixInOrder } from '../src/recipes/rigIt';
 import { DEFAULT_OPTIONS, proCharacterExport, SPACE_PROFILE } from '../src/sheets/share/model';
+import { kernelApp, ROOT, staticFetch } from './support-rig';
 
-const ROOT = new URL('../../../', import.meta.url);
 const LOGS = new URL('packages/editor-core/test/autorigFlow/logs/', ROOT);
 
-function servedFile(url: string): Uint8Array | null {
-  const path = url.startsWith('/samples/')
-    ? `fixtures/models/${url.slice('/samples/'.length)}`
-    : url.startsWith('/library/')
-      ? `apps/web/public/library/${url.slice('/library/'.length)}`
-      : null;
-  if (path === null) return null;
-  const file = new URL(path, ROOT);
-  return existsSync(file) ? new Uint8Array(readFileSync(file)) : null;
-}
-
 beforeEach(() => {
-  vi.stubGlobal('fetch', (url: string | URL) => {
-    const bytes = servedFile(String(url));
-    return Promise.resolve(
-      bytes === null ? new Response(null, { status: 404 }) : new Response(bytes.slice().buffer, { status: 200 }),
-    );
-  });
+  vi.stubGlobal('fetch', staticFetch);
 });
 afterEach(() => {
   vi.unstubAllGlobals();
 });
-
-/** An app on the production kernel, as the journey tests of T5b build it (same ids on both sides). */
-async function kernelApp(): Promise<EditorApp> {
-  await loadMeshKernel();
-  const app = createEditorApp({
-    services: { ...createFakeServices(), blobs: createMemoryBlobStore() },
-    idSource: seededIdSource(7),
-    builtins: true,
-  });
-  app.prefs.setState({ firstRunDone: true });
-  (app.meshes as KernelMeshRuntimes).attach(app);
-  return app;
-}
 
 /** The Cube Lad exported in centimetres: its node scaled ×100 (AR-R5-1's case; T5b's fixture). */
 function centimetreLad(): Uint8Array {
@@ -131,7 +94,7 @@ async function haloJ1(model: Model) {
     expect(card.get().fingers).toBe('thumb');
     // ③ Rig it, and the motion test plays
     await card.rig();
-    expect(card.get().phase, card.get().message ?? '').toBe('done');
+    expect({ phase: card.get().phase, message: card.get().message }).toMatchObject({ phase: 'done' });
     await until(() => card.get().motion?.state === 'playing');
     // ④ Starter set: Idle · Walk · Run
     await card.starterSet();
@@ -200,16 +163,11 @@ describe("Halo's J1 issues Auto-Rig's operator log (AS-ST-5, §12.2)", { timeout
       const autoUpToMeta = before(auto.log, 'char.setVrmMeta');
       expect(halo.log.length).toBeGreaterThanOrEqual(11);
       expect(halo.log).toEqual(autoUpToMeta);
-      if (process.env['T9_PRINT_LOGS'] === '1') {
-        console.log(
-          `${c.ref}: ${halo.log.map((e) => `${e.op}${e.document.length > 0 ? `[${e.document.join(',')}]` : ''}`).join(' → ')}`,
-        );
-      }
       // T5b's recorded references (①–③, the Walk motion test) equal Halo's first steps
       expect(before(halo.log, 'autorig.clip.add')).toEqual(before(reference(c.ref), 'autorig.clip.add'));
       const rig = halo.log.find((entry) => entry.op === 'autorig.rig');
       expect(rig?.args).toMatchObject({ straighten: c.ref === 'polybot-apose' });
-      if (c.ref === 'cube-lad-cm') expect(halo.fixes).toEqual(['scale']);
+      expect(halo.fixes).toEqual(c.ref === 'cube-lad-cm' ? ['scale'] : []);
 
       // ⑤ Share: the author and the licence (as on Auto-Rig's side), then Studio Pro's Character section request
       for (const patch of [{ authors: ['Tester'] }, { licensePreset: 'cc0' }]) {
@@ -223,8 +181,8 @@ describe("Halo's J1 issues Auto-Rig's operator log (AS-ST-5, §12.2)", { timeout
         proCharacterExport(record, SPACE_PROFILE, 'vrm', DEFAULT_OPTIONS),
       );
       expect(shared.status).toBe('finished');
-      const halos = (shared as { value: readonly ExportArtifact[] }).value;
-      const autos = (auto.result.export?.result as AutoRigExportResult).artifacts;
+      const halos = (shared as { value: AutoRigExportResult['artifacts'] }).value;
+      const autos: AutoRigExportResult['artifacts'] = auto.result.export?.result.artifacts ?? [];
       expect(halos.length).toBe(1);
       expect(autos.length).toBe(1);
       expect(sha(halos[0]?.bytes ?? new Uint8Array())).toBe(sha(autos[0]?.bytes ?? new Uint8Array()));
