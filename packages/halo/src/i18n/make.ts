@@ -70,6 +70,10 @@ export const makeWords = {
     notConnected: 'AI generation is not connected on this build.',
     notConnectedDetail:
       'When it is, you describe the thing or attach a photo, and the model comes back ready to clean up, rig and animate.',
+    /** The providers' names, joined (empty: none named). */
+    connected: (names: string): string =>
+      names === '' ? 'The AI service answers.' : `The AI service answers (${names}).`,
+    connectedDetail: 'Creating a model from here arrives in a later build.',
     prompt: 'Describe it',
     promptPlaceholder: 'A low-poly knight with a round shield',
     photo: 'Attach a photo',

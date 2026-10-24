@@ -14,6 +14,7 @@ import type { HaloController } from '../../shell/controller';
 import { PANE } from '../../shell/stage';
 import { registerHaloSlice } from '../../shell/stageParts';
 import { bindNoun, type Verb } from '../../halo/verbSource';
+import { aiAvailability } from './ai/availability';
 import { capNow } from './CapHandle';
 import { GA_OPS, REDUCE_BUDGETS, reduceArgs } from './cleanup';
 import { componentBox } from './geometry';
@@ -172,6 +173,8 @@ export function installMake(controller: HaloController): () => void {
         extrude: s.model.extrudeSession !== null,
         cap: cap === null ? null : { x: cap.handle.x, y: cap.handle.y, dx: cap.dir.x, dy: cap.dir.y },
         value: value === null ? null : { op: value.op, param: value.param.name, value: value.value },
+        // Create with AI's availability (ST-T8-18)
+        ai: aiAvailability(app).state,
       };
     }),
   );

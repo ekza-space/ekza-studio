@@ -24,7 +24,8 @@ import {
 } from './model';
 import { homeServices } from './start';
 // T8 (the owner's AI pipeline): *Create with AI* is one more start of *Make a character* (a lazy sheet in Make)
-import { CREATE_WITH_AI_ENTRY, openCreateWithAi } from '../stages/make/ai/open';
+import { aiShown, useAiAvailability } from '../stages/make/ai/availability';
+import { openCreateWithAi } from '../stages/make/ai/open';
 import { makeWords } from '../i18n/make';
 
 /** The pickers' list where `accept` is honoured (every desktop browser); iOS gets none and the bytes decide (S10). */
@@ -70,6 +71,8 @@ export function Home({
   const file = useRef<HTMLInputElement>(null);
   const root = useRef<HTMLElement>(null);
   const recovery = useRecovery(controller);
+  // T8: *Create with AI* where a generation gateway is configured and enabled (ST-T8-18)
+  const ai = aiShown(useAiAvailability(ctx.app));
   // "2 min ago" against a clock that ticks each minute
   const now = useSyncExternalStore(minuteClock.subscribe, minuteClock.get, minuteClock.get);
   const cards = useMemo(() => continueCards(recovery, now), [recovery, now]);
@@ -395,7 +398,7 @@ export function Home({
                 </li>
               );
             })}
-            {panel === 'starts' && CREATE_WITH_AI_ENTRY ? (
+            {panel === 'starts' && ai ? (
               <li>
                 <TouchButton
                   className="min-h-[72px] w-full flex-col items-start justify-center gap-0.5 px-4 text-left"

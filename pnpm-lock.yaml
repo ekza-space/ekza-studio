@@ -533,6 +533,9 @@ importers:
       '@ekza-studio/editor-core':
         specifier: workspace:*
         version: link:../editor-core
+      '@ekza-studio/gen-core':
+        specifier: workspace:*
+        version: link:../gen-core
       '@ekza-studio/ui':
         specifier: workspace:*
         version: link:../ui

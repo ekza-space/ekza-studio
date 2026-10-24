@@ -29,6 +29,7 @@ import {
   TEXTURE_ARGS,
 } from './cleanup';
 import { type MenuItem, Sparkle, TrayChip, TrayMenu, touch } from './kit';
+import { aiShown, useAiAvailability } from './ai/availability';
 import { openCreateWithAi } from './ai/open';
 import { makeStore, useMakeState } from './state';
 
@@ -58,6 +59,7 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
   const menu = useMakeState(app, (s) => s.menu);
   const selectArea = useMakeState(app, (s) => s.selectArea);
   const mode = useSessionValue(app, (s) => s.model.componentMode);
+  const ai = aiShown(useAiAvailability(app));
   const tool = useSessionValue(app, (s) => s.tools.viewport);
   const softSelect = useSessionValue(app, (s) => s.model.softSelect.on);
   const gridSnap = useSessionValue(app, (s) => s.model.snap.grid);
@@ -231,17 +233,20 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
           open={menu === 'drag'}
           onPress={() => toggleMenu('drag')}
         />
-        {/* the AI pipeline's door, early in the row so a portrait tray shows it (the owner's priority) */}
-        <TrayChip
-          testId="halo-make-ai"
-          label={w.createAi}
-          icon={<Sparkle />}
-          onPress={() => {
-            touch(ctx);
-            ms.set({ menu: null });
-            openCreateWithAi(ctx);
-          }}
-        />
+        {/* the AI pipeline's door, early in the row so a portrait tray shows it (the owner's priority); only where a
+            generation gateway is configured and enabled (ST-T8-18) */}
+        {ai ? (
+          <TrayChip
+            testId="halo-make-ai"
+            label={w.createAi}
+            icon={<Sparkle />}
+            onPress={() => {
+              touch(ctx);
+              ms.set({ menu: null });
+              openCreateWithAi(ctx);
+            }}
+          />
+        ) : null}
         {/* §4.8: with nothing to mirror the chip would only say why; it shows with a shape selected */}
         {mirrorReason === null ? (
           <TrayChip
@@ -291,6 +296,7 @@ function EmptyMake({
   file,
 }: StageTrayProps & { readonly file: RefObject<HTMLInputElement | null> }): JSX.Element {
   const { ctx } = controller;
+  const ai = aiShown(useAiAvailability(ctx.app));
   return (
     <Cluster
       data-halo-chrome=""
@@ -313,15 +319,17 @@ function EmptyMake({
           }}
         />
       ))}
-      <TrayChip
-        testId="halo-make-ai"
-        label={makeWords.empty.createAi}
-        icon={<Sparkle />}
-        onPress={() => {
-          touch(ctx);
-          openCreateWithAi(ctx);
-        }}
-      />
+      {ai ? (
+        <TrayChip
+          testId="halo-make-ai"
+          label={makeWords.empty.createAi}
+          icon={<Sparkle />}
+          onPress={() => {
+            touch(ctx);
+            openCreateWithAi(ctx);
+          }}
+        />
+      ) : null}
       <TrayChip
         testId="halo-make-bring"
         label={makeWords.empty.bring}

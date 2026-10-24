@@ -213,10 +213,23 @@ test.describe('ha-08: the Make stage', () => {
     await expect.poll(async () => (await halo(page)).noun).toBeNull();
   });
 
-  test('Create with AI says generation is not connected; a photo can be attached', async ({ page }, testInfo) => {
-    test.skip(testInfo.project.name === 'chrome', 'touch projects');
+  test('Create with AI is hidden while the build’s gateway is not enabled (404)', async ({ page }) => {
+    // the e2e build is a server build: its gateway is `/api/gen`, off unless GEN_GATEWAY_ENABLED=1 (m7-gbc)
     await openHalo(page, '&stage=make');
     await expect(page.getByTestId('halo-tray')).toHaveAttribute('data-empty', '');
+    await expect.poll(async () => (await makeSlice(page)).ai).toBe('hidden');
+    await expect(page.getByTestId('halo-make-ai')).toHaveCount(0);
+    await expect(page.getByTestId('halo-make-start-smooth')).toBeVisible();
+  });
+
+  test('a gateway that does not answer: Create with AI says it is not connected; a photo can be attached', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name === 'chrome', 'touch projects');
+    await page.route('**/api/gen/v1/providers', (route) => route.fulfill({ status: 503, body: 'Service Unavailable' }));
+    await openHalo(page, '&stage=make');
+    await expect(page.getByTestId('halo-tray')).toHaveAttribute('data-empty', '');
+    await expect.poll(async () => (await makeSlice(page)).ai).toBe('offline');
     const ai = page.getByTestId('halo-make-ai');
     if (testInfo.project.name === 'chrome-touch') await fingerTap(page, await centre(page, 'halo-make-ai'));
     else await ai.tap();
@@ -236,5 +249,29 @@ test.describe('ha-08: the Make stage', () => {
     });
     await expect(page.getByTestId('halo-ai-photo-name')).toContainText('ref.png');
     await expect(page.getByTestId('halo-ai-budget-hero')).toBeVisible();
+  });
+
+  test('a gateway that answers: the sheet names its providers; Create waits for the Generate flow', async ({
+    page,
+  }, testInfo) => {
+    test.skip(testInfo.project.name !== 'chrome-touch', 'chrome-touch only (CDP)');
+    await page.route('**/api/gen/v1/providers', (route) =>
+      route.fulfill({
+        json: {
+          protocol: 'ekza-gen/v1',
+          providers: [
+            { id: 'tripo', label: 'Tripo' },
+            { id: 'meshy', label: 'Meshy' },
+          ],
+          caps: { dailyUsd: 5, monthlyUsd: 20, remainingDailyUsd: 5, remainingMonthlyUsd: 20 },
+        },
+      }),
+    );
+    await openHalo(page, '&stage=make');
+    await expect.poll(async () => (await makeSlice(page)).ai).toBe('ready');
+    await fingerTap(page, await centre(page, 'halo-make-ai'));
+    await expect(page.getByTestId('halo-ai-status')).toHaveAttribute('data-state', 'ready');
+    await expect(page.getByTestId('halo-ai-status')).toContainText('Tripo, Meshy');
+    await expect(page.getByTestId('halo-ai-create')).toBeDisabled();
   });
 });

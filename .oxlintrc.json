@@ -2131,10 +2131,11 @@
                   "!@ekza-studio/editor/overlays",
                   "!@ekza-studio/editor/toolkit",
                   "!@ekza-studio/editor/agent",
+                  "!@ekza-studio/gen-core",
                   "!react",
                   "!react/**"
                 ],
-                "message": "@ekza-studio/halo may import only: @ekza-studio/anim-core, @ekza-studio/doc, @ekza-studio/editor-core, @ekza-studio/editor-core/forms, @ekza-studio/viewport, @ekza-studio/curve-editor (lazy import() only: check:size bans it from /app's initial scripts), @ekza-studio/ui, @ekza-studio/ui/touch, @ekza-studio/editor/host, @ekza-studio/editor/bodies, @ekza-studio/editor/models, @ekza-studio/editor/overlays, @ekza-studio/editor/toolkit, @ekza-studio/editor/agent, react, react/** (STUDIO-TOUCH-SPEC \u00a720.1: the editor through its subpaths only, never its root; autorig, mesh-core, rig, io, mesh-view and dockview never)."
+                "message": "@ekza-studio/halo may import only: @ekza-studio/anim-core, @ekza-studio/doc, @ekza-studio/editor-core, @ekza-studio/editor-core/forms, @ekza-studio/viewport, @ekza-studio/curve-editor (lazy import() only: check:size bans it from /app's initial scripts), @ekza-studio/ui, @ekza-studio/ui/touch, @ekza-studio/editor/host, @ekza-studio/editor/bodies, @ekza-studio/editor/models, @ekza-studio/editor/overlays, @ekza-studio/editor/toolkit, @ekza-studio/editor/agent, @ekza-studio/gen-core (T8: the generation client, lazy import() only), react, react/** (STUDIO-TOUCH-SPEC \u00a720.1: the editor through its subpaths only, never its root; autorig, mesh-core, rig, io, mesh-view and dockview never)."
               },
               {
                 "regex": "^@ekza-studio/[^/]+/[^/]+/",

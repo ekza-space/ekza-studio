@@ -2,27 +2,27 @@
 // scratch, turnkey; MODELING-PLAN §7.2 G-d; T8 placeholder): a prompt, a photo (on an iPad the file picker offers the
 // camera, the photo library and Files), and the size presets of §7.2 — Prop ≤ 500, Character ≤ 3,000, Hero ≤ 10,000
 // triangles. The model that comes back lands in Make for clean-up, then goes to Rig and Animate. G-d wires *Create* to
-// the `gen.*` operators through G-b/G-c's `GenerationClient`; until a client is connected the sheet says so plainly
-// (§3 P12) and *Create* stays off. Nothing here writes the document.
+// the `gen.*` operators through G-b/G-c's `GenerationClient`; until then the sheet says plainly whether the gateway
+// answers (§3 P12, ST-T8-18) and *Create* stays off. Nothing here writes the document.
 import { Segmented, SheetGroup, TouchButton } from '@ekza-studio/ui/touch';
 import { type JSX, useRef, useState } from 'react';
 import { makeWords } from '../../../i18n/make';
 import type { HaloSheetProps } from '../../../manifest/sheets';
 import { HaloSheet } from '../../../sheets/more/kit';
 import { REDUCE_BUDGETS } from '../cleanup';
-import { CREATE_AI_SHEET, generationClient } from './open';
+import { useAiAvailability } from './availability';
+import { CREATE_AI_SHEET } from './open';
 
 type Budget = (typeof REDUCE_BUDGETS)[number]['id'];
 const w = makeWords.ai;
 
 export default function CreateWithAiSheet({ ctx }: HaloSheetProps): JSX.Element {
   const app = ctx.host.app;
-  const connected = generationClient(app) !== null;
+  const availability = useAiAvailability(app);
   const [prompt, setPrompt] = useState('');
   const [photo, setPhoto] = useState<File | null>(null);
   const [budget, setBudget] = useState<Budget>('character');
   const file = useRef<HTMLInputElement>(null);
-  const ready = connected && (prompt.trim() !== '' || photo !== null);
   return (
     <HaloSheet
       ctx={ctx}
@@ -37,23 +37,25 @@ export default function CreateWithAiSheet({ ctx }: HaloSheetProps): JSX.Element 
             variant="primary"
             className="flex-1"
             data-testid="halo-ai-create"
-            disabled={!ready}
-            aria-describedby={connected ? undefined : 'halo-ai-status'}
+            // G-d wires the Generate flow; until then the status says why Create is off
+            disabled
+            aria-describedby="halo-ai-status"
           >
             {w.create}
           </TouchButton>
         </>
       }
     >
-      {connected ? null : (
-        <output
-          id="halo-ai-status"
-          data-testid="halo-ai-status"
-          className="block rounded-touch border border-line px-3 py-2 text-touch-label text-fg-2"
-        >
-          {w.notConnected} {w.notConnectedDetail}
-        </output>
-      )}
+      <output
+        id="halo-ai-status"
+        data-testid="halo-ai-status"
+        data-state={availability.state}
+        className="block rounded-touch border border-line px-3 py-2 text-touch-label text-fg-2"
+      >
+        {availability.state === 'ready'
+          ? `${w.connected(availability.providers.join(', '))} ${w.connectedDetail}`
+          : `${w.notConnected} ${w.notConnectedDetail}`}
+      </output>
       <SheetGroup>{w.prompt}</SheetGroup>
       <textarea
         data-testid="halo-ai-prompt"

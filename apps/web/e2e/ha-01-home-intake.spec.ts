@@ -99,21 +99,36 @@ test('ha-01: Bring a model — a VRM is a character to animate; an animation nee
   await expect.poll(async () => (await halo(page)).stage).toBe('animate');
 });
 
-test('ha-01: Make a character offers three starts and Create with AI; Smooth body opens in Make (J2 step 1: 2 touches)', async ({
+test('ha-01: Make a character offers three starts; Smooth body opens in Make (J2 step 1: 2 touches)', async ({
   page,
 }, info) => {
   test.setTimeout(120_000);
   await openHalo(page);
   await press(page, 'halo-home-make', info);
   const starts = page.getByTestId('halo-home-starts');
-  // the three starts, and Create with AI (T8, the owner's AI pipeline)
-  await expect(starts.getByRole('button')).toHaveCount(4);
-  await expect(starts.getByTestId('halo-home-start-ai')).toBeVisible();
+  // the three starts; Create with AI only where a generation gateway is enabled (T8, ST-T8-18: here it is not)
+  await expect(starts.getByRole('button')).toHaveCount(3);
   await press(page, 'halo-home-start-smooth', info);
   await expect(page.getByTestId('halo-home')).toHaveCount(0, { timeout: 60_000 });
   await expect.poll(async () => (await halo(page)).stage).toBe('make');
   await expect.poll(async () => (await call(page, 'counts')).meshes).toBe(1);
   expect(await touches(page)).toBe(2);
+});
+
+test('ha-01: with a generation gateway, Make a character also offers Create with AI (T8)', async ({ page }, info) => {
+  test.skip(isWebkit(info), 'the starts card is the same on WebKit (above)');
+  test.setTimeout(120_000);
+  // a configured gateway that does not answer yet: the door shows, the sheet says it is not connected
+  await page.route('**/api/gen/v1/providers', (route) => route.fulfill({ status: 503, body: 'Service Unavailable' }));
+  await openHalo(page);
+  await press(page, 'halo-home-make', info);
+  const starts = page.getByTestId('halo-home-starts');
+  await expect(starts.getByRole('button')).toHaveCount(4);
+  await press(page, 'halo-home-start-ai', info);
+  await expect(page.getByTestId('halo-home')).toHaveCount(0, { timeout: 60_000 });
+  await expect.poll(async () => (await halo(page)).stage).toBe('make');
+  await expect(page.getByTestId('halo-sheet-createAi')).toBeVisible();
+  await expect(page.getByTestId('halo-ai-status')).toContainText('not connected');
 });
 
 test('ha-01: the other samples — the Cube Lad is a model to rig, in Rig', async ({ page }, info) => {

@@ -13,6 +13,8 @@ export interface MakeSlice {
   readonly extrude: boolean;
   readonly cap: { readonly x: number; readonly y: number; readonly dx: number; readonly dy: number } | null;
   readonly value: { readonly op: string; readonly param: string; readonly value: number } | null;
+  /** Create with AI's availability (ST-T8-18). */
+  readonly ai: 'checking' | 'hidden' | 'offline' | 'token' | 'ready';
 }
 
 export interface PaintSlice {

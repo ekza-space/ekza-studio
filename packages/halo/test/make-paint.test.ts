@@ -5,6 +5,7 @@ import type { MeshId } from '@ekza-studio/doc';
 import { type EditorApp, extrudeManipulatorFrame, loadExtrudeEngine } from '@ekza-studio/editor-core';
 import { describe, expect, it } from 'vitest';
 import { makeWords, paintWords } from '../src/i18n/make';
+import { aiShown, checkAi, setGenerationGateway } from '../src/stages/make/ai/availability';
 import { PENDING_OPERATORS } from '../src/manifest/types';
 import {
   CHARACTER_BUDGET,
@@ -190,6 +191,57 @@ describe('the reference plane noun (select.imagePlane, §6.2)', { timeout: 60_00
     // an unknown plane is refused with the reason
     const refused = await app.runUntyped('select.imagePlane', { id: 'img_nope' });
     expect(refused.status).toBe('cancelled');
+  });
+});
+
+describe('Create with AI shows where a generation gateway answers (ADR 0017 §2, ST-T8-18)', { timeout: 60_000 }, () => {
+  /** An app whose host sets `services.generation` (or leaves it out), for the availability probe alone. */
+  const appWith = (generation?: unknown): EditorApp =>
+    ({ services: generation === undefined ? {} : { generation } }) as unknown as EditorApp;
+  const failing = (status: number | null, code: string) => ({
+    providers: () => Promise.reject(Object.assign(new Error(code), { status, code })),
+  });
+  const PROVIDERS = {
+    protocol: 'ekza-gen/v1',
+    providers: [{ label: 'Tripo' }, { label: 'Meshy' }],
+    caps: { dailyUsd: 5, monthlyUsd: 20, remainingDailyUsd: 5, remainingMonthlyUsd: 20 },
+  };
+
+  it('no gateway URL and no client, the host’s null, or a gateway that is not enabled (404): hidden', async () => {
+    setGenerationGateway('');
+    expect(await checkAi(appWith())).toEqual({ state: 'hidden' });
+    expect(await checkAi(appWith(null))).toEqual({ state: 'hidden' });
+    expect(await checkAi(appWith(failing(404, 'not-found')))).toEqual({ state: 'hidden' });
+  });
+
+  it('a gateway that does not answer or wants its token is "not connected"; one that answers lists its providers', async () => {
+    const offline = await checkAi(appWith(failing(null, 'network')));
+    const token = await checkAi(appWith(failing(401, 'unauthorized')));
+    const ready = await checkAi(appWith({ providers: () => Promise.resolve(PROVIDERS) }));
+    expect([offline.state, token.state]).toEqual(['offline', 'token']);
+    expect(ready).toEqual({ state: 'ready', providers: ['Tripo', 'Meshy'] });
+    expect([offline, token, ready].every(aiShown)).toBe(true);
+    expect(aiShown({ state: 'hidden' })).toBe(false);
+    expect(aiShown({ state: 'checking' })).toBe(false);
+  });
+
+  it('without a host client, the build’s gateway URL makes one with gen-core (404 hides; an answer shows)', async () => {
+    const calls: string[] = [];
+    const answers = [new Response('Not Found', { status: 404 }), Response.json(PROVIDERS)];
+    const realFetch = globalThis.fetch;
+    globalThis.fetch = (input: RequestInfo | URL) => {
+      calls.push(input instanceof Request ? input.url : input.toString());
+      return Promise.resolve(answers.shift() ?? new Response(null, { status: 500 }));
+    };
+    try {
+      setGenerationGateway('https://gen.example.test/');
+      expect(await checkAi(appWith())).toEqual({ state: 'hidden' });
+      expect(await checkAi(appWith())).toEqual({ state: 'ready', providers: ['Tripo', 'Meshy'] });
+      expect(calls).toEqual(['https://gen.example.test/v1/providers', 'https://gen.example.test/v1/providers']);
+    } finally {
+      globalThis.fetch = realFetch;
+      setGenerationGateway('');
+    }
   });
 });
 
