@@ -60,10 +60,10 @@ Halo's vocabulary may replace them.
 ## How it works
 
 **Availability without a request on load.** The host creates a lazy `GenerationClient` when the build has a gateway
-base (server builds `/api/gen`; a static export only with `STUDIO_GEN_GATEWAY_URL`). Nothing is requested until the
-panel or the sheet opens: `providers()` then answers ready, 401 (the token prompt) or 404 (not enabled: the controls are
-hidden, one plain line says so, and File › Generate with AI… goes away for the page). A default server build therefore
-never logs a 404 on page load (M7-GD-5).
+base (server builds `/api/gen`; a static export only with `STUDIO_GEN_GATEWAY_URL`). Studio Pro requests nothing until the
+panel opens: `providers()` then answers ready, 401 (the token prompt) or 404 (not enabled: the controls are hidden,
+one plain line says so, and File › Generate with AI… goes away for the page), so a default server build never logs a
+404 on `/editor`'s load; Halo's entries keep T8's probe (ST-T8-18) (M7-GD-5).
 
 **Before spending.** Generate stays off, with the reason shown, until the gateway is ready, the input is there (a
 picture is re-encoded and uploaded; its person question answered), the plan with that provider is stated (Q-GEN-9),
