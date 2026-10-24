@@ -602,6 +602,10 @@ export { NO_SHELL_NAVIGATION, registerShellNavigate, SHELL_ROUTES } from './oper
 // lazy shell chunks only (tree-shaken here, so no route's first visit grows).
 export * from './autorigFlow';
 
+// M7 G-d (MODELING-PLAN §7.2): the Generate flow both shells bind, the session of jobs and the provenance helpers; read
+// by lazy chunks only (tree-shaken here), the operators' polls read the session.
+export * from './genFlow';
+
 // T5c (STUDIO-TOUCH-SPEC §20.3 item 10): Auto-Rig's derived progress, read by the Auto-Rig wizard and Halo's readiness
 // (tree-shaken here; `/autorig` keeps its checklist chunk lazy).
 export * from './progress';

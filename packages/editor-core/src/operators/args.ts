@@ -17,6 +17,7 @@ import type { BrushSettings, PaintMode, PoseView, RigMode } from '../types';
 import type { AutoRigExportResult, AutoRigExportTarget, AutoRigFix, AutoRigRigResult, AutoRigSampleId, ClipParams,
   IntakeReport, ShellRoute } from '../types';
 import type { ArrivalAction, ShellKind } from '../types';   // STUDIO-TOUCH-SPEC §20.4 (T2)
+import type { GenImportArgs, GenImportResult, GenJobArgs, GenJobResult, GenSubmitArgs } from '../genFlow/types';   // M7 G-d
 
 export type SampleId = 'seed-san' | 'polybot' | 'quaternius-ual';
 export interface FileArgs { readonly name: string; readonly bytes: Uint8Array }
@@ -650,6 +651,11 @@ export interface OperatorMap {
   'target.exportPackage': { args: { readonly character: CharacterId; readonly devZip?: boolean; readonly fileName?: string };
     result: { readonly fileName: string; readonly saved: boolean; readonly artifact: ExportArtifact;
       readonly lints: readonly LintIssue[]; readonly bytes: Uint8Array | null } };
+  // ---------- M7 G-d (MODELING-PLAN §7.2; DECISIONS M7-GD-*, additive): the generation operators (lazy bodies) ----------
+  'gen.submit': { args: GenSubmitArgs; result: GenJobResult };
+  'gen.cancel': { args: GenJobArgs; result: GenJobResult };
+  'gen.retry': { args: GenJobArgs; result: GenJobResult };
+  'gen.import': { args: GenImportArgs; result: GenImportResult };
   // stretch (D0 types only, MCP-SPEC §1.2; not registered until built): 'pose.plantContacts', 'pose.recipe'
   'pose.plantContacts': { args: { readonly clip: ClipId; readonly feet?: readonly ('L' | 'R')[];
     readonly contacts?: readonly { readonly foot: 'L' | 'R'; readonly range: { readonly start: Frame; readonly end: Frame } }[];

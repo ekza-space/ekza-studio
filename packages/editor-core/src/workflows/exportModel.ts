@@ -38,6 +38,7 @@ import type { MeshLintInput, StaticThreeReadBack } from '@ekza-studio/io/write';
 import type { MeshData } from '@ekza-studio/mesh-core';
 import type { GatedModelLoader } from '../characters/models';
 import { isAssetCharacter } from '../characters/registry';
+import { aiDisclosure, withAiGenerator } from '../genFlow/disclose';
 import { loadMeshKernel } from '../mesh';
 import type { CharacterRuntime, DisplayModel, EditorApp, MeshRuntimeRegistry, ModelLoader } from '../types';
 import { loadWritePath } from './export';
@@ -237,14 +238,22 @@ export async function runExportModel(app: EditorApp, req: StaticExportRequest): 
   for (const root of roots) nodes.push(await build(root, root.budget));
   const handheld = roots.find((root) => root.handheld !== null)?.handheld ?? null;
   const fileName = /\.glb$/i.test(req.fileName) ? req.fileName : `${req.fileName}.glb`;
+  // M7 G-d (ADR 0017 §7): meshes made from a generated model disclose its generator in `ekza_model_v1`.
+  const ai = aiDisclosure(app, meshInputs);
   let artifact = await write.exportStaticModel(
     {
       roots: nodes,
       palettes,
       handheld,
-      model: write.manualModelProvenance({ toolVersion: EDITOR_VERSION }),
+      model: withAiGenerator(write.manualModelProvenance({ toolVersion: EDITOR_VERSION }), ai.generator),
     },
-    { fileName, profile, generator: `Ekza Studio ${EDITOR_VERSION}`, meshes: meshInputs },
+    {
+      fileName,
+      profile,
+      generator: `Ekza Studio ${EDITOR_VERSION}`,
+      meshes: ai.meshes,
+      ...(ai.generated ? { aiGenerated: true } : {}),
+    },
   );
   if (unlitShaded.length > 0) {
     artifact = {

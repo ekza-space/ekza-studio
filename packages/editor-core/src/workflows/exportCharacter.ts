@@ -58,6 +58,8 @@ import {
 } from '@ekza-studio/io';
 import { computeStepSchedule, type TrackKey } from '@ekza-studio/rig';
 import { adoptedMaterials } from '../characters/assetMaterials';
+import { withAiGenerator } from '../genFlow/disclose';
+import { generatorOfExport } from '../genFlow/table';
 import { loadCharacterRuntime } from '../characters/runtimeChunk';
 import { loadMeshKernel } from '../mesh';
 import type { EditorApp } from '../types';
@@ -407,7 +409,15 @@ export async function characterWriteInput(
   if (plan.format === 'vrm' && plan.thumbnail === 'stored' && vrm !== null && vrm.thumbnail !== null) {
     thumbnailPng = await app.services.assets.get(vrm.thumbnail);
   }
-  const model = chunk.modelProvenance(parts, skeleton, EDITOR_VERSION);
+  // M7 G-d (ADR 0017 §7): a character made from a generated model discloses its generator in `ekza_model_v1`.
+  const model = withAiGenerator(
+    chunk.modelProvenance(parts, skeleton, EDITOR_VERSION),
+    generatorOfExport(
+      app.store,
+      parts.meshes.map((mesh) => mesh.record.id),
+      parts.character.id,
+    ),
+  );
   return {
     write: {
       skeleton,

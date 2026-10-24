@@ -54,6 +54,9 @@ export interface StudioHostProps {
   readonly kernelDebug?: boolean;
   /** Overrides the URL parameters (harnesses and tests). */
   readonly params?: EditorParams;
+  /** M7 G-d (ADR 0017 §2; M7-GB-12): the generation gateway's base (`NEXT_PUBLIC_EKZA_GEN_GATEWAY`); '' or absent
+   *  hides AI generation. */
+  readonly genGateway?: string;
   readonly summarize?: Summarizer;
   readonly createValidatorWorker?: () => Worker;
   /** A same-page navigation between the shells (Next's `router.push`); without it a switch reloads the page with a
@@ -91,6 +94,10 @@ function boot(props: StudioHostProps, push: (href: string) => void): Boot {
     pointerLock: params.pointerLock,
     kernelDebug: props.kernelDebug === true || params.e2e,
     onDownload: (record) => host?.exports.recordDownload(record),
+    // M7 G-d: e2e pages poll a job faster (their gateway is routed in the page, which cannot stream events).
+    ...(props.genGateway === undefined || props.genGateway === ''
+      ? {}
+      : { generation: { baseUrl: props.genGateway, pollMs: params.e2e ? 400 : 3000 } }),
     ...(props.createValidatorWorker === undefined ? {} : { createValidatorWorker: props.createValidatorWorker }),
   });
   let app: EditorApp;
