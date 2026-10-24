@@ -2,7 +2,7 @@
 
 Work packages G-d and G-e of [MODELING-PLAN](../MODELING-PLAN.md) §7.2 (§3.11, §7.3) under
 [ADR 0017](../adr/0017-ai-generation-boundary.md) and DECISIONS §G.6 (Q-GEN-1…10). Branch `m7/gd-generate` off `dev`
-`b8fc6a32`, with `dev` merged at `2bde8c24` (G-a, the intake operators). The owner's goal (2026-10-24): write a prompt
+`b8fc6a32`, with `dev` merged at `2bde8c24` (G-a, the intake operators) and `e1208263` (T8, the Make stage). The owner's goal (2026-10-24): write a prompt
 or attach a photo → a generator, through our gateway, returns a model → Studio cleans it → the person tweaks it →
 Auto-Rig → animation; characters and props alike, mainly on the iPad. Decisions:
 [DECISIONS-OPEN §V](../DECISIONS-OPEN.md#v-m7-g-d-the-generate-flow-the-operators-and-the-panel-2026-10-25), rows
@@ -17,7 +17,7 @@ Auto-Rig → animation; characters and props alike, mainly on the iPad. Decision
 | Exports | `editor-core/src/workflows/{exportModel,exportCharacter}.ts` | `ekza_model_v1.provenance.generator` from the linked generated asset (static GLB and character VRM/GLB), `aiGenerated` for the mesh lint |
 | The host's client | `editor/src/services/generation.ts`, `services/browser.ts`, `host/StudioHost.tsx`, `apps/web/app/(studio)/hostProps.ts` | `createLazyGenerationClient({baseUrl, pollMs})` (gen-core loads with the first call), `setGenerationToken` (memory only); the base is `NEXT_PUBLIC_EKZA_GEN_GATEWAY` |
 | Studio Pro | `editor/src/panels/generate/{index.ts,GeneratePanelLazy.tsx,GeneratePanel.tsx}`, `shell/menuItems.ts`, `shell/HelpLine.tsx`, `shell/genTraySlot.ts`, `panels/index.ts` | File › Generate with AI… (only with a gateway; removed after a 404), the lazy Generate panel (picture and words tabs, presets, service and terms, plan, price, Generate, the tray, the clean-up dialog, Rig it, Rig with Tripo), the help line's job pill |
-| Halo | `halo/src/generate/binding.ts`, `halo/src/manifest/{disclosure,labels}.ts` | The binding for T8's *Create with AI* sheet; the manifest rows (Make's tray, pending on T8) |
+| Halo | `halo/src/stages/make/ai/CreateWithAiSheet.tsx`, `halo/src/generate/binding.ts`, `halo/src/i18n/make.ts`, `halo/src/manifest/{disclosure,labels}.ts` | T8's *Create with AI* sheet made real (below); the manifest rows on the `createAi` sheet |
 | Agents | `agent-tools/src/policy.ts` | Every spend asks the person: `gen.submit`, `gen.retry` confirm (Edit), `gen.cancel` confirm (View), `gen.import` confirm (Edit) |
 | Gates | `apps/web/scripts/check-size.mjs`, `tooling/check-deps.mjs`, `.oxlintrc.json` | The `generate` lazy boundary (`ekza-generate-flow`); editor may hold gen-core types and load the client by a dynamic import; headless-tests and the e2e specs may run the gateway and its testing kit |
 | Tests | `editor-core/test/m7/gen.test.ts`, `headless-tests/test/m7.generate.test.ts`, `apps/web/e2e/gen-0{1..6}-*.spec.ts`, `apps/web/e2e/helpers/gen.ts` | below |
@@ -117,18 +117,17 @@ GATE
 `/private/tmp/claude-501/-Users-wotori-git/d810d71f-f77c-5950-8a1f-82bdfe6725d3/scratchpad/m7/gd-*.png` (not
 committed; produced by the specs with `EKZA_M7GD_SHOTS=<folder>` and attached to each test).
 
-## For the Halo sheet once T8 lands
+## Halo: *Create with AI* (T8's sheet, made real)
 
-1. Merge T8; in `stages/make/ai/CreateWithAiSheet.tsx` replace the placeholder state with `useCreateWithAi(ctx)`:
-   the prompt and photo fields call `setPrompt` / `setImage`, the budget segment calls `setPreset`; add the person
-   question, the service and plan rows, the price line and the token field (`needs-token`), show `ai.blocked`, and
-   wire *Create* to `ai.create()`; drop `generationClient()` (the binding reads the host's client).
-2. Show `ai.view.jobs` in the sheet (or Make's tray) with *Stop*, *Try again* and *Bring it in* (`ai.bringIn(id)`:
-   the clean-up, then Rig for a humanoid, Animate for a provider-rigged character).
-3. Manifest: add `createAi` to `SHEET_OWNER` (T8), move the five `gen.*` / `workspace.showPanel {panel: 'generate'}`
-   rows from `T('make')` to the sheet's sections as T8 lays them out, add T8 to `BUILT_OWNERS`, lower the `searchOnly`
-   baseline (`EKZA_HALO_PARITY_WRITE=1`).
-4. E2E: a `ha-*` spec for the sheet on `chrome-touch` with `helpers/gen.ts`'s `routeGateway` (the same harness).
+T8 merged at `e1208263` (`dev` merged here at `f3db804b`); its sheet now runs the flow:
+
+| Part | What |
+|---|---|
+| `stages/make/ai/CreateWithAiSheet.tsx` | The status line (T8's `data-state`: checking, token, offline, hidden, ready) with the **token prompt** on a 401 (P-T8 G-d); *Describe it* and *Attach a photo* (a photo makes a picture request; it is redrawn here and its person question asked); the size (Prop / Character / Hero); the service with its terms; the plan with it (no answer until the person gives one: the kit's `Segmented` always marks a choice, so the plan and the person question are toggle rows); the price line; *Create* with its plain reason when off; the jobs with progress, *Stop*, *Try again*, *Bring it in*; the result (triangles of the budget, colours, warnings, the made-with-AI badge) with *Rig it* and *Rig with Tripo* |
+| `generate/binding.ts` | `useCreateWithAi(ctx)`; `bringIn` (the clean-up in Make, one undo step; a provider-rigged character goes to Animate); `rigIt` (the cleaned meshes become Auto-Rig's subject through `takeHandedSubject` on Halo's flow host — the subject the Rig-it card rigs — then the Rig stage; T9's files untouched) |
+| `stages/make/ai/availability.ts` | T8's entry probe, unchanged: the entries show for a gateway that answers, wants its token or does not answer, and hide for none or a 404 |
+| `i18n/make.ts` | The sheet's words (the vocabulary lint passes) |
+| Manifest | The four `gen.*` rows and `workspace.showPanel {panel: 'generate'}` on the `createAi` sheet (T8, built) |
 
 ## Open items
 

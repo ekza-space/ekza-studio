@@ -4,22 +4,10 @@
   "compilerOptions": {
     "rootDir": "..",
     "outDir": "../.tsbuild/e2e",
-    "lib": [
-      "ES2023",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "types": [
-      "node"
-    ]
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["node"]
   },
-  "include": [
-    "./**/*",
-    "../playwright.config.ts",
-    "../next.config.ts",
-    "../csp.ts",
-    "../vitest.config.ts"
-  ],
+  "include": ["./**/*", "../playwright.config.ts", "../next.config.ts", "../csp.ts", "../vitest.config.ts"],
   "references": [
     {
       "path": "../../../packages/anim-core/src"
