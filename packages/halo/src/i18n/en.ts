@@ -282,6 +282,8 @@ export const en = {
   verbs: {
     again: (label: string): string => `Again: ${label}`,
     repeat: (label: string): string => `${label} again`,
+    /** An operator this build does not register yet (T8: Reduce and Clean up wait for the AI intake tools). */
+    notInBuild: 'Not in this build yet',
   },
 } as const;
 

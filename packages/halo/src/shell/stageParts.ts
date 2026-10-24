@@ -49,6 +49,7 @@ export const STAGE_MODULES: Readonly<Partial<Record<HaloStage, () => Promise<Sta
 export const STAGE_SHEETS: Readonly<Record<string, () => Promise<SheetModule>>> = {
   palette: () => import('../sheets/palette'),
   makeEditableReport: () => import('../stages/make/report'),
+  createAi: () => import('../stages/make/ai'),
 };
 
 const Nothing = (): null => null;

@@ -44,6 +44,15 @@ export function createVerbRunner(
   return (verb, from) => {
     store.set((s) => ({ touches: s.touches + 1, loupe: null }));
     if (from === 'more') store.set({ sheet: null });
+    // a ▾ petal shows its choices beside the Halo (§6.2); a ring closes into the arc that holds them
+    if (verb.choices !== undefined && verb.choices.length > 0 && from !== 'more') {
+      store.set((s) => ({
+        sub: s.sub === verb.id ? null : verb.id,
+        ...(s.halo?.mode === 'ring' ? { halo: { mode: 'arc' as const, at: s.halo.at } } : {}),
+      }));
+      return;
+    }
+    if (store.get().sub !== null) store.set({ sub: null });
     if ('stage' in verb.run) {
       void deps.enterStage(verb.run.stage);
       return;
