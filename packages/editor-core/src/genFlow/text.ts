@@ -64,7 +64,9 @@ const OWNERSHIP: Readonly<Record<GenTerms['ownership'], TermsBadge>> = {
 export function termsBadges(terms: GenTerms, tier: 'paid' | 'free' | null): readonly TermsBadge[] {
   const ownership = tier === 'free' ? terms.freeTierOwnership : terms.ownership;
   const badges: TermsBadge[] = [
-    tier === null ? { tone: 'info', text: `Paid plan: ${OWNERSHIP[terms.ownership].text.toLowerCase()}` } : OWNERSHIP[ownership],
+    tier === null
+      ? { tone: 'info', text: `Paid plan: ${OWNERSHIP[terms.ownership].text.toLowerCase()}` }
+      : OWNERSHIP[ownership],
     terms.trainsOnInputs === true
       ? { tone: 'warn', text: 'May train on your inputs' }
       : terms.trainsOnInputs === false

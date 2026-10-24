@@ -93,7 +93,7 @@ function createSession(app: EditorApp): GenSession {
   const watches = new Map<string, GenWatch>();
   const bytes = new Map<string, Uint8Array>();
   const emit = (): void => {
-    for (const listener of [...listeners]) listener(state);
+    for (const listener of listeners) listener(state);
   };
   const set = (patch: Partial<GenSessionState>): void => {
     state = { ...state, ...patch };

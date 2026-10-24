@@ -19,13 +19,16 @@ export const intakeStepOp = (kind: string): string => (kind.includes('.') ? kind
 export function withPostSteps(p: GenProvenance, ops: readonly string[]): GenProvenance {
   return {
     ...p,
-    postSteps: [...p.postSteps, ...ops.map((op) => ({ op, aiMarksMayBeAltered: GEN_MARK_ALTERING_STEPS.includes(op) }))],
+    postSteps: [
+      ...p.postSteps,
+      ...ops.map((op) => ({ op, aiMarksMayBeAltered: GEN_MARK_ALTERING_STEPS.includes(op) })),
+    ],
   };
 }
 
 /** The prompt's hash as provenance records it: SHA-256 of the UTF-8 bytes (gen-core `promptSha256`). */
 export function promptSha256(prompt: string): Promise<string> {
-  return sha256Hex(new TextEncoder().encode(prompt) as Uint8Array<ArrayBuffer>);
+  return sha256Hex(new TextEncoder().encode(prompt));
 }
 
 /** The record with the prompt text, after checking it is the generation's (gen-core `withPromptOptIn`). */
@@ -58,9 +61,7 @@ export function documentGenerator(p: GenProvenance): GeneratorProvenance {
     op: p.op,
     params: { ...p.params },
     inputSha256: [...p.inputSha256],
-    termsSnapshot: Object.fromEntries(
-      Object.entries(p.termsSnapshot).map(([key, value]) => [key, Array.isArray(value) ? [...value] : value]),
-    ),
+    termsSnapshot: JSON.parse(JSON.stringify(p.termsSnapshot)) as GeneratorProvenance['termsSnapshot'],
     rawSha256: p.rawSha256,
     postSteps: p.postSteps.map((step) => ({ ...step })),
     promptSha256: p.promptSha256,

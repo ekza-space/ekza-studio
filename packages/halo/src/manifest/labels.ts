@@ -303,4 +303,9 @@ export const PLAIN_LABELS: Readonly<Record<string, string>> = {
   'agent.show': 'Show what changed',
   'shell.navigate': 'Switch layout',
   'autorig.navigate': 'Switch layout',
+  // M7 G-d: AI generation (*Create with AI*)
+  'gen.submit': 'Create with AI',
+  'gen.cancel': 'Stop creating',
+  'gen.retry': 'Try creating again',
+  'gen.import': 'Bring in the created model',
 };

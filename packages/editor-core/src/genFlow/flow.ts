@@ -8,13 +8,7 @@
 // provider's VRM-named rig (Q-GEN-8). Every spend and every document change is an operator run through the shell's
 // funnel; the flow never shows anything itself and keeps its U state (never the document's, never an undo step).
 import type { CharacterId, MeshId } from '@ekza-studio/doc';
-import type {
-  GenerationClient,
-  GenProviderInfo,
-  GenQuote,
-  GenRequest,
-  TextureMode,
-} from '@ekza-studio/gen-core';
+import type { GenerationClient, GenProviderInfo, GenQuote, GenRequest, TextureMode } from '@ekza-studio/gen-core';
 import type { EditorApp, OperatorResult } from '../types';
 import { type ReencodedImage, reencodeImage } from './image';
 import { buildRequest, importedFrom, modelArtifact, newIdempotencyKey, providerInfo, trackJob } from './ops';
@@ -234,7 +228,7 @@ export function createGenFlow(host: GenFlowHost, initial: GenFlowState = default
   let quoteTimer: ReturnType<typeof setTimeout> | null = null;
   let disposed = false;
   const emit = (): void => {
-    for (const listener of [...listeners]) listener();
+    for (const listener of listeners) listener();
   };
   const set = (patch: Partial<GenFlowState>): void => {
     state = { ...state, ...patch };
@@ -341,10 +335,9 @@ export function createGenFlow(host: GenFlowHost, initial: GenFlowState = default
     session.setState({ availability: { status: 'checking' } });
     try {
       const providers = await c.providers();
-      const ready: GenAvailability =
-        providers.providers.some((p) => p.configured || p.byoAllowed)
-          ? { status: 'ready' }
-          : { status: 'error', message: GEN_TEXT.noProvider };
+      const ready: GenAvailability = providers.providers.some((p) => p.configured || p.byoAllowed)
+        ? { status: 'ready' }
+        : { status: 'error', message: GEN_TEXT.noProvider };
       session.setState({ availability: ready, providers });
       await resume(c);
       scheduleQuote();
@@ -382,11 +375,13 @@ export function createGenFlow(host: GenFlowHost, initial: GenFlowState = default
         progress: job.progress,
         active: !isTerminalState(job.state),
         canCancel: !isTerminalState(job.state) && job.state !== 'fetching',
-        canRetry:
-          isTerminalState(job.state) && job.state !== 'succeeded' && entry.request !== null,
+        canRetry: isTerminalState(job.state) && job.state !== 'succeeded' && entry.request !== null,
         canImport: job.state === 'succeeded' && artifact !== undefined,
         imported,
-        badge: generator === null ? null : badgeOf({ origin: 'generated', derivedFrom: [], redistributable: 'unknown', generator }),
+        badge:
+          generator === null
+            ? null
+            : badgeOf({ origin: 'generated', derivedFrom: [], redistributable: 'unknown', generator }),
         rigOf: entry.rigOf,
         costUsd: job.costUsd,
         watchError: entry.watchError,
@@ -426,7 +421,7 @@ export function createGenFlow(host: GenFlowHost, initial: GenFlowState = default
     if (quote !== null) {
       if (quote.usd > state.maxCostUsd) return `It costs more than your limit of $${state.maxCostUsd.toFixed(2)}`;
       if (quote.usd > quote.caps.remainingDailyUsd || quote.usd > quote.caps.remainingMonthlyUsd)
-        return "It is over what this server may spend now";
+        return 'It is over what this server may spend now';
     }
     if (state.submitting) return GEN_TEXT.generating;
     return null;
@@ -457,12 +452,7 @@ export function createGenFlow(host: GenFlowHost, initial: GenFlowState = default
         ...(state.mode === 'image-to-model' && state.realPerson !== null ? { realPersonPhoto: state.realPerson } : {}),
         keepPrompt: state.keepPrompt,
         idempotencyKey: newIdempotencyKey(),
-        title:
-          prompt !== ''
-            ? undefined
-            : state.image.image !== null
-              ? `From ${state.image.image.name}`
-              : undefined,
+        title: prompt !== '' ? undefined : state.image.image !== null ? `From ${state.image.image.name}` : undefined,
       });
       if (result.status !== 'finished') {
         set({ submitting: false, message: { tone: 'error', text: messageOf(result) } });
@@ -573,7 +563,8 @@ export function createGenFlow(host: GenFlowHost, initial: GenFlowState = default
         if (state.image.image !== image) return;
         input({ image: { status: 'ready', image, upload: upload.upload, message: null } });
       } catch (error) {
-        if (state.image.image === image) set({ image: { status: 'error', image, upload: null, message: errorText(error) } });
+        if (state.image.image === image)
+          set({ image: { status: 'error', image, upload: null, message: errorText(error) } });
       }
     },
     setPreset: (preset) => input({ preset }),
@@ -630,7 +621,8 @@ export function createGenFlow(host: GenFlowHost, initial: GenFlowState = default
       set({ post: { ...post, rigQuote: { status: 'loading', quote: null, message: null, key } } });
       try {
         const quote = await c.quote(req);
-        if (state.post !== null) set({ post: { ...state.post, rigQuote: { status: 'ready', quote, message: null, key } } });
+        if (state.post !== null)
+          set({ post: { ...state.post, rigQuote: { status: 'ready', quote, message: null, key } } });
       } catch (error) {
         if (state.post !== null)
           set({ post: { ...state.post, rigQuote: { status: 'error', quote: null, message: errorText(error), key } } });

@@ -31,6 +31,7 @@ export function createLazyGenerationClient(opts: GenerationClientOptions): Gener
   const slot: { value: string | null } = { value: null };
   let real: Promise<GenerationClient> | null = null;
   const load = (): Promise<GenerationClient> => {
+    // oxlint-disable-next-line no-restricted-imports -- the one lazy loader of the generation client (ADR 0017 §2)
     real ??= import('@ekza-studio/gen-core').then((core) =>
       core.createGenerationClient({
         baseUrl,

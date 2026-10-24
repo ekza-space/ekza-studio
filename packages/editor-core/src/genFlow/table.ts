@@ -83,8 +83,8 @@ interface AnyTx extends AnyView {
   put(table: string, record: unknown): void;
   patch(table: string, id: string, fields: unknown): void;
 }
-const view = (store: ReadView): AnyView => store as unknown as AnyView;
-const write = (tx: Tx): AnyTx => tx as unknown as AnyTx;
+const view = (store: ReadView): AnyView => store;
+const write = (tx: Tx): AnyTx => tx;
 
 /** Every live generation record of the document. */
 export function generationRecords(store: ReadView): readonly GenerationRecord[] {

@@ -4,6 +4,7 @@ import { registerAttributesPanel } from './attributes';
 import { registerChannelsPanel } from './channels';
 import { registerClipsPanel } from './clips';
 import { registerDopeSheetPanel } from './dopesheet';
+import { registerGeneratePanel } from './generate';
 import { registerGraphPanel } from './graph';
 import { registerMeshCheckPanel } from './meshcheck';
 import { registerOutlinerPanel } from './outliner';
@@ -57,6 +58,8 @@ export function registerBuiltinPanels(registry: PanelRegistry): Disposer {
     // CHARACTER-CONTRACT-SPEC §8.4 (C1): the Target panel docked beside Clips (Windows › Target); its body rides the
     // Clip Library's lazy chunk (one loader for both: no extra chunk entry on the route, CC-C1-17)
     registry.register(lazyPanelDef('target', 'Target', loadClipLibraryPanels)),
+    // M7 G-d (MODELING-PLAN §7.2): the Generate panel, a lazy chunk shown from File › Generate with AI…
+    registerGeneratePanel(registry),
   ];
   return () => {
     for (const dispose of [...disposers].reverse()) dispose();

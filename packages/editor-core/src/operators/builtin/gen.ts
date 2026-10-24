@@ -8,12 +8,12 @@
 import type { GenOp } from '@ekza-studio/gen-core';
 import { isGenPreset } from '../../genFlow/presets';
 import { GEN_REASONS, type GenJobEntry, isTerminalState, peekGenSession } from '../../genFlow/session';
-import type { GenImportArgs, GenSubmitArgs } from '../../genFlow/types';
 import { GLOBAL_SCOPE, type EditorApp, type PollResult } from '../../types';
 import { type AnyOperator, defineOperator, fail, isFiniteNumber, isRecord, OK } from './define';
 import { pollEditable } from './polls';
+import type * as OpsModule from '../../genFlow/ops';
 
-type Ops = typeof import('../../genFlow/ops');
+type Ops = typeof OpsModule;
 const loadOps = (): Promise<Ops> => import('../../genFlow/ops');
 
 /** What `prepare` hands to `apply`: the loaded body module and its prepared value. */
@@ -48,7 +48,8 @@ function pollSubmit(app: EditorApp, args: unknown): PollResult {
   if (!OPS.includes(op as GenOp)) return fail(`expects op ${OPS.join(' | ')}`);
   if (!isFiniteNumber(args['maxCostUsd']) || args['maxCostUsd'] <= 0) return fail('Set the most it may cost');
   if (!TIERS.includes(args['tier'])) return fail('Say which plan you have with this provider (paid or free)');
-  if (args['preset'] !== undefined && !isGenPreset(args['preset'])) return fail('expects preset prop | character | hero');
+  if (args['preset'] !== undefined && !isGenPreset(args['preset']))
+    return fail('expects preset prop | character | hero');
   const prompt = typeof args['prompt'] === 'string' ? args['prompt'].trim() : '';
   const images = Array.isArray(args['images']) ? args['images'].length : 0;
   const image = args['image'] instanceof Uint8Array ? 1 : 0;
@@ -113,9 +114,9 @@ const submit = defineOperator<'gen.submit', Prepared<SubmitPrepared>>({
   poll: ({ app }, args) => pollSubmit(app, args),
   async prepare(ctx, args) {
     const ops = await loadOps();
-    return { ops, prepared: await ops.prepareSubmit(ctx, args as GenSubmitArgs) };
+    return { ops, prepared: await ops.prepareSubmit(ctx, args) };
   },
-  apply: ({ app }, args, { ops, prepared }) => ops.applySubmit(app, args as GenSubmitArgs, prepared),
+  apply: ({ app }, args, { ops, prepared }) => ops.applySubmit(app, args, prepared),
 });
 
 const cancel = defineOperator<'gen.cancel', Prepared<JobSnapshot>>({
@@ -160,7 +161,7 @@ const importJob = defineOperator<'gen.import', Prepared<ImportPrepared>>({
   poll: ({ app }, args) => pollImport(app, args),
   async prepare(ctx, args) {
     const ops = await loadOps();
-    return { ops, prepared: await ops.prepareImport(ctx, args as GenImportArgs) };
+    return { ops, prepared: await ops.prepareImport(ctx, args) };
   },
   apply: (ctx, _args, { ops, prepared }) => ops.applyImport(ctx, prepared),
 });

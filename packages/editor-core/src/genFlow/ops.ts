@@ -31,13 +31,7 @@ import { GEN_PRESETS, type GenPresetId, isGenPreset, presetParams } from './pres
 import { generatedAssetProvenance, intakeStepOp, promptProvenance } from './provenance';
 import { GEN_REASONS, type GenJobEntry, type GenSession, genSessionOf, isTerminalState } from './session';
 import { ensureGenerationTable, putGeneration } from './table';
-import type {
-  GenImportArgs,
-  GenImportResult,
-  GenIntakeOutcome,
-  GenJobResult,
-  GenSubmitArgs,
-} from './types';
+import type { GenImportArgs, GenImportResult, GenIntakeOutcome, GenJobResult, GenSubmitArgs } from './types';
 
 type AnyDef = OperatorDef<unknown, unknown, unknown>;
 
@@ -115,7 +109,9 @@ export function buildRequest(
     provider: args.provider,
     op: args.op,
     ...(prompt === '' ? {} : { prompt }),
-    ...(images === undefined || images.length === 0 ? {} : { images: images.map((image) => ({ upload: image.upload })) }),
+    ...(images === undefined || images.length === 0
+      ? {}
+      : { images: images.map((image) => ({ upload: image.upload })) }),
     ...(args.source === undefined ? {} : { source: { job: args.source.job } }),
     params: { ...base, ...args.params },
     idempotencyKey: args.idempotencyKey ?? newIdempotencyKey(),
@@ -210,7 +206,7 @@ export function forwardOf(info: GenProviderInfo | undefined): '+x' | '+z' | '-z'
 export function liveOperator(app: EditorApp, id: string): AnyDef | null {
   const def = app.operators.get(id);
   if (def === undefined) return null;
-  const probe = def.poll?.({ app, panel: null, paneId: null }, {} as never) ?? true;
+  const probe = def.poll?.({ app, panel: null, paneId: null }, {}) ?? true;
   if (probe !== true && /arrives after the mvp|not available yet/i.test(probe.reason)) return null;
   return def;
 }
@@ -235,9 +231,7 @@ async function compose(ctx: OperatorContext, def: AnyDef, raw: unknown, kind: Co
   const args = coerceRunArgs(ctx.app, def, raw, runContextOf(ctx));
   const first = def.poll?.(ctx, args) ?? true;
   if (first !== true) throw new EkzaError('unsupported', first.reason);
-  let prepared = def.prepare === undefined ? undefined : def.prepare(ctx, args);
-  if (prepared !== null && typeof prepared === 'object' && typeof (prepared as { then?: unknown }).then === 'function')
-    prepared = await prepared;
+  const prepared: unknown = def.prepare === undefined ? undefined : await Promise.resolve(def.prepare(ctx, args));
   const second = def.poll?.(ctx, args) ?? true;
   if (second !== true) throw new EkzaError('unsupported', second.reason);
   return { def, args, prepared, kind };
@@ -313,13 +307,14 @@ const isRecordValue = (value: unknown): value is Readonly<Record<string, unknown
 export function applyImport(ctx: ApplyContext, prepared: ImportPrepared): GenImportResult {
   const { tx } = ctx;
   if (tx === null) throw new EkzaError('internal', 'gen.import runs in a transaction');
-  const { inner, artifact, entry, preset } = prepared;
+  const { inner, artifact, preset } = prepared;
   const value = inner.def.apply(ctx, inner.args, inner.prepared);
   let meshes: readonly MeshId[] = [];
   let character: CharacterId | null = null;
   let outcome: GenIntakeOutcome | null = null;
   if (inner.kind === 'character') {
-    character = isRecordValue(value) && typeof value['character'] === 'string' ? (value['character'] as CharacterId) : null;
+    character =
+      isRecordValue(value) && typeof value['character'] === 'string' ? (value['character'] as CharacterId) : null;
   } else if (isRecordValue(value) && Array.isArray(value['meshes'])) {
     meshes = value['meshes'] as readonly MeshId[];
     if (inner.kind === 'intake') outcome = value as unknown as GenIntakeOutcome;

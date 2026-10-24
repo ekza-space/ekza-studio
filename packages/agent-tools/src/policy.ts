@@ -21,6 +21,8 @@ const DENIED_EXPORT_SETUP = 'files go through project_export';
 // the operators they wrap, so the toolset and its generated reference stay as they are.
 const DENIED_UI_WRAPPER =
   "a touch-shell command on the user's selection, playhead and copied pose; use pose_set, pose_transfer, pose_ik_target, pose_aim, keys_adjust, keys_retime or clip_make_loop";
+// M7 G-d: a generation is a paid request to a third-party service (ADR 0017 §10): the person confirms each one.
+const DENIED_SPEND = 'spends money: a paid request to the AI 3D generation service (the person confirms each one)';
 /** The reason an operator without a classification answers `denied_operator` with. */
 export const UNCLASSIFIED_REASON = 'this operator is not classified for agents';
 
@@ -432,6 +434,12 @@ export const OPERATOR_POLICY: Readonly<Record<string, OperatorAgentPolicy>> = nu
   'key.offsetValues': denied(DENIED_UI_WRAPPER),
   'key.offsetInLoop': denied(DENIED_UI_WRAPPER),
   'imagePlane.replace': denied(DENIED_MODELING),
+  // M7 G-d (MODELING-PLAN §7.2; DECISIONS M7-GD-*): AI generation. Submitting or retrying spends the person's money at
+  // a paid service: every call asks the person first (an explicit grant per spend); stopping and importing too.
+  'gen.submit': { policy: 'confirm', access: 'edit', reason: DENIED_SPEND },
+  'gen.retry': { policy: 'confirm', access: 'edit', reason: DENIED_SPEND },
+  'gen.cancel': { policy: 'confirm', access: 'view', reason: 'stops an AI generation the person started' },
+  'gen.import': { policy: 'confirm', access: 'edit', reason: 'adds a generated model to the scene and selects it' },
 });
 
 function nullPrototype<T>(entries: Readonly<Record<string, T>>): Readonly<Record<string, T>> {

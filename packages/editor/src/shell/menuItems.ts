@@ -9,6 +9,7 @@
 import type { Disposer } from '@ekza-studio/anim-core';
 import {
   type EditorApp,
+  genSessionOf,
   hostNavigation,
   type MenuItemDef,
   type OperatorDef,
@@ -452,7 +453,44 @@ export function registerShellMenuItems(
     if (app.menus.get(def.id) !== undefined) continue;
     disposers.push(app.contribute({ kind: 'menu', def }));
   }
+  // M7 G-d (ADR 0017 §2): File › Generate with AI… only in builds with a gateway; gone once it answers that it is off.
+  disposers.push(registerGenerateMenuItem(app));
   return () => {
     for (const dispose of disposers.reverse()) dispose();
+  };
+}
+
+/** File › Generate with AI… (`workspace.showPanel {panel: 'generate'}`). */
+export const GENERATE_MENU_ITEM: MenuItemDef = {
+  id: 'shell.file.generate',
+  menu: 'file',
+  op: 'workspace.showPanel',
+  args: { panel: 'generate' },
+  group: 'open',
+  order: 25,
+  label: 'Generate with AI…',
+};
+
+/**
+ * Lists File › Generate with AI… while the build has a gateway (`EditorServices.generation`) that has not answered
+ * "not enabled" (a 404 from `providers()`, read from the generation session): the panel checks when it opens, never
+ * the page on load (a disabled gateway's 404 would be logged on every visit).
+ */
+export function registerGenerateMenuItem(app: EditorApp): Disposer {
+  if ((app.services.generation ?? null) === null) return () => {};
+  let item: Disposer | null =
+    app.menus.get(GENERATE_MENU_ITEM.id) === undefined
+      ? app.contribute({ kind: 'menu', def: GENERATE_MENU_ITEM })
+      : null;
+  const off = genSessionOf(app).subscribe((state) => {
+    if (state.availability.status === 'unavailable' && item !== null) {
+      item();
+      item = null;
+    }
+  });
+  return () => {
+    off();
+    item?.();
+    item = null;
   };
 }

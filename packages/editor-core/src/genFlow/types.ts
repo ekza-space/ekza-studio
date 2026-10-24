@@ -1,7 +1,8 @@
 // The `gen.*` operators' contract (MODELING-PLAN §7.2 G-d; DECISIONS M7-GD-*): arguments and results. Eager-safe:
 // plain types (the operators' `OperatorMap` rows read them).
-import type { AssetId, CharacterId, MeshId, PaletteId } from '@ekza-studio/doc';
+import type { AssetId, CharacterId, MeshId } from '@ekza-studio/doc';
 import type { GenJob, GenOp, GenParams } from '@ekza-studio/gen-core';
+import type { IntakeOutcome } from '../intake/types';
 import type { GenPresetId } from './presets';
 
 /** `gen.submit`: one generation request. Spends money: agents need the person's confirmation (agent policy). */
@@ -41,24 +42,8 @@ export interface GenJobResult {
   readonly job: GenJob;
 }
 
-/** The outcome of `mesh.intake` (DECISIONS M7-GA-CONTRACT-6), as `gen.import` reads it. */
-export interface GenIntakeOutcome {
-  readonly meshes: readonly MeshId[];
-  readonly palette: PaletteId | null;
-  readonly triangles: { readonly before: number; readonly after: number };
-  readonly colours: number | null;
-  readonly steps: readonly {
-    readonly kind: string;
-    readonly ms: number;
-    readonly trianglesBefore: number;
-    readonly trianglesAfter: number;
-    readonly facts: Readonly<Record<string, number | string | boolean>>;
-  }[];
-  readonly warnings: readonly string[];
-  readonly aiMarksMayBeAltered: boolean;
-  readonly worker: boolean;
-  readonly ms: number;
-}
+/** The outcome of `mesh.intake` (DECISIONS M7-GA-CONTRACT-6), as `gen.import` returns it. */
+export type GenIntakeOutcome = IntakeOutcome;
 
 /** `gen.import`: the finished job's model into the document, cleaned up by `mesh.intake` (one undo step). */
 export interface GenImportArgs {
