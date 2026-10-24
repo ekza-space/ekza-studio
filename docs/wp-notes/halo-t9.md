@@ -64,7 +64,30 @@ In the session's scratchpad `halo/` (production e2e builds and the dev server, C
 
 ## Gate and sizes
 
-See the gate record below (`EKZA_E2E_PORT=3189 pnpm run ci`).
+`EKZA_E2E_PORT=3189 pnpm run ci` at `712a31d2` (local Chrome, after `dev` `47fa724f` was merged): **exit 0**. Format,
+lint, typecheck, deps, fixtures, licences, every package's tests (halo 242, autorig 115, viewport 351 + 1 skipped,
+headless-tests 237, editor-core 1,831, editor 677 + 1 skipped, …), the production build, `check:size`,
+`check:gen-boundary`, and the e2e suite: **566 passed, 186 skipped** (project-gated), none failed or flaky. The T9 specs:
+ha-10 ×2, ha-14 834 / 744 / phone, ha-J1, ha-J1 (generated) and ha-J7 on chrome-touch; ha-10's Back to Studio on
+chrome; ha-10 and ha-14's boots on webkit-ipad.
+
+`check:size` (production build, gzip -9, first visit; SIZE-1: one 5,000,000 B gate per route, the rest a record). The
+`dev` column is `47fa724f` built on this machine the same way (with source maps, which add ≈ 120 B):
+
+| Route | `dev` `47fa724f` | T9 | Δ |
+|---|---|---|---|
+| `/editor` | 902,724 B | **902,533 B** | ≈ −70 B |
+| `/autorig` | 661,202 B | **661,174 B** | ≈ +75 B (*Back to Studio*) |
+| `/app` | 734,640 B | **735,842 B** | ≈ +1,320 B (the Rig card's open flag and lift, the stage hooks, the `rigDot` noun and its labels, the Next action, the seam line) |
+
+`/autorig` takes no Halo code (`halo-shell` is unreachable from its scripts). The Rig stage, its sheets, the recipes,
+the brush tray and the words are lazy chunks; the eager Rig files on `/app` are `stages/rig/{ui,cardOpen,dotLabels}.ts`
+(≈ 1.6 kB raw). The first gate run showed `/app` at 778,245 B: `verbs/nouns.ts` imported editor-core's
+`QUICK_RIG_LABELS`, which drags the Quick Rig operators, the skeleton builders and io's skeleton readers into the
+initial scripts (+43.7 kB; found with `STUDIO_SOURCE_MAPS=1` and a per-source diff against `dev`). The noun now reads
+`stages/rig/dotLabels.ts` (a test keeps it equal to Pro's table), and `test/rig-stage.test.ts` fails when an eager Halo
+module imports any value of editor-core's rig operators or `autorigFlow` — the halo rules test walks only Halo's own
+modules, so a package-level leak slipped past it.
 
 ## Lines outside the T9 row (seam-shaped; each is a hook other stages can use)
 
@@ -77,7 +100,7 @@ See the gate record below (`EKZA_E2E_PORT=3189 pnpm run ci`).
 | `halo/src/halo/verbSource.ts` (T6-INT) | `registerPetalArgs('<noun>.<petal>', app => args)` | A rig dot's *Mirror to other side* names that dot and its mirrored point |
 | `halo/src/halo/run.ts` (T6a) | `registerVerbAction(app, verbId, action)` | The Make part's *Rig it* (`stage:rig`, T8's petal) opens the card on the selected part |
 | `halo/src/halo/HaloLayer.tsx` (T6a) | The Echo chips give way while a Rig card is up | After *Rig it* the last run is the inner Bind Skin; the card speaks for it |
-| `halo/src/verbs/{nouns,table}.ts` (T6b) | The `rigDot` noun from Quick Rig's selected marker; Checks petals open the Checks sheet; the dot's *Remove* reads *Clear dots* (`skel.quickRig.clear` clears every dot) | §6.2 curated in T6a–T9 |
+| `halo/src/verbs/{nouns,table}.ts` (T6b) | The `rigDot` noun from Quick Rig's selected marker, named by `stages/rig/dotLabels.ts` (never editor-core's `QUICK_RIG_LABELS`: see *Gate and sizes*); Checks petals open the Checks sheet; the dot's *Remove* reads *Clear dots* (`skel.quickRig.clear` clears every dot) | §6.2 curated in T6a–T9 |
 | `halo/src/manifest/{types,sheets,sheetLoaders,disclosure}.ts`, `searchOnly.baseline.json` (T6b) | `T9` built; the three sheets' sections and prefetch loaders; the sheet surfaces of the operators they run; the baseline regenerated | P-T6B-5 |
 | `halo/src/recipes/index.ts` (T11) | `rigItOffer`, `fixBendOffer` | P-T11-1 |
 | `autorig/src/i18n/en/frame.ts` (Auto-Rig D0) | `backToStudio`, `backToStudioTitle` | Auto-Rig's strings live in its tables (§8.4); the row owns `autorig/src/shell/**` only |
