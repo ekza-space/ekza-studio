@@ -1,10 +1,10 @@
 // ha-J10 Resume after a reload or from autosave (STUDIO-TOUCH-SPEC §9 J10, §17, §6.7 `recovery`, AS-ST-4 "J10 ≤ 1";
-// T11): a tab that reloads while a project is open comes back to it silently — the same document, stage, time and
-// selection, with *Back where you were* — in **0 touches**, and never shows the Recovery dialog. Any other unsaved work
+// T11): a tab that reloads while a project is open comes back to it silently — the same document, stage, time,
+// selection and view camera (T12, P-T11-3), with *Back where you were* — in **0 touches**, and never shows the Recovery dialog. Any other unsaved work
 // (a closed tab) is Home › **Continue** — **1 touch**. One storage namespace (`ns=`) across the pages, as a real
 // browser keeps its storage.
 import { expect, test } from '@playwright/test';
-import { halo, openHalo } from './helpers/halo';
+import { camera, halo, near, openHalo, PANE } from './helpers/halo';
 import { press, t11, touches } from './helpers/halo-share';
 import { call, runOk, waitForTestApi } from './helpers/test-api';
 
@@ -25,6 +25,9 @@ test('ha-J10: a reload while a project is open restores it silently — 0 touche
   await runOk(page, 'time.setFrame', { frame: 9 });
   const control = (await call(page, 'controls'))[1]?.id ?? '';
   await runOk(page, 'select.controls', { ids: [control], mode: 'replace' });
+  // T12 (P-T11-3): a view of the person's own — a close-up of the selection — comes back too
+  await runOk(page, 'view.frame', { what: 'selection', paneId: PANE });
+  const view = await camera(page);
   const counts = await call(page, 'counts');
   const stage = (await halo(page)).stage;
   await page.evaluate(() => window.__EKZA_STUDIO_TEST__?.flushAutosave());
@@ -41,6 +44,7 @@ test('ha-J10: a reload while a project is open restores it silently — 0 touche
   await expect.poll(async () => (await halo(page)).stage).toBe(stage);
   await expect.poll(async () => (await call(page, 'state')).sceneFrame).toBe(9);
   await expect.poll(async () => (await call(page, 'state')).selection.controls).toEqual([control]);
+  await expect.poll(async () => near(await camera(page), view)).toBe(true);
   await expect(page.getByTestId('halo-toasts')).toContainText('Back where you were');
   expect(await touches(page)).toBe(0);
   info.annotations.push({ type: 'J10 touches (reload)', description: String(await touches(page)) });

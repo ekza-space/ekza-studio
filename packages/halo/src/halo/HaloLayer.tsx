@@ -11,8 +11,9 @@ import type { HaloController } from '../shell/controller';
 import { type SizeClass, useDocumentVersion, useSessionValue } from '../shell/hooks';
 import { useHaloStore } from '../shell/store';
 import { ConfirmCard } from '../dialogs/ConfirmCard';
+import { activeSession } from '../session/sessions';
 import { Breadcrumb } from './Breadcrumb';
-import { BREADCRUMB_ROW, breadcrumbTop, selectionBox } from './geometry';
+import { BREADCRUMB_ROW, breadcrumbTop, grammarTop, selectionBox } from './geometry';
 import { Icon } from './icons';
 import { TargetLine } from './TargetMode';
 import { FACE_OPS } from './run';
@@ -67,6 +68,10 @@ export function HaloLayer({
   const components = useSessionValue(app, (s) => s.model.components.version);
   const lastRun = useSessionValue(app, (s) => s.lastRun);
   const version = useDocumentVersion(app);
+  // T12 (P-T9-2): with the session bar (the dots, the brush, …) or the target bar up, the breadcrumb and the arc start
+  // under it, so its hint is never covered
+  const sessionUp = useSessionValue(app, () => activeSession(app) !== null);
+  const top = grammarTop(insetTop, sessionUp || targeting);
   // the box follows the camera: measured again when a gesture ends and on every selection or document change
   const [frame, setFrame] = useState(0);
   useEffect(() => {
@@ -142,7 +147,7 @@ export function HaloLayer({
           noun={noun}
           box={box === null ? null : { ...box, top: Math.min(box.top, height - insetBottom + 8) }}
           width={width}
-          above={insetTop}
+          above={top}
         />
       ) : null}
       {halo !== null &&
@@ -180,7 +185,7 @@ export function HaloLayer({
             width={width}
             height={height}
             prefer={handedness === 'right' ? 'left' : 'right'}
-            insetTop={halo.mode === 'arc' ? breadcrumbTop(box, insetTop) + BREADCRUMB_ROW : insetTop}
+            insetTop={halo.mode === 'arc' ? breadcrumbTop(box, top) + BREADCRUMB_ROW : top}
             insetBottom={insetBottom}
             hideMore={halo.reduced === true}
             onSelect={select}

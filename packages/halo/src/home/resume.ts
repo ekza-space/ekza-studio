@@ -5,10 +5,14 @@
 // mirror, and one toast, *Back where you were · 2 min ago*. 0 touches. Any other orphaned slot is Home › Continue
 // (`./model`); Halo never shows the Recovery dialog (the host's hook offers Home, `./start`).
 //
-// The camera comes back to its framing: the viewport keeps no camera across a reload (an API patch, P-T11-3).
+// T12 (P-T11-3): the view camera comes back too — the record keeps the canvas pane's view (`ViewportManager.viewState`)
+// and the restore puts it back (`setViewState`) as the person's own view, so a character that finishes loading after
+// it does not frame it again.
 import type { AutosaveSlotInfo, EditorApp } from '@ekza-studio/editor-core';
+import type { NavState } from '@ekza-studio/viewport';
 import { en } from '../i18n/en';
 import type { HaloController } from '../shell/controller';
+import { PANE } from '../shell/stage';
 import { agoText } from './model';
 
 export const HALO_RESUME_KEY = 'ekza-studio:halo:resume:v1';
@@ -24,6 +28,8 @@ export interface ResumeRecord {
     readonly objects: readonly string[];
     readonly joints: readonly string[];
   };
+  /** The canvas pane's view camera when the record was written (null: a scene camera, or no pane yet). */
+  readonly camera: NavState | null;
 }
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
@@ -38,6 +44,21 @@ function sessionStore(): StorageLike | null {
 
 const strings = (value: unknown): readonly string[] =>
   Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
+
+const triple = (value: unknown): readonly [number, number, number] | null =>
+  Array.isArray(value) && value.length === 3 && value.every((v) => typeof v === 'number' && Number.isFinite(v))
+    ? [value[0] as number, value[1] as number, value[2] as number]
+    : null;
+
+/** A stored view camera, or null when it is absent or malformed (an older record has none). */
+function cameraOf(value: unknown): NavState | null {
+  if (typeof value !== 'object' || value === null) return null;
+  const v = value as { position?: unknown; target?: unknown; zoom?: unknown };
+  const position = triple(v.position);
+  const target = triple(v.target);
+  const zoom = typeof v.zoom === 'number' && Number.isFinite(v.zoom) && v.zoom > 0 ? v.zoom : null;
+  return position === null || target === null || zoom === null ? null : { position, target, zoom };
+}
 
 export function readResume(storage: StorageLike | null): ResumeRecord | null {
   try {
@@ -55,6 +76,7 @@ export function readResume(storage: StorageLike | null): ResumeRecord | null {
         objects: strings(v.selection?.objects),
         joints: strings(v.selection?.joints),
       },
+      camera: cameraOf((v as { camera?: unknown }).camera),
     };
   } catch {
     return null;
@@ -70,8 +92,8 @@ function writeResume(storage: StorageLike | null, record: ResumeRecord | null): 
   }
 }
 
-/** This page's record (the slot the autosave wrote last, with the time and the selection now). */
-export function recordOf(app: EditorApp): ResumeRecord | null {
+/** This page's record (the slot the autosave wrote last, with the time, the selection and the view camera now). */
+export function recordOf(app: EditorApp, camera: NavState | null = null): ResumeRecord | null {
   const s = app.session.getState();
   if (s.autosave.slot === null || s.autosave.lastSavedAt === null) return null;
   return {
@@ -84,6 +106,7 @@ export function recordOf(app: EditorApp): ResumeRecord | null {
       objects: [...s.selection.objects],
       joints: [...s.selection.joints],
     },
+    camera,
   };
 }
 
@@ -108,6 +131,12 @@ export function createResume(controller: HaloController, storage: StorageLike | 
   const { app } = ctx;
   // the previous page's record, read once before this page writes its own
   const previous = readResume(storage);
+  const viewNow = (): NavState | null => ctx.vm()?.viewState(PANE) ?? null;
+  /** Puts the view camera back once the canvas pane is registered (a few frames after the shell mounts at most). */
+  const putCamera = (camera: NavState, tries = 60): void => {
+    if (ctx.vm()?.setViewState(PANE, camera) === true || tries <= 0) return;
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(() => putCamera(camera, tries - 1));
+  };
   let attempted = false;
   let restoring = false;
 
@@ -137,6 +166,8 @@ export function createResume(controller: HaloController, storage: StorageLike | 
     if (controls.length > 0) await app.runUntyped('select.controls', { ids: controls, mode: 'replace' });
     if (objects.length > 0) await app.runUntyped('select.objects', { ids: objects, mode: 'replace' });
     if (joints.length > 0) await app.runUntyped('select.joints', { ids: joints, mode: 'replace' });
+    // after the stage's workspace: the view of that workspace's pane is the one the person left
+    if (record.camera !== null) putCamera(record.camera);
     ctx.toasts.push({ key: 'resume', text: en.home.back(agoText(slot.savedAt, Date.now())) });
   };
 
@@ -160,19 +191,27 @@ export function createResume(controller: HaloController, storage: StorageLike | 
             state.autosave.lastSavedAt !== prior.autosave.lastSavedAt ||
             state.autosave.slot !== prior.autosave.slot
           ) {
-            const record = recordOf(app);
+            const record = recordOf(app, viewNow());
             if (record !== null) writeResume(storage, record);
           }
         }),
       ];
       // the time and selection as they are when the page hides (iPadOS may discard it, S24)
       const onHide = (): void => {
-        const record = recordOf(app);
+        const record = recordOf(app, viewNow());
         if (record !== null) writeResume(storage, record);
+      };
+      // a tab sent to the background may be discarded without a `pagehide` (S24): hiding writes it too
+      const onVisibility = (): void => {
+        if (document.visibilityState === 'hidden') onHide();
       };
       if (typeof window !== 'undefined') {
         window.addEventListener('pagehide', onHide);
-        offs.push(() => window.removeEventListener('pagehide', onHide));
+        document.addEventListener('visibilitychange', onVisibility);
+        offs.push(() => {
+          window.removeEventListener('pagehide', onHide);
+          document.removeEventListener('visibilitychange', onVisibility);
+        });
       }
       return () => {
         for (const off of offs) off();

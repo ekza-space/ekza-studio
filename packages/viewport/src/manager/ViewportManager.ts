@@ -1139,6 +1139,36 @@ export class ViewportManager {
   }
 
   /**
+   * STUDIO-TOUCH-SPEC J10 (T12, P-T11-3): a pane's view camera — its position, orbit pivot and zoom — to keep and put
+   * back later (a shell's resume after a reload). Null for an unknown pane, or a pane looking through a scene camera
+   * (that camera is the document's; its own record keeps it).
+   */
+  viewState(paneId: string): NavState | null {
+    const pane = this.panes.get(paneId);
+    if (pane === undefined) return null;
+    const resolved = this.resolve(pane);
+    return resolved.kind === 'view' ? resolved.nav.saveState() : null;
+  }
+
+  /**
+   * Puts a pane's view camera back where `viewState` found it, as the person's own view (it is not framed again when a
+   * character finishes loading). False for an unknown pane, a scene camera, or a state that is not finite.
+   */
+  setViewState(paneId: string, state: NavState): boolean {
+    const pane = this.panes.get(paneId);
+    if (pane === undefined) return false;
+    const finite = [...state.position, ...state.target, state.zoom].every((v) => Number.isFinite(v));
+    if (!finite || state.zoom <= 0) return false;
+    const resolved = this.resolve(pane);
+    if (resolved.kind !== 'view') return false;
+    resolved.nav.restoreState(state);
+    resolved.view.touched = true;
+    this.picker.forget(paneId);
+    this.invalidate();
+    return true;
+  }
+
+  /**
    * M-AI (MCP-SPEC §4.3): the agent host — the shared renderer and scene, the user's active pane and its camera, a
    * temporary pose for one draw and overlay passes. Reading it changes nothing the user sees. Async: the pose code is a
    * lazy chunk (§0.4).

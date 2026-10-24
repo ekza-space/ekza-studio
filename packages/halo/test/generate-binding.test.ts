@@ -6,6 +6,7 @@ import type { OperatorResult } from '@ekza-studio/editor-core';
 import { describe, expect, it } from 'vitest';
 import { haloGenFlow, haloGenHost, rigIt, statusOf } from '../src/generate/binding';
 import { haloFlowStore } from '../src/intake/flowHost';
+import { provideRigOpeners } from '../src/stages/rig/openers';
 import { everyOperator, runOk } from './support';
 
 describe('Create with AI: the binding (M7 G-d)', () => {
@@ -51,5 +52,40 @@ describe('Create with AI: the binding (M7 G-d)', () => {
     expect(stages).toEqual(['rig']);
     expect(haloFlowStore(app).get().subject).toEqual({ character: null, meshes: [mesh] });
     expect(app.session.getState().selection.objects).toEqual([mesh]);
+  });
+
+  it('Rig it opens the mounted Rig stage’s card on the hand-over instead (P-T9-1: one touch)', async () => {
+    const app = await everyOperator();
+    await runOk(app, 'workspace.set', { workspace: 'model' });
+    const { mesh } = await runOk<{ mesh: MeshId }>(app, 'mesh.create.cube');
+    const opened: string[] = [];
+    const off = provideRigOpeners(app, {
+      rigIt: async () => {
+        // the subject is handed over before the card opens: the card rigs these meshes
+        opened.push(`rigIt:${haloFlowStore(app).get().subject.meshes.join(',')}`);
+      },
+      fixBend: async () => {
+        opened.push('fixBend');
+      },
+    });
+    try {
+      const stages: string[] = [];
+      const done = await rigIt(
+        { host: { app }, run: (op, args) => app.runUntyped(op, args), setStage: (stage) => stages.push(stage) },
+        {
+          asset: 'a'.repeat(64) as never,
+          meshes: [mesh],
+          character: null,
+          outcome: null,
+          rig: 'auto-rig',
+          warnings: [],
+        },
+      );
+      expect(done).toBe(true);
+      expect(opened).toEqual([`rigIt:${mesh}`]);
+      expect(stages).toEqual([]);
+    } finally {
+      off();
+    }
   });
 });

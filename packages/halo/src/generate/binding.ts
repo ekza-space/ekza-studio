@@ -3,8 +3,9 @@
 // editor-core's UI-free flow (`createGenFlow`: the same model and the same operators as Studio Pro's Generate panel) to
 // a Halo sheet context — the sheet's `run` (failures become toasts), quiet bookkeeping runs, the host's in-memory
 // gateway token — and adds what Halo does next: a finished model is brought in and cleaned up in Make (one undo step);
-// *Rig it* hands the cleaned meshes to Auto-Rig's flow (the subject the Rig-it card rigs, `intake/flowHost`) and
-// switches to Rig; a provider-rigged character goes to Animate. Lazy: only the sheet's chunk imports it.
+// *Rig it* hands the cleaned meshes to Auto-Rig's flow (the subject the Rig-it card rigs, `intake/flowHost`) and opens
+// the Rig-it card on them, closing the sheet (T12, P-T9-1); a provider-rigged character goes to Animate. Lazy: only the
+// sheet's chunk imports it.
 import {
   type EditorApp,
   GEN_PRESET_IDS,
@@ -24,6 +25,7 @@ import {
 import { setGenerationToken } from '@ekza-studio/editor/host';
 import { useEffect, useReducer } from 'react';
 import { haloFlowHost } from '../intake/flowHost';
+import { rigOpenersOf } from '../stages/rig/openers';
 
 /** What the binding needs of a Halo sheet context (`HaloSheetContext` satisfies it). */
 export interface CreateWithAiContext {
@@ -94,8 +96,9 @@ export async function bringIn(ctx: CreateWithAiContext, flow: GenFlow, job: stri
 }
 
 /**
- * *Rig it*: the cleaned meshes become Auto-Rig's subject (the hand-over Studio Pro's Auto-Rig switch makes; the
- * Rig-it card rigs it) and Halo goes to Rig. False when there is nothing to rig.
+ * *Rig it*: the cleaned meshes become Auto-Rig's subject (the hand-over Studio Pro's Auto-Rig switch makes) and the
+ * mounted Rig stage opens its Rig-it card on them, which closes the sheet (T12, P-T9-1: one touch, not two). Without
+ * a mounted Rig stage (a harness) Halo only goes to Rig. False when there is nothing to rig.
  */
 export async function rigIt(ctx: CreateWithAiContext, result: GenImportResult): Promise<boolean> {
   const { app } = ctx.host;
@@ -106,7 +109,9 @@ export async function rigIt(ctx: CreateWithAiContext, result: GenImportResult): 
     character: null,
     meshes,
   });
-  ctx.setStage('rig');
+  const open = rigOpenersOf(app);
+  if (open === undefined) ctx.setStage('rig');
+  else await open.rigIt();
   return true;
 }
 

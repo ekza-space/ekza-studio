@@ -89,6 +89,9 @@ describe('the navigation port with Halo (T2)', () => {
     expect(host.navigation.takeHalo()).toEqual({ stage: 'animate', threadLayer: 2 });
     expect(host.navigation.takeHalo()).toBeNull();
     expect(host.navigation.takeWorkspace()).toBe('animate');
+    // T12 (P-T11-4): the shell the switch left, read once by Pro's arrival toast
+    expect(host.navigation.takeFrom()).toBe('halo');
+    expect(host.navigation.takeFrom()).toBeNull();
     host.dispose();
   });
 
@@ -117,6 +120,8 @@ describe('the navigation port with Halo (T2)', () => {
       createdAt: 1,
     };
     host.navigation.arrive(info);
+    // a record says in its own toast that the undo history starts there: no same-page arrival
+    expect(host.navigation.takeFrom()).toBeNull();
     expect(host.navigation.takeArrival()).toEqual({ kind: 'dialog', dialog: 'export' });
     expect(host.navigation.takeHalo()).toEqual({ stage: 'animate', sheet: 'share' });
     expect(host.navigation.takeHandoffInfo()).toBe(info);

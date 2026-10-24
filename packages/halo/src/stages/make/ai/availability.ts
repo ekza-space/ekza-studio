@@ -4,8 +4,11 @@
 // `/app`'s entry through `setGenerationGateway`). No URL, or a gateway that answers `providers()` with 404 (not enabled),
 // hides every entry. A gateway that is configured but does not answer (network, 5xx, a token it wants) keeps the
 // entries and the sheet's "not connected" state; one that answers lists its providers. The Generate flow itself is G-d's.
+// T12 (ST-T8-18, ST-INT-4): nothing is asked while `/app` loads. A server build's base is its own `/api/gen` even when
+// the gateway is not enabled (404, the default of every deployment), so Home asks only once *Make a character* opens
+// its starts, and the Make tray when the stage shows — as Studio Pro asks when its Generate panel opens (gen-05).
 import type { EditorApp, EditorServices } from '@ekza-studio/editor-core';
-import { useSyncExternalStore } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import { CREATE_WITH_AI_ENTRY } from './open';
 
 type GenerationClient = NonNullable<EditorServices['generation']>;
@@ -93,16 +96,24 @@ export const aiAvailability = (app: EditorApp): AiAvailability => probeOf(app).v
 export const aiShown = (availability: AiAvailability): boolean =>
   availability.state === 'offline' || availability.state === 'token' || availability.state === 'ready';
 
-export function useAiAvailability(app: EditorApp): AiAvailability {
+/**
+ * The answer, asked of the gateway once a surface that offers *Create with AI* shows (`ask`): with `ask` false it
+ * subscribes without asking (`checking` until another surface asks), so a page load requests nothing (ST-INT-4).
+ */
+export function useAiAvailability(app: EditorApp, ask = true): AiAvailability {
   const probe = probeOf(app);
-  return useSyncExternalStore(
-    (listener) => {
+  const subscribe = useCallback(
+    (listener: () => void) => {
       probe.listeners.add(listener);
-      void checkAi(app);
+      if (ask) void checkAi(app);
       return () => {
         probe.listeners.delete(listener);
       };
     },
+    [app, probe, ask],
+  );
+  return useSyncExternalStore(
+    subscribe,
     () => probe.value,
     () => probe.value,
   );

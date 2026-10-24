@@ -45,16 +45,16 @@ test('ha-J1 (generated): Create with AI → Bring it in → Rig it → the Rig-i
     const generated = (await call(page, 'meshes')).filter((mesh) => mesh.owner === 'scene').map((mesh) => mesh.id);
     expect(generated.length).toBeGreaterThan(0);
 
-    // from here, J1's rig steps (counted): Rig it (the sheet) → the Next chip → For: OMOBA → Rig it
+    // from here, J1's rig steps (counted): Rig it (the sheet) → For: OMOBA → Rig it
     const log = touchLog();
     await tap(page, 'halo-ai-rig');
     log.count('create with AI: rig it');
     await expect.poll(async () => (await halo(page)).stage, { timeout: 30_000 }).toBe('rig');
     // the hand-over is the flow's subject (the cleaned meshes), with the report's start pose
     expect([...(await rig(page)).subject.meshes].sort()).toEqual([...generated].sort());
-    // the sheet stays open on its result (G-d): the tray's *Rig it for me* opens the card and closes the sheet
-    await tapId(page, 'halo-rig-it', info, log);
+    // T12 (P-T9-1): the sheet's *Rig it* opens the Rig-it card itself and closes the sheet — no second touch
     await expect.poll(async () => (await rig(page)).card.phase, { timeout: 60_000 }).toBe('dots');
+    await expect.poll(async () => (await halo(page)).sheet).toBeNull();
     // the card rigs that subject: Quick Rig opened on the generated meshes (not a second guess at the document)
     expect([...(await rig(page)).subject.meshes].sort()).toEqual([...generated].sort());
     await tapId(page, 'halo-rig-destination-omoba', info, log);
@@ -69,7 +69,7 @@ test('ha-J1 (generated): Create with AI → Bring it in → Rig it → the Rig-i
       type: 'touches',
       description: `rig steps: ${log.steps.length} — ${log.steps.join(' · ')}`,
     });
-    expect(log.steps.length).toBeLessThanOrEqual(4);
+    expect(log.steps.length).toBeLessThanOrEqual(3);
   } finally {
     await gateway.close();
   }

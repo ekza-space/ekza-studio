@@ -293,11 +293,25 @@ describe('Home (§4.2 A, §17, J10)', () => {
       projectName: 'P',
       frame: 12,
       selection: { controls: ['c'], objects: [], joints: [] },
+      // an older record has no view camera (T12, P-T11-3)
+      camera: null,
     });
     expect(resumable(record, [slot('as_y', 1)])).toBeNull();
     expect(resumable(record, [slot('as_x', 5)])?.id).toBe('as_x');
     storage.set('ekza-studio:halo:resume:v1', '{"slot": 3}');
     expect(readResume(fake)).toBeNull();
+    // T12 (P-T11-3): the view camera travels with the record; a malformed one reads as none
+    const camera = { position: [1, 2, 3], target: [0, 1, 0], zoom: 1 };
+    storage.set('ekza-studio:halo:resume:v1', JSON.stringify({ slot: 'as_x', savedAt: 5, camera }));
+    expect(readResume(fake)?.camera).toEqual(camera);
+    for (const bad of [
+      { ...camera, zoom: 0 },
+      { ...camera, position: [1, 2] },
+      { ...camera, target: [0, 'x', 0] },
+    ]) {
+      storage.set('ekza-studio:halo:resume:v1', JSON.stringify({ slot: 'as_x', savedAt: 5, camera: bad }));
+      expect(readResume(fake)?.camera).toBeNull();
+    }
   });
 
   it('routes a picked file by its sniffed kind (S10)', () => {

@@ -71,8 +71,9 @@ export function Home({
   const file = useRef<HTMLInputElement>(null);
   const root = useRef<HTMLElement>(null);
   const recovery = useRecovery(controller);
-  // T8: *Create with AI* where a generation gateway is configured and enabled (ST-T8-18)
-  const ai = aiShown(useAiAvailability(ctx.app));
+  // T8: *Create with AI* where a generation gateway is configured and enabled (ST-T8-18); asked only once *Make a
+  // character* opens its starts, never on load (ST-INT-4: a server build without the gateway answers 404)
+  const ai = aiShown(useAiAvailability(ctx.app, panel === 'starts'));
   // "2 min ago" against a clock that ticks each minute
   const now = useSyncExternalStore(minuteClock.subscribe, minuteClock.get, minuteClock.get);
   const cards = useMemo(() => continueCards(recovery, now), [recovery, now]);

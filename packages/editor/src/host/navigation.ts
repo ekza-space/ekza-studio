@@ -5,7 +5,8 @@
 // The new-tab flow and the page-load fallback (no `push`: a harness, or the two-island design) hand the document over
 // through a one-shot handoff record (`./handoff`, a lazy chunk). The chooser is a plain page load.
 // STUDIO-TOUCH-SPEC §16, §20.4 (T2): the third shell, Halo (`/app`); every route is mapped explicitly; a switch also
-// hands over the arrival action and, when Halo leaves, Halo's state (`takeArrival`, `takeHalo`, read once).
+// hands over the arrival action and, when Halo leaves, Halo's state (`takeArrival`, `takeHalo`, read once); T12 adds the
+// shell a same-page switch left (`takeFrom`, P-T11-4: Pro's arrival toast).
 import type {
   ArrivalAction,
   AutoRigSubject,
@@ -55,6 +56,7 @@ export function createNavigation(
   let workspace: WorkspaceId | null = null;
   let arrival: ArrivalAction | null = null;
   let halo: HaloHandoffState | null = null;
+  let from: ShellKind | null = null;
   let received: HandoffInfo | null = null;
   const loc = (): Pick<Location, 'search' | 'assign'> => opts.location ?? window.location;
 
@@ -86,6 +88,7 @@ export function createNavigation(
       // after leave(): Halo has committed its tool session (§16.1); another leaving shell hands over no Halo state
       const left = host.mounted.getState();
       halo = left?.kind === 'halo' ? (left.haloState?.() ?? null) : null;
+      from = left?.kind ?? null;
       subject = request.subject ?? null;
       workspace = request.workspace ?? null;
       arrival = request.arrival ?? null;
@@ -107,6 +110,7 @@ export function createNavigation(
       workspace = info.workspace;
       arrival = info.arrival ?? null;
       halo = info.halo ?? null;
+      from = null;
     },
     takeHandoffInfo(): HandoffInfo | null {
       const taken = received;
@@ -121,6 +125,11 @@ export function createNavigation(
     takeHalo(): HaloHandoffState | null {
       const taken = halo;
       halo = null;
+      return taken;
+    },
+    takeFrom(): ShellKind | null {
+      const taken = from;
+      from = null;
       return taken;
     },
   };
