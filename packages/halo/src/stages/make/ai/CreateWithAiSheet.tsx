@@ -19,6 +19,40 @@ const w = makeWords.ai;
 const PRESET_LABEL: Readonly<Record<GenPresetId, string>> = { prop: w.prop, character: w.character, hero: w.hero };
 const BUDGET: Readonly<Record<GenPresetId, number>> = { prop: 500, character: 3000, hero: 10_000 };
 
+/**
+ * A question with no answer until the person gives one (the touch kit's `Segmented` always marks a choice): the plan
+ * with a service and the photo's person question must be stated, never assumed (Q-GEN-9).
+ */
+function Answer<V extends string>({
+  label,
+  value,
+  items,
+  onChange,
+  testId,
+}: {
+  readonly label: string;
+  readonly value: V | null;
+  readonly items: readonly { readonly value: V; readonly label: string }[];
+  readonly onChange: (value: V) => void;
+  readonly testId: string;
+}): JSX.Element {
+  return (
+    <fieldset aria-label={label} data-testid={testId} className="flex flex-wrap gap-2 border-0 p-0">
+      {items.map((item) => (
+        <TouchButton
+          key={item.value}
+          aria-pressed={value === item.value}
+          data-testid={`${testId}-${item.value}`}
+          variant={value === item.value ? 'primary' : 'default'}
+          onClick={() => onChange(item.value)}
+        >
+          {item.label}
+        </TouchButton>
+      ))}
+    </fieldset>
+  );
+}
+
 function Status({ ai }: { readonly ai: CreateWithAi }): JSX.Element {
   const [token, setToken] = useState('');
   const names = ai.view.providers.map((p) => p.info.label).join(', ');
@@ -301,11 +335,11 @@ export default function CreateWithAiSheet({ ctx }: HaloSheetProps): JSX.Element 
           {state.image.status !== 'ready' ? null : (
             <>
               <SheetGroup>{w.personQuestion}</SheetGroup>
-              <Segmented<'yes' | 'no' | 'unset'>
+              <Answer<'yes' | 'no'>
                 label={w.personQuestion}
-                data-testid="halo-ai-person"
-                value={state.realPerson === null ? 'unset' : state.realPerson ? 'yes' : 'no'}
-                onValueChange={(value) => flow.setRealPerson(value === 'unset' ? null : value === 'yes')}
+                testId="halo-ai-person"
+                value={state.realPerson === null ? null : state.realPerson ? 'yes' : 'no'}
+                onChange={(value) => flow.setRealPerson(value === 'yes')}
                 items={[
                   { value: 'yes', label: w.personYes },
                   { value: 'no', label: w.personNo },
@@ -344,11 +378,11 @@ export default function CreateWithAiSheet({ ctx }: HaloSheetProps): JSX.Element 
             ))}
           </div>
           <SheetGroup>{w.plan(provider.info.label)}</SheetGroup>
-          <Segmented<'paid' | 'free' | 'unset'>
+          <Answer<'paid' | 'free'>
             label={w.plan(provider.info.label)}
-            data-testid="halo-ai-plan"
-            value={provider.tier ?? 'unset'}
-            onValueChange={(tier) => (tier === 'unset' ? undefined : flow.attest(provider.info.id, tier))}
+            testId="halo-ai-plan"
+            value={provider.tier}
+            onChange={(tier) => flow.attest(provider.info.id, tier)}
             items={[
               { value: 'paid', label: w.paid },
               { value: 'free', label: w.free },

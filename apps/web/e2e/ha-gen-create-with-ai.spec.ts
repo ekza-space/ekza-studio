@@ -18,6 +18,12 @@ async function tap(page: Page, testId: string): Promise<void> {
   await fingerTap(page, await centre(page, testId));
 }
 
+/** An answer of the sheet's questions (the plan, the photo's person): a toggle button, pressed once chosen. */
+async function answer(page: Page, testId: string): Promise<void> {
+  await tap(page, testId);
+  await expect(page.getByTestId(testId)).toHaveAttribute('aria-pressed', 'true');
+}
+
 /** A segment of a touch Segmented (its items are the group's buttons, by label). */
 async function chooseSegment(page: Page, group: string, label: RegExp): Promise<void> {
   const item = page.getByTestId(group).getByRole('radio', { name: label });
@@ -64,7 +70,7 @@ test('E2E-GEN on touch: words → a Tripo character in Make → Bring it in (≤
     await expect(page.getByTestId('halo-ai-terms')).toContainText('No training on your inputs');
     await expect(page.getByTestId('halo-ai-create')).toBeDisabled();
     await expect(page.getByTestId('halo-ai-blocked')).toHaveText('Say which plan you have with Tripo');
-    await chooseSegment(page, 'halo-ai-plan', /Paid/);
+    await answer(page, 'halo-ai-plan-paid');
     await expect(page.getByTestId('halo-ai-quote')).toHaveText(/ · P1-20260311 · /);
     await expect(page.getByTestId('halo-ai-create')).toBeEnabled();
     await tap(page, 'halo-ai-create');
@@ -107,13 +113,13 @@ test('E2E-GEN on touch: a photo → a Meshy prop within the Prop budget', async 
       .getByTestId('halo-ai-photo-input')
       .setInputFiles({ name: 'vase.png', mimeType: 'image/png', buffer: Buffer.from(makePng(256, 256, 'exif')) });
     await expect(page.getByTestId('halo-ai-photo-name')).toHaveText('Photo: vase.png');
-    await chooseSegment(page, 'halo-ai-person', /^No$/);
+    await answer(page, 'halo-ai-person-no');
     await chooseSegment(page, 'halo-ai-budget', /Prop/);
     await expect(page.getByTestId('halo-ai-service').getByRole('radio', { name: 'Meshy' })).toHaveAttribute(
       'aria-checked',
       'true',
     );
-    await chooseSegment(page, 'halo-ai-plan', /Paid/);
+    await answer(page, 'halo-ai-plan-paid');
     await expect(page.getByTestId('halo-ai-quote')).toHaveText(/ · meshy-t2\.5 · /);
     await tap(page, 'halo-ai-create');
     await expect(page.getByTestId('halo-ai-job')).toHaveAttribute('data-state', 'succeeded', { timeout: 120_000 });

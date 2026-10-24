@@ -14,6 +14,7 @@ import { addClip, exportMeta, nextToMarkers, onStep, primary } from './helpers/a
 import { wizard } from './helpers/ar-markers';
 import { checkRow } from './helpers/ar-model';
 import { autoRig } from './helpers/ar-rig';
+import { autorig } from './helpers/autorig';
 import { dataNumber, jobRow, openGeneratePanel, routeGateway, shot, untilJob } from './helpers/gen';
 import { validatorErrors } from './helpers/m6b-mvp-script';
 import { call, expectKernelStarted, openEditor } from './helpers/test-api';
@@ -60,7 +61,9 @@ test('§7.3: one picture → a rigged ≤ 3k-triangle, ≤ 16-colour humanoid �
     // Rig it: Auto-Rig with the generated meshes.
     await page.getByTestId('gen-post-rig-auto').click();
     await expect(page).toHaveURL(/\/autorig/, { timeout: 60_000 });
-    await expect.poll(async () => (await wizard(page)).subject.meshes.length, { timeout: 60_000 }).toBeGreaterThan(0);
+    await expect
+      .poll(async () => (await autorig(page))?.subject.meshes.length ?? 0, { timeout: 60_000 })
+      .toBeGreaterThan(0);
     for (const check of ['centred', 'grounded', 'facing', 'upright', 'size']) {
       await expect(checkRow(page, check)).toHaveAttribute('data-ok', 'true', { timeout: 30_000 });
     }
