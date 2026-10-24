@@ -6,6 +6,7 @@
 // marks, the prompt only on opt-in) and the `ekza.generations` link; a re-run undoes the last import first; cancel and
 // retry; a static export of the generated meshes discloses the generator in `ekza_model_v1`.
 import { createHash } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import type { AssetId, MeshId } from '@ekza-studio/doc';
 import { makeAiLikeGlb } from '@ekza-studio/io/testing';
 import { describe, expect, it } from 'vitest';
@@ -97,12 +98,13 @@ function providers(): Providers {
 }
 
 /** An in-memory client: jobs advance when the test says so; watches get every snapshot. */
-function fakeClient(model: Uint8Array) {
+function fakeClient(model: Uint8Array, rigged: Uint8Array | null = null) {
   const jobs = new Map<string, Job>();
   const watchers = new Map<string, (job: Job) => void>();
   const requests: Request[] = [];
   let seq = 0;
   const modelSha = sha(model);
+  const riggedSha = rigged === null ? '' : sha(rigged);
   const client: Client = {
     protocol: 'ekza-gen/v1',
     baseUrl: '/api/gen',
@@ -164,6 +166,7 @@ function fakeClient(model: Uint8Array) {
     },
     async artifact(a) {
       const hash = typeof a === 'string' ? a : a.sha256;
+      if (rigged !== null && hash === riggedSha) return rigged;
       if (hash !== modelSha) throw new Error('unknown artifact');
       return model;
     },
@@ -179,13 +182,22 @@ function fakeClient(model: Uint8Array) {
     const job = jobs.get(id) as Job;
     const req = requests[Number(id.slice(4)) - 1] as Request;
     set(id, { state: 'running', submitted: true, progress: 40, revision: job.revision + 1 });
+    const rig = req.op === 'rig' && rigged !== null;
+    const bytes = rig ? rigged : model;
+    const hash = rig ? riggedSha : modelSha;
     return set(id, {
       state: 'succeeded',
       progress: 100,
       revision: job.revision + 2,
       costUsd: 0.5,
       artifacts: [
-        { role: 'model', sha256: modelSha, size: model.length, mime: 'model/gltf-binary', fileName: 'model.glb' },
+        {
+          role: rig ? 'rigged' : 'model',
+          sha256: hash,
+          size: bytes.length,
+          mime: 'model/gltf-binary',
+          fileName: rig ? 'model-rigged.vrm' : 'model.glb',
+        },
       ],
       provenance: {
         kind: 'ai',
@@ -196,7 +208,7 @@ function fakeClient(model: Uint8Array) {
         params: { face_limit: req.params.faceLimit ?? 0 },
         inputSha256: [],
         termsSnapshot: { ...TERMS, termsUrl: TERMS.termsUrl },
-        rawSha256: modelSha,
+        rawSha256: hash,
         postSteps: [],
         promptSha256: req.prompt === undefined ? null : await promptSha256(req.prompt),
         prompt: null,
@@ -211,11 +223,11 @@ function fakeClient(model: Uint8Array) {
       revision: (jobs.get(id) as Job).revision + 1,
       error: { code: 'provider-failed', message: 'The provider could not make it', retryable: true },
     });
-  return { client, requests, finish, fail, modelSha };
+  return { client, requests, finish, fail, modelSha, riggedSha };
 }
 
-async function genApp(model: Uint8Array) {
-  const fake = fakeClient(model);
+async function genApp(model: Uint8Array, rigged: Uint8Array | null = null) {
+  const fake = fakeClient(model, rigged);
   const t = await meshTestApp();
   const app: EditorApp = t.app;
   (app.services as { generation?: Client | null }).generation = fake.client;
@@ -400,6 +412,43 @@ describe('the Generate flow (M7 G-d)', () => {
     expect(genSessionOf(app).getState().jobs).toHaveLength(2);
     flow.dismiss(first);
     expect(genSessionOf(app).getState().jobs).toHaveLength(1);
+    flow.dispose();
+  });
+
+  it("the provider's VRM-named rig: a quoted rig job of the model, imported as a character with its provenance", async () => {
+    const vrm = new Uint8Array(readFileSync(new URL('../../../../fixtures/models/polybot.vrm', import.meta.url)));
+    const { app, flow, fake } = await genApp(makeAiLikeGlb({ subdivisions: 2, textureSize: 64 }), vrm);
+    const id = await submitText(flow);
+    await fake.finish(id);
+    await until(() => flow.view().jobs[0]?.canImport === true);
+    flow.openPost(id);
+    await flow.quoteProviderRig(id);
+    expect(flow.getState().post?.rigQuote?.quote?.usd).toBe(0.25);
+    const rigJob = await flow.providerRig(id);
+    expect(rigJob).not.toBeNull();
+    expect(fake.requests[1]).toMatchObject({
+      provider: 'tripo',
+      op: 'rig',
+      source: { job: id },
+      params: { skeleton: 'vrm' },
+      attestation: { tier: 'paid' },
+    });
+    expect(flow.rigOffers(rigJob as string)).toEqual([]);
+    await fake.finish(rigJob as string);
+    await until(() => flow.view().jobs[0]?.canImport === true);
+    flow.openPost(rigJob as string);
+    const result = (await flow.runPost()) as GenImportResult;
+    expect(result.character).not.toBeNull();
+    expect(result.outcome).toBeNull();
+    expect(result.rig).toBeNull();
+    expect(app.store.get('characters', result.character as never)).toBeDefined();
+    expect(app.store.get('assets', fake.riggedSha as AssetId)?.provenance?.generator).toMatchObject({
+      service: 'tripo',
+      op: 'rig',
+      rawSha256: fake.riggedSha,
+    });
+    expect(generationRecords(app.store).find((r) => r.asset === fake.riggedSha)?.character).toBe(result.character);
+    expect(flow.view().jobs[0]?.imported.character).toBe(result.character);
     flow.dispose();
   });
 
