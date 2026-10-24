@@ -77,7 +77,10 @@ test('ha-t12: the top bar’s live AI line follows the agent and opens Ask (P-T1
   // search › a request › Ask AI loads the agent module (its e2e hook comes with it)
   await page.getByTestId('halo-search').click();
   await page.getByTestId('halo-palette-input').pressSequentially('make him wave');
-  await page.getByTestId('halo-ask-ai').getByRole('button', { name: /make him wave/ }).click();
+  await page
+    .getByTestId('halo-ask-ai')
+    .getByRole('button', { name: /make him wave/ })
+    .click();
   await expect.poll(async () => (await halo(page)).sheet).toBe('ask');
   await page.waitForFunction(() => window.__EKZA_AGENT_E2E__ !== undefined, null, { timeout: 30_000 });
   // an agent that claimed the code asks for access: the line says so, with the sheet closed too

@@ -233,13 +233,7 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
         <TrayMenu label={open.label} items={open.items} testId={`halo-make-menu-${menu}`} onReason={reason} />
       )}
       {compact ? (
-        <TrayChip
-          testId="halo-pick"
-          label={pickLabel}
-          menu
-          open={menu === 'pick'}
-          onPress={() => toggleMenu('pick')}
-        />
+        <TrayChip testId="halo-pick" label={pickLabel} menu open={menu === 'pick'} onPress={() => toggleMenu('pick')} />
       ) : (
         <Segmented<ComponentMode>
           label={en.tray.pick}
