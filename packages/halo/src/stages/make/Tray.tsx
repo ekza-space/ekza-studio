@@ -197,7 +197,23 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
     }),
   ];
 
+  // T12 (P-T8-6): on a phone the selection level is one chip with its levels in a menu, so the row keeps its chips
+  const pickItems: MenuItem[] = PICK.map(
+    (p): MenuItem => ({
+      id: p.value,
+      label: p.label,
+      current: mode === p.value,
+      run: () => {
+        touch(ctx);
+        ms.set({ menu: null });
+        void ctx.run('select.mode', { mode: p.value });
+      },
+    }),
+  );
+  const pickLabel = PICK.find((p) => p.value === mode)?.label ?? en.tray.whole;
+
   const menus: Record<Exclude<typeof menu, null>, { label: string; items: readonly MenuItem[] }> = {
+    pick: { label: en.tray.pick, items: pickItems },
     drag: { label: w.dragTitle, items: dragItems },
     cut: { label: w.cutTitle, items: cutItems },
     cleanUp: { label: w.cleanUpTitle, items: cleanItems },
@@ -216,17 +232,27 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
       {open === null ? null : (
         <TrayMenu label={open.label} items={open.items} testId={`halo-make-menu-${menu}`} onReason={reason} />
       )}
-      <Segmented<ComponentMode>
-        label={en.tray.pick}
-        data-testid="halo-pick"
-        value={mode}
-        onValueChange={(next) => {
-          touch(ctx);
-          ms.set({ menu: null });
-          void ctx.run('select.mode', { mode: next });
-        }}
-        items={PICK}
-      />
+      {compact ? (
+        <TrayChip
+          testId="halo-pick"
+          label={pickLabel}
+          menu
+          open={menu === 'pick'}
+          onPress={() => toggleMenu('pick')}
+        />
+      ) : (
+        <Segmented<ComponentMode>
+          label={en.tray.pick}
+          data-testid="halo-pick"
+          value={mode}
+          onValueChange={(next) => {
+            touch(ctx);
+            ms.set({ menu: null });
+            void ctx.run('select.mode', { mode: next });
+          }}
+          items={PICK}
+        />
+      )}
       <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto" data-touch-scroll="">
         <TrayChip
           testId="halo-make-drag"
