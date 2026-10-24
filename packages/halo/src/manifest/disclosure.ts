@@ -330,7 +330,7 @@ export const DISCLOSURE: Readonly<Record<string, ManifestEntry>> = {
   'view.setNavProfile': on(2, [S('settings', 'input')]),
   'view.tool': [
     on(0, [C('canvas'), T('make')], { when: { panel: 'viewport', tool: 'select' }, plain: 'Select' }),
-    on(2, [M('mesh', 'Transform'), M('control', 'Show'), M('faces', 'Transform'), P('joint')], {
+    on(2, [M('mesh', 'Transform'), M('control', 'Show'), M('faces', 'Transform'), P('joint'), P('mesh'), T('make')], {
       when: { panel: 'viewport', tool: ['move', 'rotate', 'scale'] },
       plain: 'Move / Turn / Scale rings',
     }),
@@ -427,11 +427,11 @@ export const DISCLOSURE: Readonly<Record<string, ManifestEntry>> = {
   'mesh.fillHole': on(2, [M('faces', 'Shape'), M('edges', 'Shape')], MAKE),
   'mesh.merge': on(1, [P('edges'), P('vertices')], MAKE),
   'mesh.mergeToCenter': on(1, [M('vertices', 'Merge'), M('edges', 'Merge')], { ...MAKE, plain: 'Merge to centre' }),
-  'mesh.mergeByDistance': on(2, [M('vertices', 'Merge'), M('mesh', 'Clean up')], MAKE),
+  'mesh.mergeByDistance': on(1, [T('make'), M('vertices', 'Merge'), M('mesh', 'Clean up')], MAKE),
   'mesh.targetWeld': on(1, [P('vertices'), C('targetMode')], { ...MAKE, ...HANDS, plain: 'Weld to…' }),
   'mesh.collapse': on(2, [M('edges', 'Shape'), M('vertices', 'Shape')], MAKE),
   'mesh.delete': on(1, [P('faces'), P('vertices')], MAKE),
-  'mesh.deleteEdgeVertex': on(2, [M('edges', 'Shape'), M('vertices', 'Shape')], {
+  'mesh.deleteEdgeVertex': on(1, [P('edges'), M('edges', 'Shape'), M('vertices', 'Shape')], {
     ...MAKE,
     plain: 'Delete edge & vertices',
   }),
@@ -444,23 +444,27 @@ export const DISCLOSURE: Readonly<Record<string, ManifestEntry>> = {
   'mesh.setNormalAngle': on(2, [M('edges', 'Normals'), M('mesh', 'Normals')], { ...MAKE, plain: 'Normal angle' }),
   'mesh.reverse': on(2, [M('faces', 'Colour & surface'), M('mesh', 'Normals')], { ...MAKE, plain: 'Flip normals' }),
   'mesh.conform': on(2, [M('mesh', 'Normals')], MAKE),
-  'mesh.mirror': on(1, [P('mesh')], MAKE),
+  'mesh.mirror': on(2, [M('mesh', 'Clean up')], MAKE),
   'mesh.symmetrize': on(2, [M('mesh', 'Clean up')], MAKE),
   'mesh.applyTransform': on(2, [M('mesh', 'Transform')], { ...MAKE, plain: 'Apply transforms' }),
   'mesh.uv.planar': on(2, [M('mesh', 'UV'), M('faces', 'Colour & surface')], MAKE),
   'mesh.uv.box': on(2, [M('mesh', 'UV'), M('faces', 'Colour & surface')], MAKE),
   'mesh.uv.cylindrical': on(2, [M('mesh', 'UV'), M('faces', 'Colour & surface')], MAKE),
-  'mesh.cleanup': on(2, [M('mesh', 'Clean up'), S('health', 'checks')], MAKE),
-  // M7 G-a (MODELING-PLAN §7.2; DECISIONS M7-GA-CONTRACT-6): the AI intake operators, in More until T8's Make stage
-  // gives the intake preset its own place (the Generate panel, G-d, runs it after an import).
-  'mesh.intake': on(2, [M('mesh', 'Clean up')], { ...MAKE, plain: 'Clean up a generated model' }),
-  'mesh.reduce': on(2, [M('mesh', 'Clean up')], { ...MAKE, plain: 'Fewer triangles' }),
-  'mesh.normalize': on(2, [M('mesh', 'Transform')], { ...MAKE, plain: 'Stand up and face front' }),
-  'mesh.paletteBake': on(2, [M('mesh', 'Colour & surface')], { ...MAKE, plain: 'Flat colours from the texture' }),
-  'mesh.textureDownsize': on(2, [M('mesh', 'Colour & surface')], { ...MAKE, plain: 'Smaller textures' }),
+  'mesh.cleanup': on(1, [T('make'), M('mesh', 'Clean up'), S('health', 'checks')], MAKE),
+  // M7 G-a (MODELING-PLAN §7.2; DECISIONS M7-GA-CONTRACT-6): the AI intake operators. G-a put them in More; T8's Make
+  // stage gives them the tray (Clean up ▾: the intake with its budgets, Reduce, Stand up, Colours, Textures) and the
+  // part's Halo (Reduce ▾ with its budgets) (P-T8-1, ST-T8-12).
+  'mesh.intake': on(1, [T('make'), M('mesh', 'Clean up')], { ...MAKE, plain: 'Clean up a generated model' }),
+  'mesh.reduce': on(1, [P('mesh'), T('make'), M('mesh', 'Clean up')], { ...MAKE, plain: 'Fewer triangles' }),
+  'mesh.normalize': on(1, [T('make'), M('mesh', 'Transform')], { ...MAKE, plain: 'Stand up and face front' }),
+  'mesh.paletteBake': on(1, [T('make'), M('mesh', 'Colour & surface')], {
+    ...MAKE,
+    plain: 'Flat colours from the texture',
+  }),
+  'mesh.textureDownsize': on(1, [T('make'), M('mesh', 'Colour & surface')], { ...MAKE, plain: 'Smaller textures' }),
   'mesh.combine': on(2, [M('mesh', 'Object')], MAKE),
-  'mesh.separate': on(2, [M('mesh', 'Object')], MAKE),
-  'mesh.extract': on(2, [M('faces', 'Shape')], MAKE),
+  'mesh.separate': on(1, [P('mesh'), M('mesh', 'Object'), T('make')], MAKE),
+  'mesh.extract': on(1, [P('faces'), M('faces', 'Shape')], { ...MAKE, plain: 'Separate' }),
   'mesh.duplicateFaces': on(2, [M('faces', 'Shape')], { ...MAKE, plain: 'Duplicate face' }),
   'mesh.create.cube': on(1, [P('empty'), T('make')], MAKE),
   'mesh.create.sphere': on(1, [P('empty'), T('make')], MAKE),
@@ -468,7 +472,7 @@ export const DISCLOSURE: Readonly<Record<string, ManifestEntry>> = {
   'mesh.create.cone': on(1, [P('empty'), T('make')], MAKE),
   'mesh.create.plane': on(1, [P('empty'), T('make')], MAKE),
   'mesh.create.torus': on(1, [P('empty'), T('make')], MAKE),
-  'mesh.create.template': on(1, [P('empty'), C('home')], MAKE),
+  'mesh.create.template': on(1, [P('empty'), C('home'), T('make')], MAKE),
   'mesh.primitive.set': on(0, [C('echoChips'), S('numbers', 'shapeInputs')], MAKE),
   'mesh.makeEditable': on(1, [P('mesh'), M('character', 'Rig')], { stages: ['make', 'paint', 'rig'] }),
   'mesh.setAttributes': on(2, [S('numbers', 'mesh')], MAKE),
@@ -488,13 +492,15 @@ export const DISCLOSURE: Readonly<Record<string, ManifestEntry>> = {
     plain: 'Parent to…',
   }),
   'scene.unparent': on(2, [M('mesh', 'Object'), S('scene', 'reparent')], MAKE),
-  'scene.duplicate': on(1, [P('mesh')], MAKE),
-  'scene.delete': on(2, [M('mesh', 'Object')], MAKE),
+  'scene.duplicate': on(2, [M('mesh', 'Object')], MAKE),
+  'scene.delete': on(1, [P('mesh'), M('mesh', 'Object')], MAKE),
   'scene.rename': on(1, [C('breadcrumb'), S('numbers', 'mesh'), S('scene', 'objects')], MAKE),
   'imagePlane.import': on(1, [P('empty')], { ...MAKE, plain: 'Reference' }),
   'imagePlane.set': on(1, [P('imagePlane'), S('numbers', 'imagePlane'), S('scene', 'references')], MAKE),
   'imagePlane.delete': on(1, [P('imagePlane'), S('scene', 'references')], MAKE),
   'imagePlane.replace': on(2, [M('imagePlane', 'Image'), S('scene', 'references')], MAKE),
+  // T8: a tap on a reference in the view that shows it (Make's tap hook) or its Scene row
+  'select.imagePlane': on(0, [C('canvas'), S('scene', 'references')], { ...MAKE, plain: 'Select a reference' }),
 
   // ===== Paint (§13.1, §15.4) =====
   'mesh.paint': on(1, [P('faces'), T('paint')], { stages: ['make', 'paint'], ...HANDS, plain: 'Colour' }),

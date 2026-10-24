@@ -59,6 +59,7 @@ export function defaultModelSession(): ModelSessionState {
     capture: { armed: null, field: null, text: null },
     lastTool: null,
     activeSwatch: null,
+    imagePlane: null,
     tweakHandle: null,
   };
 }

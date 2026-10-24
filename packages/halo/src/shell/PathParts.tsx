@@ -26,7 +26,11 @@ export function FramePath({
       stage={stage}
       readiness={r}
       bar={bar}
-      onStage={(next) => void controller.enterStage(next)}
+      onStage={(next) => {
+        // one touch of the journeys' counter (AS-ST-4: J6 "Path › Paint (1)"; T8)
+        store.set((ui) => ({ touches: ui.touches + 1 }));
+        void controller.enterStage(next);
+      }}
       onProblems={(at) => store.set({ sheet: 'health', sheetArgs: { section: at }, sheetNoun: null, halo: null })}
     />
   );

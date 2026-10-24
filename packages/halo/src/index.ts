@@ -16,3 +16,5 @@ export { HALO_SHELL_MARKER } from './shell/Frame';
 export { HaloShell } from './shell/HaloShell';
 export { HALO_SESSION_KEY } from './shell/mirror';
 export { HALO_STAGES, stageOfWorkspace, workspaceOfStage } from './shell/stage';
+// T8 (ADR 0017 §2): `/app`'s entry hands over the build's generation gateway URL (Create with AI's availability)
+export { setGenerationGateway } from './stages/make/ai/availability';

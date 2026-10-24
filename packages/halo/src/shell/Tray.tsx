@@ -1,16 +1,17 @@
 // The tray (STUDIO-TOUCH-SPEC §4.1, §7.1): empty space is a noun too, and the tray is its Halo, docked — the stage's
 // tools and state chips, with `⋯` pinned last so it never scrolls away. The stage packages own the real trays
-// (`stages/*/Tray.tsx`, T7–T9: component pill toggles, swatches, the rig segment, the Thread); until they mount, the
-// grammar docks empty space's verbs here, and Make keeps its component pill (Whole · Points · Edges · Faces).
+// (`stages/*/Tray.tsx` through `./stageParts`: T8 Make and Paint, T7 the Thread, T9 the rig segment); a stage without
+// one, or while its chunk loads, gets the stand-in below — empty space's verbs docked, and Make's component pill.
 import type { ComponentMode } from '@ekza-studio/editor-core';
 import { Cluster, Segmented, VerbBar, type VerbItem } from '@ekza-studio/ui/touch';
-import type { JSX } from 'react';
+import { type JSX, Suspense } from 'react';
 import { Icon } from '../halo/icons';
 import { pollVerb, spaceNoun } from '../halo/verbSource';
 import { en } from '../i18n/en';
 import { EMPTY_NOUN } from '../verbs/nouns';
 import type { HaloController } from './controller';
 import { useDocumentVersion, useSessionValue } from './hooks';
+import { STAGE_TRAYS } from './stageParts';
 import { useHaloStore } from './store';
 
 const PICK_MODES: readonly { readonly value: ComponentMode; readonly label: string }[] = [
@@ -21,6 +22,23 @@ const PICK_MODES: readonly { readonly value: ComponentMode; readonly label: stri
 ];
 
 export function Tray({
+  controller,
+  compact,
+}: {
+  readonly controller: HaloController;
+  readonly compact: boolean;
+}): JSX.Element {
+  const stage = useHaloStore(controller.ctx.store, (s) => s.stage);
+  const Own = STAGE_TRAYS[stage];
+  if (Own === undefined) return <StandInTray controller={controller} compact={compact} />;
+  return (
+    <Suspense key={stage} fallback={<StandInTray controller={controller} compact={compact} />}>
+      <Own controller={controller} compact={compact} />
+    </Suspense>
+  );
+}
+
+function StandInTray({
   controller,
   compact,
 }: {

@@ -33,7 +33,8 @@ describe('More (§6.3)', () => {
     const rings = moreGroups(app, 'mesh', 'make')
       .flatMap((g) => g.rows)
       .filter((row) => row.op === 'view.tool');
-    expect(rings.map((row) => row.plain)).toEqual(['Move ring', 'Turn ring', 'Scale ring']);
+    // T8: the mesh's *Move* petal runs the Move ring (first, on the Halo); Turn and Scale stay More rows
+    expect(rings.map((row) => row.plain)).toEqual(['Move', 'Turn ring', 'Scale ring']);
     expect(rings.map((row) => (row.args as { tool: string }).tool)).toEqual(['move', 'rotate', 'scale']);
   });
 

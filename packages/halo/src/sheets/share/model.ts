@@ -298,7 +298,14 @@ export function destinationChoice(
         profile: SPACE_PROFILE,
       });
     case 'engine':
-      if (record === null) return none(destination, words.noCharacter, { stage: 'rig' });
+      if (record === null) {
+        // T8 (§9 J6 "Game engine › Export Cube Lad.glb"): a model made in Make without a character is one GLB of the
+        // scene's meshes, Pro's Static section request through `local/generic` (More formats › Static model)
+        const args = proStaticExport(app, GENERIC_PROFILE, options);
+        return args === null
+          ? none(destination, words.noCharacter, { stage: 'rig' })
+          : call(destination, { op: 'file.exportModel', args, format: 'GLB (static)', profile: GENERIC_PROFILE });
+      }
       if (subject.kind === 'vrm' || subject.kind === 'vrm0') {
         return none(destination, words.isVrm(record.name), { destination: 'omoba' });
       }

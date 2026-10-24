@@ -7,7 +7,7 @@ import type { StoreApi } from 'zustand/vanilla';
 import type { AnimCurve, CompiledAnimCurve, Disposer, Frame, Handle, ParamDef, ParamValues, Quat, TangentType,
   Vec3 } from '@ekza-studio/anim-core';
 import type { AnyChange, AssetId, AssetRecord, CameraId, ChangeBatch, ChannelId, ChannelValues, CharacterId, ClipId, ConstraintId,
-  ControlId, CurveId, DocumentStore, GroupId, JointId, KeyId, MeshId, MeshRef, SkeletonId, Tx, UndoResult,
+  ControlId, CurveId, DocumentStore, GroupId, ImagePlaneId, JointId, KeyId, MeshId, MeshRef, SkeletonId, Tx, UndoResult,
   UserId } from '@ekza-studio/doc';
 import type { ComponentKind, ComponentSelection, DirtySet, EditMesh, ElementRemap, FalloffCurve, HiddenSet, MeshData,
   MeshOp, MeshSetOp, Normals, OpFrame, OpResult, OpWarning, Refusal, SymmetryAxis, SymmetryMap,
@@ -1063,6 +1063,9 @@ export interface ModelSessionState {
   readonly capture: NumericCaptureState;
   readonly lastTool: ToolId | null;                      // Y
   readonly activeSwatch: string | null;                  // SwatchId (Palette panel, Paint Colour)
+  /** STUDIO-TOUCH-SPEC §6.2 "Image plane" (Halo T8): the reference image plane a canvas tap or a Scene row selected
+   *  (`select.imagePlane`, U state); a scene-object pick clears it. Absent reads as none. */
+  readonly imagePlane?: ImagePlaneId | null;
   readonly tweakHandle: ManipHandle | null;              // last-picked handle of the W/E/R tool (MMB rule, §5.15)
 }
 

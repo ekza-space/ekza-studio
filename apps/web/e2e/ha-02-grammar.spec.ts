@@ -202,7 +202,8 @@ test.describe('ha-02: touch grammar', () => {
     await fingerTap(page, on);
     await expect.poll(async () => (await halo(page)).noun?.kind).toBe('mesh');
     await expect(haloMenu(page)).toBeVisible();
-    await expect(petal(page, 'Duplicate')).toBeVisible();
+    // T8: a part's Halo is the clean-up one (Move · Separate · Delete · Reduce ▾ · Rig it, ST-T8-4)
+    await expect(petal(page, 'Separate')).toBeVisible();
     expect((await grammar(page))['halo']).toEqual({ mode: 'arc', reduced: false });
   });
   test('verb → target: Parent to… (More) waits for a tap on the target, then parents the subject (§6.4)', async ({

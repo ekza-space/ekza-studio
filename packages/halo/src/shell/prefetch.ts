@@ -4,6 +4,7 @@
 // sheets (`prefetchSheets`, P-T6B-2).
 import { type EditorApp, loadUiWrappers } from '@ekza-studio/editor-core';
 import { prefetchSheets } from '../manifest/sheetLoaders';
+import { prefetchStageParts } from './stageParts';
 
 /** Every lazy chunk of the shell (each loader is idempotent: the module cache keeps it). */
 export const LAZY_CHUNKS: readonly (() => Promise<unknown>)[] = [
@@ -26,6 +27,7 @@ export function prefetchLazyChunks(app: EditorApp): () => void {
     if (cancelled) return;
     for (const load of LAZY_CHUNKS) void load().catch(() => {});
     void prefetchSheets();
+    void prefetchStageParts();
     void loadUiWrappers(app).catch(() => {});
   };
   const idle = (window as unknown as { requestIdleCallback?: Idle }).requestIdleCallback;

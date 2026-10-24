@@ -477,12 +477,15 @@ function planeRow(ctx: Ctx, plane: ImagePlaneRecord): SceneRow {
     depth: 0,
     expandable: false,
     expanded: false,
-    selected: false,
+    selected: (ctx.app.session.getState().model.imagePlane ?? null) === plane.id,
     active: false,
     hidden: !plane.visible,
-    select: null,
+    // T8: a tap selects the plane (`select.imagePlane`), and its Halo opens as for a tap on the canvas
+    select: action(ctx.app, 'select', 'Select', 'Select Image Plane', [
+      { op: 'select.imagePlane', args: { id: plane.id } },
+    ]),
     eye,
-    // T6-INT: the canvas cannot select a plane yet (P-T6B-7), so its row carries Delete as well
+    // T6-INT: the row also carries Delete (the plane's Halo has it too since T8)
     menu: [
       eye,
       lock,
