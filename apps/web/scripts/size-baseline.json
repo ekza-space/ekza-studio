@@ -38,12 +38,13 @@
       "gate": 5000000,
       "target": 660000,
       "enforce": true,
-      "total": null,
-      "gateDecision": "owner, 2026-10-24 (DECISIONS-OPEN SIZE-1, closes OQ-3): one 5,000,000 B gate on every route, enforced now; T12 records the merged measure",
+      "total": 736801,
+      "gateDecision": "owner, 2026-10-24 (DECISIONS-OPEN SIZE-1, closes OQ-3): one 5,000,000 B gate on every route, enforced; T12 recorded the merged measure (ST-INT-10)",
       "placeholder": {
         "total": 635275,
         "recorded": "2026-10-24, T2 (halo/t2-contracts on dev d5d123c3): the empty Halo shell over the shared host, production build; docs/wp-notes/halo-t2.md"
-      }
+      },
+      "recorded": "2026-10-25, T12 at the release gate (halo/t12-release over dev b4bcf546: T0–T11, M7 G-a…G-e, C1/C2): production build, gzip -9, first visit; dev b4bcf546 measured 735,842 B the same way (+959 B: the top bar's live AI line, the grammar's session-bar inset, the entry flag's writes). docs/wp-notes/halo-t12.md, DECISIONS-OPEN ST-INT-10"
     }
   },
   "previous": {
