@@ -451,6 +451,17 @@ export const DISCLOSURE: Readonly<Record<string, ManifestEntry>> = {
   'mesh.uv.box': on(2, [M('mesh', 'UV'), M('faces', 'Colour & surface')], MAKE),
   'mesh.uv.cylindrical': on(2, [M('mesh', 'UV'), M('faces', 'Colour & surface')], MAKE),
   'mesh.cleanup': on(1, [T('make'), M('mesh', 'Clean up'), S('health', 'checks')], MAKE),
+  // M7 G-a (MODELING-PLAN §7.2; DECISIONS M7-GA-CONTRACT-6): the AI intake operators. G-a put them in More; T8's Make
+  // stage gives them the tray (Clean up ▾: the intake with its budgets, Reduce, Stand up, Colours, Textures) and the
+  // part's Halo (Reduce ▾ with its budgets) (P-T8-1, ST-T8-12).
+  'mesh.intake': on(1, [T('make'), M('mesh', 'Clean up')], { ...MAKE, plain: 'Clean up a generated model' }),
+  'mesh.reduce': on(1, [P('mesh'), T('make'), M('mesh', 'Clean up')], { ...MAKE, plain: 'Fewer triangles' }),
+  'mesh.normalize': on(1, [T('make'), M('mesh', 'Transform')], { ...MAKE, plain: 'Stand up and face front' }),
+  'mesh.paletteBake': on(1, [T('make'), M('mesh', 'Colour & surface')], {
+    ...MAKE,
+    plain: 'Flat colours from the texture',
+  }),
+  'mesh.textureDownsize': on(1, [T('make'), M('mesh', 'Colour & surface')], { ...MAKE, plain: 'Smaller textures' }),
   'mesh.combine': on(2, [M('mesh', 'Object')], MAKE),
   'mesh.separate': on(1, [P('mesh'), M('mesh', 'Object'), T('make')], MAKE),
   'mesh.extract': on(1, [P('faces'), M('faces', 'Shape')], { ...MAKE, plain: 'Separate' }),
