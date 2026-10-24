@@ -46,14 +46,13 @@ export default function CreateWithAiSheet({ ctx }: HaloSheetProps): JSX.Element 
       }
     >
       {connected ? null : (
-        <p
+        <output
           id="halo-ai-status"
-          role="status"
           data-testid="halo-ai-status"
-          className="m-0 rounded-touch border border-line px-3 py-2 text-touch-label text-fg-2"
+          className="block rounded-touch border border-line px-3 py-2 text-touch-label text-fg-2"
         >
           {w.notConnected} {w.notConnectedDetail}
-        </p>
+        </output>
       )}
       <SheetGroup>{w.prompt}</SheetGroup>
       <textarea

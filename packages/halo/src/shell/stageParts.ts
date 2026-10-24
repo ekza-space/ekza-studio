@@ -53,32 +53,21 @@ export const STAGE_SHEETS: Readonly<Record<string, () => Promise<SheetModule>>> 
 };
 
 const Nothing = (): null => null;
-const trays = new Map<HaloStage, ComponentType<StageTrayProps>>();
-const layers = new Map<HaloStage, ComponentType<StageLayerProps>>();
 
-/** The stage's own tray (lazy), or null: the stand-in tray stays. */
-export function stageTray(stage: HaloStage): ComponentType<StageTrayProps> | null {
-  const load = STAGE_MODULES[stage];
-  if (load === undefined) return null;
-  let tray = trays.get(stage);
-  if (tray === undefined) {
-    tray = lazy(() => load().then((module) => ({ default: module.Tray ?? Nothing })));
-    trays.set(stage, tray);
-  }
-  return tray;
-}
+/** The stages' trays and canvas layers, made once at module load (lazy: nothing loads until one renders). */
+export const STAGE_TRAYS: Readonly<Partial<Record<HaloStage, ComponentType<StageTrayProps>>>> = Object.fromEntries(
+  Object.entries(STAGE_MODULES).map(([stage, load]) => [
+    stage,
+    lazy(() => load().then((module) => ({ default: module.Tray ?? Nothing }))),
+  ]),
+);
 
-/** The stage's canvas layer (lazy), or null. */
-export function stageLayer(stage: HaloStage): ComponentType<StageLayerProps> | null {
-  const load = STAGE_MODULES[stage];
-  if (load === undefined) return null;
-  let layer = layers.get(stage);
-  if (layer === undefined) {
-    layer = lazy(() => load().then((module) => ({ default: module.Layer ?? Nothing })));
-    layers.set(stage, layer);
-  }
-  return layer;
-}
+export const STAGE_LAYERS: Readonly<Partial<Record<HaloStage, ComponentType<StageLayerProps>>>> = Object.fromEntries(
+  Object.entries(STAGE_MODULES).map(([stage, load]) => [
+    stage,
+    lazy(() => load().then((module) => ({ default: module.Layer ?? Nothing }))),
+  ]),
+);
 
 /**
  * Installs every stage module and registers the stage packages' sheets (the controller's start); the disposer

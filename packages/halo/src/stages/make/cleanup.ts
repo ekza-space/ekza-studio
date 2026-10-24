@@ -6,7 +6,7 @@
 // `mesh.paletteBake {colours = 16, meshes?}` and `mesh.textureDownsize {size = 1024, meshes?}`; without `meshes` they
 // act on the selected mesh objects — beside the existing `mesh.cleanup`, `mesh.mergeByDistance` and `mesh.separate`. Halo never stubs them: until G-a registers them they show greyed with the reason (*Not in this build
 // yet*); once they are live their own polls apply (ST-T8-12).
-import type { EditorApp, OperatorId } from '@ekza-studio/editor-core';
+import type { EditorApp } from '@ekza-studio/editor-core';
 
 /** G-a's operator ids (MODELING-PLAN §7.2), not in `OperatorMap` until G-a lands. */
 export const GA_OPS = {
@@ -43,4 +43,4 @@ export const PALETTE_BAKE_ARGS = { colours: 16 } as const;
 export const TEXTURE_ARGS = { size: 1024 } as const;
 
 /** True when the operator is registered in this build. */
-export const isLive = (app: EditorApp, op: string): boolean => app.operators.get(op as OperatorId) !== undefined;
+export const isLive = (app: EditorApp, op: string): boolean => app.operators.get(op) !== undefined;

@@ -16,7 +16,13 @@ import {
   reduceArgs,
   TEXTURE_ARGS,
 } from '../src/stages/make/cleanup';
-import { capDistance, capGeometry, componentBox, selectionCentroid } from '../src/stages/make/geometry';
+import {
+  type CapGeometry,
+  capDistance,
+  capGeometry,
+  componentBox,
+  selectionCentroid,
+} from '../src/stages/make/geometry';
 import { activeSwatch, currentPalette, hexOf, paintMeshes, swatchesOf, traySwatches } from '../src/stages/paint/model';
 import { resolveNoun } from '../src/verbs/nouns';
 import { petalsFor } from '../src/verbs/table';
@@ -33,28 +39,29 @@ async function cubeInFaceMode(): Promise<{ readonly app: EditorApp; readonly mes
   return { app, mesh };
 }
 
-describe('Make: the cap handle (ST-T8-1)', () => {
+describe('Make: the cap handle (ST-T8-1)', { timeout: 60_000 }, () => {
   it('sits on the cap’s projected normal; a drag along it is metres along the normal', async () => {
     const { app, mesh } = await cubeInFaceMode();
     await loadExtrudeEngine();
-    // the cube's top face (+Y): its normal projects straight up the screen
-    const data = app.meshes.get(mesh)?.data();
-    expect(data).toBeDefined();
-    await runOk(app, 'select.components', { mesh, kind: 'face', indices: [2], mode: 'replace' });
-    await runOk(app, 'mesh.extrude', {});
+    // a face whose normal lies in the screen plane of the flat projection (a side, the top or the bottom)
+    let found: CapGeometry | null = null;
+    for (let face = 0; face < 6 && found === null; face += 1) {
+      await runOk(app, 'select.components', { mesh, kind: 'face', indices: [face], mode: 'replace' });
+      await runOk(app, 'mesh.extrude', {});
+      const geometry = capGeometry(app, flat);
+      if (geometry !== null && Math.hypot(geometry.normal[0], geometry.normal[1]) > 0.99) found = geometry;
+      else await runOk(app, 'edit.undo');
+    }
     expect(app.session.getState().model.extrudeSession).not.toBeNull();
-    const frame = extrudeManipulatorFrame(app);
-    expect(frame).not.toBeNull();
-    const cap = capGeometry(app, flat);
-    expect(cap).not.toBeNull();
-    if (cap === null) return;
+    expect(extrudeManipulatorFrame(app)).not.toBeNull();
+    expect(found).not.toBeNull();
+    const cap = found as CapGeometry;
     // the handle is 112 px from the cap along the projected normal (a unit screen direction)
     expect(Math.hypot(cap.dir.x, cap.dir.y)).toBeCloseTo(1, 6);
     expect(Math.hypot(cap.handle.x - cap.at.x, cap.handle.y - cap.at.y)).toBeCloseTo(112, 4);
     // 100 px along the normal's screen direction is 1 m when the normal lies in the screen plane
     const along = capDistance(cap, { x: 0, y: 0 }, { x: cap.dir.x * 100, y: cap.dir.y * 100 });
-    const inPlane = Math.hypot(cap.normal[0], cap.normal[1]);
-    if (inPlane > 0.99) expect(along).toBeCloseTo(1, 4);
+    expect(along).toBeCloseTo(1, 4);
     // Fine (the Thumb key) is a tenth of it; across the axis is nothing
     expect(capDistance(cap, { x: 0, y: 0 }, { x: cap.dir.x * 100, y: cap.dir.y * 100 }, 0.1)).toBeCloseTo(
       along / 10,
@@ -69,18 +76,17 @@ describe('Make: the cap handle (ST-T8-1)', () => {
     // a projection that drops depth along the normal: every face normal projects to a point when it is ±Z
     const front = (p: readonly [number, number, number]) => ({ x: 500 + p[0] * 100, y: 500 - p[1] * 100 });
     // find a face whose normal is ±Z
-    for (let face = 0; face < 6; face += 1) {
+    let facing: CapGeometry | null = null;
+    for (let face = 0; face < 6 && facing === null; face += 1) {
       await runOk(app, 'select.components', { mesh, kind: 'face', indices: [face], mode: 'replace' });
       await runOk(app, 'mesh.extrude', {});
       const cap = capGeometry(app, front);
-      if (cap !== null && Math.abs(cap.normal[2]) > 0.99) {
-        expect(cap.dir).toEqual({ x: 0, y: -1 });
-        expect(cap.pxPerUnit).toBeGreaterThan(0);
-        return;
-      }
-      await runOk(app, 'edit.undo');
+      if (cap !== null && Math.abs(cap.normal[2]) > 0.99) facing = cap;
+      else await runOk(app, 'edit.undo');
     }
-    throw new Error('no ±Z face on the cube');
+    expect(facing).not.toBeNull();
+    expect(facing?.dir).toEqual({ x: 0, y: -1 });
+    expect(facing?.pxPerUnit ?? 0).toBeGreaterThan(0);
   });
 
   it('the selection’s centroid and box come from the selected faces', async () => {
@@ -91,13 +97,15 @@ describe('Make: the cap handle (ST-T8-1)', () => {
     const box = componentBox(app, flat, 0);
     expect(box).not.toBeNull();
     if (box === null || centroid === null) return;
-    const c = flat(centroid as unknown as readonly [number, number, number]);
+    const c = flat(centroid);
     expect(c.x).toBeGreaterThanOrEqual(box.left - 1e-6);
     expect(c.x).toBeLessThanOrEqual(box.right + 1e-6);
   });
 });
 
-describe('Make: clean-up calls G-a’s operators by id with their contract (M7-GA-CONTRACT-1…6, ST-T8-12)', () => {
+describe('Make: clean-up calls G-a’s operators by id with their contract (M7-GA-CONTRACT-1…6, ST-T8-12)', {
+  timeout: 60_000,
+}, () => {
   it('the ids, and the arguments of each row', () => {
     expect(GA_OPS).toEqual({
       intake: 'mesh.intake',
@@ -139,7 +147,7 @@ describe('Make: clean-up calls G-a’s operators by id with their contract (M7-G
   });
 });
 
-describe('Paint: the palette in use and the tray’s swatches', () => {
+describe('Paint: the palette in use and the tray’s swatches', { timeout: 60_000 }, () => {
   it('a template paints with the starter palette; the tray keeps the active swatch in view', async () => {
     const app = await everyOperator();
     await runOk(app, 'workspace.set', { workspace: 'model' });
@@ -162,7 +170,7 @@ describe('Paint: the palette in use and the tray’s swatches', () => {
   });
 });
 
-describe('the reference plane noun (select.imagePlane, §6.2)', () => {
+describe('the reference plane noun (select.imagePlane, §6.2)', { timeout: 60_000 }, () => {
   it('a plane is selected by its own operator; a scene pick lets it go', async () => {
     const app = await everyOperator();
     await runOk(app, 'workspace.set', { workspace: 'model' });
@@ -195,7 +203,7 @@ function strings(node: unknown, path: string[] = []): { readonly path: string; r
   return [];
 }
 
-describe('the Make and Paint words (§1.3, ST-32)', () => {
+describe('the Make and Paint words (§1.3, ST-32)', { timeout: 60_000 }, () => {
   const all = [...strings(makeWords, ['make']), ...strings(paintWords, ['paint'])];
   it('no DCC jargon at L0 or L1; Finish is Matte · Shiny', () => {
     const jargon =

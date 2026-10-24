@@ -140,7 +140,7 @@ export const VERB_TABLE: Readonly<Record<NounKind, readonly PetalDef[]>> = {
     { id: 'separate', plain: 'Separate', op: 'mesh.separate', stages: ['make'], icon: 'scissors' },
     { id: 'delete', plain: 'Delete', op: 'scene.delete', stages: ['make'], icon: 'trash' },
     // G-a's operator (MODELING-PLAN §7.2); its budgets are the binding's ▾ choices (`stages/make/install.ts`)
-    { id: 'reduce', plain: 'Reduce', op: 'mesh.reduce' as OperatorId, stages: ['make'], icon: 'minimize' },
+    { id: 'reduce', plain: 'Reduce', op: 'mesh.reduce', stages: ['make'], icon: 'minimize' },
     { id: 'rigIt', plain: 'Rig it', go: { stage: 'rig' }, stages: ['make'], icon: 'bone' },
     { id: 'makeCharacter', plain: 'Make a character', op: 'char.fromModel', stages: ['rig'], icon: 'person-standing' },
     { id: 'checks', plain: 'Checks', go: { sheet: 'health' }, stages: ['rig'], icon: 'stethoscope' },

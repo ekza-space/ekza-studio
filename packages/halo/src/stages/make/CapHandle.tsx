@@ -66,6 +66,8 @@ export function CapHandle({ ctx }: { readonly ctx: ShellContext }): JSX.Element 
   const breathing = useHaloStore(ctx.store, (s) => s.breathing);
   const drag = useRef<Drag | null>(null);
   const [dragging, setDragging] = useState(false);
+  /** The cap at the drag's start, shown while a Smart drag has ended the session it started from. */
+  const [held, setHeld] = useState<CapGeometry | null>(null);
   // the cap follows the camera and the drag: measured every frame while a session is open
   const live = useProjected(
     session !== null,
@@ -74,8 +76,7 @@ export function CapHandle({ ctx }: { readonly ctx: ShellContext }): JSX.Element 
   );
   useEffect(() => () => drag.current?.gesture?.cancel(), []);
   // a Smart drag ends the open session as it starts (§5.8): the handle stays under the finger until it lifts
-  const held = dragging ? (drag.current?.cap ?? null) : null;
-  const shown = (session === null ? null : live) ?? held;
+  const shown = (session === null ? null : live) ?? (dragging ? held : null);
   if (shown === null || (breathing && !dragging)) return null;
   const cap = shown;
   const angle = (Math.atan2(cap.dir.y, cap.dir.x) * 180) / Math.PI + 90;
@@ -84,6 +85,7 @@ export function CapHandle({ ctx }: { readonly ctx: ShellContext }): JSX.Element 
     const d = drag.current;
     drag.current = null;
     setDragging(false);
+    setHeld(null);
     ctx.store.set({ breathing: false });
     if (d === null) return;
     if (commit && d.moved) d.gesture?.commit();
@@ -146,6 +148,7 @@ export function CapHandle({ ctx }: { readonly ctx: ShellContext }): JSX.Element 
             d.moved = true;
             d.gesture = begin(ctx.app, d.smart);
             setDragging(true);
+            setHeld(d.cap);
             ctx.store.set({ breathing: true });
           }
           const distance = capDistance(d.cap, d.start, at, d.speed);

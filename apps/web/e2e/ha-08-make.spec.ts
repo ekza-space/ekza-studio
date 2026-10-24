@@ -13,10 +13,6 @@ import { fingerDrag, fingerTap } from './helpers/touch';
 // *Create with AI* says plainly that generation is not connected. On `webkit-ipad` (compatibility only): Make boots
 // with its tray and the sheet opens by touch.
 
-/** A 1 × 1 PNG (a reference image's bytes). */
-const PNG_HEX =
-  '89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8ffff3f0005fe02fe0dc7d6e10000000049454e44ae426082';
-
 const touchOnly = (info: TestInfo): void => test.skip(info.project.name !== 'chrome-touch', 'chrome-touch only (CDP)');
 
 async function tapId(page: Page, testId: string): Promise<void> {

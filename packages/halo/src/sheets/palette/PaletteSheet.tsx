@@ -166,9 +166,8 @@ export default function PaletteSheet({ ctx }: HaloSheetProps): JSX.Element {
             </div>
           ) : null}
           <SheetGroup>{t.swatches}</SheetGroup>
-          <div
-            className="flex flex-wrap gap-2 px-1"
-            role="group"
+          <fieldset
+            className="m-0 flex flex-wrap gap-2 border-0 px-1 py-0"
             aria-label={t.swatches}
             data-testid="halo-palette-swatches"
           >
@@ -190,7 +189,7 @@ export default function PaletteSheet({ ctx }: HaloSheetProps): JSX.Element {
             >
               {t.addSwatch}
             </TouchButton>
-          </div>
+          </fieldset>
           <SheetGroup>{w.palettes}</SheetGroup>
           <div className="flex flex-col gap-2 px-1">
             {palettes.length > 1 ? (

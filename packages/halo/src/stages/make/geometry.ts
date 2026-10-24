@@ -42,9 +42,9 @@ export function capGeometry(app: EditorApp, project: Project, offsetPx = CAP_HAN
   const length = norm(raw);
   if (!(length > 1e-9)) return null;
   const normal = scale(raw, 1 / length);
-  const at = project(frame.pivot as unknown as readonly [number, number, number]);
+  const at = project(frame.pivot);
   if (at === null) return null;
-  const tip = project(add(frame.pivot, scale(normal, PROBE)) as unknown as readonly [number, number, number]);
+  const tip = project(add(frame.pivot, scale(normal, PROBE)));
   let dir: Point = { x: 0, y: -1 };
   let pxPerUnit = 0;
   if (tip !== null) {
@@ -60,10 +60,7 @@ export function capGeometry(app: EditorApp, project: Project, offsetPx = CAP_HAN
     // the normal faces the camera: drag up to pull, at the cap's own screen scale (a cap axis, never the normal)
     const side = frame.scaleAxes[0];
     const sideLength = norm(side);
-    const across =
-      sideLength > 1e-9
-        ? project(add(frame.pivot, scale(side, PROBE / sideLength)) as unknown as readonly [number, number, number])
-        : null;
+    const across = sideLength > 1e-9 ? project(add(frame.pivot, scale(side, PROBE / sideLength))) : null;
     pxPerUnit = across === null ? 1000 : Math.max(Math.hypot(across.x - at.x, across.y - at.y) / PROBE, 1);
   }
   return {
@@ -191,7 +188,7 @@ export function componentBox(
   let box: { left: number; top: number; right: number; bottom: number } | null = null;
   for (const mesh of app.session.getState().model.hilite) {
     for (const p of selectedPoints(app, mesh)) {
-      const s = project(p as unknown as readonly [number, number, number]);
+      const s = project(p);
       if (s === null) continue;
       box =
         box === null

@@ -356,12 +356,12 @@ export const haloVerbs: VerbSource = {
   noun: resolveNoun,
   petals(app, noun, stage) {
     const verbs = petalVerbs(app, noun.kind, stage);
-    const bind = bindings.get(noun.kind)?.verb;
-    if (bind === undefined) return verbs;
+    const binding = bindings.get(noun.kind);
+    if (binding?.verb === undefined) return verbs;
     const defs = petalsFor(noun.kind, stage);
     return verbs.map((verb, i) => {
       const def = defs[i];
-      return def === undefined ? verb : bind(app, noun, def, verb, stage);
+      return def === undefined || binding.verb === undefined ? verb : binding.verb(app, noun, def, verb, stage);
     });
   },
   async more(app, noun, stage) {

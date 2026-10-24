@@ -147,7 +147,7 @@ export function ValueHandle({ ctx }: { readonly ctx: ShellContext }): JSX.Elemen
         const rates = ctx.app.prefs.getState().virtualSlider;
         d.raw += (e.clientX - d.lastX) * paramSliderRate(d.run.param, rates) * d.speed;
         d.lastX = e.clientX;
-        d.value = clampParamValue(d.run.param, d.raw).value as number;
+        d.value = clampParamValue(d.run.param, d.raw).value;
         if (d.preview !== null && !d.preview.slow) d.preview.update({ [d.run.param.name]: d.value });
       }}
       onPointerUp={(e) => {

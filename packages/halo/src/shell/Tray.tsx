@@ -11,7 +11,7 @@ import { en } from '../i18n/en';
 import { EMPTY_NOUN } from '../verbs/nouns';
 import type { HaloController } from './controller';
 import { useDocumentVersion, useSessionValue } from './hooks';
-import { stageTray } from './stageParts';
+import { STAGE_TRAYS } from './stageParts';
 import { useHaloStore } from './store';
 
 const PICK_MODES: readonly { readonly value: ComponentMode; readonly label: string }[] = [
@@ -29,8 +29,8 @@ export function Tray({
   readonly compact: boolean;
 }): JSX.Element {
   const stage = useHaloStore(controller.ctx.store, (s) => s.stage);
-  const Own = stageTray(stage);
-  if (Own === null) return <StandInTray controller={controller} compact={compact} />;
+  const Own = STAGE_TRAYS[stage];
+  if (Own === undefined) return <StandInTray controller={controller} compact={compact} />;
   return (
     <Suspense key={stage} fallback={<StandInTray controller={controller} compact={compact} />}>
       <Own controller={controller} compact={compact} />

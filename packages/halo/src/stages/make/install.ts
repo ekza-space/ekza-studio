@@ -49,7 +49,7 @@ function reduceVerb(verb: Verb): Verb {
       (budget): Verb => ({
         id: `${GA_OPS.reduce}:${budget.id}`,
         label: makeWords.ai[budget.id],
-        run: { op: GA_OPS.reduce as never, args: reduceArgs(budget) },
+        run: { op: GA_OPS.reduce, args: reduceArgs(budget) },
       }),
     ),
   };

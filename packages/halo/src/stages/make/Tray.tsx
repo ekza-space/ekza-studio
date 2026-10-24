@@ -5,7 +5,7 @@
 // the character starts), *Create with AI* and the pinned ⋯ (empty space's More). An empty scene shows the bridge to the
 // next step instead (§7.1): *Make a character · Create with AI · Bring a model*. Every control runs an operator; the
 // only state here is which menu is open and *Select area*.
-import type { ComponentMode, OperatorId, ToolId } from '@ekza-studio/editor-core';
+import type { ComponentMode, ToolId } from '@ekza-studio/editor-core';
 import { PANEL, VIEWPORT_TOOL } from '@ekza-studio/editor-core';
 import { Cluster, Segmented } from '@ekza-studio/ui/touch';
 import { type JSX, type RefObject, useRef } from 'react';
@@ -82,7 +82,7 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
   const poll = (op: string, args?: unknown): string | null => {
     if (!isLive(app, op)) return en.verbs.notInBuild;
     try {
-      const result = app.operators.poll(op as OperatorId, { panel: PANEL.viewport, paneId: 'pane-single' }, args);
+      const result = app.operators.poll(op, { panel: PANEL.viewport, paneId: 'pane-single' }, args);
       return result === true ? null : result.reason;
     } catch {
       return null;

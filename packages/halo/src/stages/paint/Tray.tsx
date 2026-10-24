@@ -68,9 +68,6 @@ export function PaintTray({ controller }: StageTrayProps): JSX.Element {
   const focus = useHaloStore(store, (s) => (s.focus?.kind === 'swatch' ? s.focus.id : null));
   const thumb = useHaloStore(store, (s) => s.thumb);
   const pick = useHaloStore(store, (s) => s.thumbPick);
-  const reason = (text: string): void => {
-    ctx.toasts.push({ key: 'reason', text });
-  };
 
   const meshes = paintMeshes(app);
   const shell = (children: JSX.Element | readonly JSX.Element[], empty = false): JSX.Element => (
@@ -124,10 +121,9 @@ export function PaintTray({ controller }: StageTrayProps): JSX.Element {
   };
   return shell(
     <>
-      <div
-        role="group"
+      <fieldset
         aria-label={w.swatches}
-        className="flex min-w-0 shrink items-center gap-1.5 overflow-x-auto px-1"
+        className="m-0 flex min-w-0 shrink items-center gap-1.5 overflow-x-auto border-0 px-1 py-0"
         data-touch-scroll=""
         data-testid="halo-swatches"
       >
@@ -165,7 +161,7 @@ export function PaintTray({ controller }: StageTrayProps): JSX.Element {
             }}
           />
         )}
-      </div>
+      </fieldset>
       {/* `+n` is the palette's door when swatches are left out; the palette chip otherwise */}
       {more > 0 ? null : (
         <TrayChip
