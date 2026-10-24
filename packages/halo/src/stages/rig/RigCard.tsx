@@ -115,21 +115,23 @@ export function RigCard({
       body = (
         <>
           <p className="m-0 text-touch-title font-semibold">{w.dotsTitle}</p>
-          <p className="m-0 text-touch-label text-fg-2">
+          <p className={`m-0 text-touch-label text-fg-2 ${size === 'compact' ? 'hidden' : ''}`}>
             {w.dotsDetail}
             {moved > 0 ? ` ${w.moved(moved)}` : ''}
           </p>
           <div className="flex flex-wrap items-center gap-2">
-            <Segmented<AutoRigFingers>
-              label={w.fingers}
-              data-testid="halo-rig-fingers"
-              value={state.fingers === 'minimal' ? 'mittens' : state.fingers}
-              onValueChange={(fingers) => {
-                rig.touch();
-                void recipe?.fingers(fingers);
-              }}
-              items={FINGERS}
-            />
+            <div className="min-w-0 max-w-full overflow-x-auto" data-touch-scroll="">
+              <Segmented<AutoRigFingers>
+                label={w.fingers}
+                data-testid="halo-rig-fingers"
+                value={state.fingers === 'minimal' ? 'mittens' : state.fingers}
+                onValueChange={(fingers) => {
+                  rig.touch();
+                  void recipe?.fingers(fingers);
+                }}
+                items={FINGERS}
+              />
+            </div>
             <span className="flex-1" />
             <TouchButton
               variant="primary"
@@ -372,19 +374,21 @@ export function RigCard({
         {asksDestination ? (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-fg-2">{w.forLabel}</span>
-            <Segmented<string>
-              label={w.forLabel}
-              data-testid="halo-rig-destination"
-              value={(CARD_DESTINATIONS as readonly string[]).includes(destination) ? destination : 'exploring'}
-              onValueChange={(next) => {
-                rig.touch();
-                void recipe?.destination(next);
-              }}
-              items={CARD_DESTINATIONS.map((id) => ({
-                value: id,
-                label: DESTINATIONS.find((d) => d.id === id)?.name ?? id,
-              }))}
-            />
+            <div className="min-w-0 max-w-full overflow-x-auto" data-touch-scroll="">
+              <Segmented<string>
+                label={w.forLabel}
+                data-testid="halo-rig-destination"
+                value={(CARD_DESTINATIONS as readonly string[]).includes(destination) ? destination : 'exploring'}
+                onValueChange={(next) => {
+                  rig.touch();
+                  void recipe?.destination(next);
+                }}
+                items={CARD_DESTINATIONS.map((id) => ({
+                  value: id,
+                  label: DESTINATIONS.find((d) => d.id === id)?.name ?? id,
+                }))}
+              />
+            </div>
           </div>
         ) : null}
         <div className="flex items-center gap-2">

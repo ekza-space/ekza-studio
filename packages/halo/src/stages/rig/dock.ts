@@ -4,5 +4,8 @@ import type { SizeClass } from '../../shell/hooks';
 
 /** The `bottom` of a card docked above the tray. */
 export function aboveTray(trayHeight: number, size: SizeClass): string {
-  return `calc(var(--touch-inset-bottom) + ${trayHeight + 14 + (size === 'compact' ? 60 : 0)}px)`;
+  // portrait and phones: the card spans the width, so it clears the corner clusters (↶, the Thumb key, the puck) too —
+  // and on phones the Path's tab bar; on Wide the corners sit beside it
+  const corners = size === 'compact' ? 200 : size === 'regular' ? 80 : 0;
+  return `calc(var(--touch-inset-bottom) + ${trayHeight + 14 + corners}px)`;
 }

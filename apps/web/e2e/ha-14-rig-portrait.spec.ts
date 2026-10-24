@@ -109,3 +109,30 @@ function shot(info: { project: { name: string } }, size: string, name: string): 
   const dir = process.env['EKZA_T9_SHOTS'] ?? 'test-results';
   return `${dir}/t9-ha14-${info.project.name}-${size}-${name}.png`;
 }
+
+test.describe('phone (best-effort, OQ-11)', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+  test('ha-14 (phone): the Rig tray and the card fit a Compact container; the dots show one pane', async ({
+    page,
+  }, info) => {
+    test.skip(info.project.name !== 'chrome-touch', 'chrome-touch only (CDP touch)');
+    test.setTimeout(240_000);
+    await openHalo(page);
+    await tapId(page, 'halo-home-sample-more', info);
+    await tapId(page, 'halo-home-sample-cube-lad', info);
+    await expect.poll(async () => (await halo(page)).stage, { timeout: 60_000 }).toBe('rig');
+    await expect(page.getByTestId('halo-shell')).toHaveAttribute('data-size', 'compact');
+    await tapId(page, 'halo-rig-it', info);
+    await expect.poll(async () => (await rig(page)).card.phase, { timeout: 60_000 }).toBe('dots');
+    // every control of the card is on screen (nothing cut at an edge, §4.1)
+    for (const id of ['halo-rig-go', 'halo-rig-adjust', 'halo-rig-card-more']) {
+      const box = await page.getByTestId(id).boundingBox();
+      expect(box, id).not.toBeNull();
+      expect((box?.x ?? -1) >= 0 && (box?.x ?? 0) + (box?.width ?? 0) <= 390, id).toBe(true);
+    }
+    await page.screenshot({ path: shot(info, 'phone', 'card') });
+    await tapId(page, 'halo-rig-adjust', info);
+    await expect.poll(async () => (await rig(page)).dots.panes).toEqual(['pane-front']);
+    await page.screenshot({ path: shot(info, 'phone', 'dots') });
+  });
+});

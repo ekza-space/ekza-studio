@@ -13,10 +13,5 @@
   "targets": {},
   "live": 362,
   "reachable": 342,
-  "items": [
-    "file.saveJson",
-    "key.delete",
-    "key.write",
-    "ui.commandPalette"
-  ]
+  "items": ["file.saveJson", "key.delete", "key.write", "ui.commandPalette"]
 }

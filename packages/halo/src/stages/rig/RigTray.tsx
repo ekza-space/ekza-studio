@@ -425,7 +425,8 @@ export default function RigTray({
           </span>
         ) : null}
         {!nothing && (state.character === null || state.quickRig) ? rigIt(true) : null}
-        {state.character === null && state.asset === null && !nothing ? (
+        {/* §4.1: a Compact tray folds its lower-priority items into ⋯ (More lists where they go) */}
+        {state.character === null && state.asset === null && !nothing && !compact ? (
           <TouchButton
             className="gap-1"
             aria-expanded={menu === 'skeleton'}
@@ -469,7 +470,7 @@ export default function RigTray({
             {w.tray.paintWeights}
           </TouchButton>
         ) : null}
-        {mode === 'skeleton' ? (
+        {mode === 'skeleton' && !compact ? (
           <TouchButton
             className="gap-1"
             aria-expanded={menu === 'joints'}
@@ -480,8 +481,8 @@ export default function RigTray({
             <Icon name="down" size={16} />
           </TouchButton>
         ) : null}
-        {nothing ? null : checks}
-        {state.character !== null && !state.quickRig ? rigIt(false) : null}
+        {nothing || compact ? null : checks}
+        {state.character !== null && !state.quickRig && !compact ? rigIt(false) : null}
         <span className="flex-1" />
         <TouchButton
           variant="ghost"
