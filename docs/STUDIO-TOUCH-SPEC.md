@@ -2490,7 +2490,7 @@ the checkbox *"Ekza Studio path (manifest entry) added or not needed"*.
   - `ROUTE_INITIAL_MARKERS.app = ['ekza-studio-host', 'ekza-halo-shell']`;
   - `size-baseline.json` `routes.app` is an unenforced placeholder at T2 and enforced at T12 (the Auto-Rig D0→D7
     pattern) — as built: the owner's SIZE-1 (2026-10-24) made every route's gate 5,000,000 B, enforced, with the
-    targets and allowances report-only; T12 recorded the merged measure, **736,850 B** (ST-INT-10);
+    targets and allowances report-only; T12 recorded the merged measure, **736,853 B** (ST-INT-10);
   - `apps/web/test/halo-size.test.ts` is modelled on `ar-size.test.ts`, and the route is added to `budgets.bench.ts`.
 - **`/editor` and `/autorig` gain 0 B from the route.** The shared extractions and Pro's lazy *Simple layout* items are
   measured after every merge and recorded in one re-baseline row (**ST-B1**, AR-B1 pattern).

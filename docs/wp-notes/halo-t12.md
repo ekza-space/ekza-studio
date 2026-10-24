@@ -111,12 +111,12 @@ gateway's provider labels where the person picks the service (its terms and data
 
 ## Gate and sizes
 
-`EKZA_E2E_PORT=3192 pnpm run ci` at the branch head (local Chrome; CI is off for this repository): **E2E_RESULT**.
+`EKZA_E2E_PORT=3192 pnpm run ci` at `9e38a973` (local Chrome; CI is off for this repository; later commits are docs only): **green, exit 0**.
 Format, lint (oxlint type-aware), typecheck, check:deps (25 packages), check:fixtures, check:licenses (178 production
 packages), unit tests 24 / 24 turbo tasks four at a time (halo 245, editor-core 1,831, editor 678 + 1 skipped, viewport
 354 + 1 skipped, headless-tests 237, curve-editor 226 + 3 skipped, autorig 115, web 117, …), the production build,
 `check:size`, `check:gen-boundary`, and the e2e suite on `chrome`, `chrome-touch` and `webkit-ipad` with axe:
-E2E_COUNTS (the skips are project-gated: Pro and mouse specs on `chrome` only, CDP touch on `chrome-touch` only,
+**581 passed, 191 skipped, 0 failed, 0 flaky** (the skips are project-gated: Pro and mouse specs on `chrome` only, CDP touch on `chrome-touch` only,
 compatibility-only boots on `webkit-ipad`).
 
 Earlier runs on the branch stopped on what they should: biome format (two files), oxlint (`no-assign-module-variable`
@@ -131,7 +131,7 @@ first-run dialog opened a moment after the shell and took the menu click (the te
 |---|---|---|---|
 | `/editor` | 902,533 B | **902,757 B** | +224 B (the arrival toast, `takeFrom`, the unconditional switch, the press hooks' release) |
 | `/autorig` | 661,174 B | **661,337 B** | +163 B (the host's `takeFrom`; the viewport's `viewState` and `clear*`) |
-| `/app` | 735,842 B | **736,850 B** | +1,008 B (the live AI line, `grammarTop`, the entry writes) — recorded in `size-baseline.json` |
+| `/app` | 735,842 B | **736,853 B** | +1,011 B (the live AI line, `grammarTop`, the entry writes) — recorded in `size-baseline.json` |
 
 `/editor` and `/autorig` load no Halo module (the `ekza-halo-shell` boundary holds). The budgets bench's new `/app`
 route measurement (with the idle prefetch of Halo's lazy chunks) is report-only.
