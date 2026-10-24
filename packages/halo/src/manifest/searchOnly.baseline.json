@@ -1,45 +1,22 @@
 {
   "note": "STUDIO-TOUCH-SPEC §20.5 test 5: the searchOnly ratchet. Regenerate with EKZA_HALO_PARITY_WRITE=1 (ha-parity).",
-  "total": 25,
+  "total": 4,
   "explicit": 4,
-  "pending": 21,
+  "pending": 0,
   "byStage": {
     "make": 0,
     "paint": 0,
-    "rig": 18,
+    "rig": 0,
     "animate": 2,
-    "all": 5
+    "all": 2
   },
-  "targets": {
-    "T9": 4
-  },
-  "live": 358,
-  "reachable": 321,
+  "targets": {},
+  "live": 362,
+  "reachable": 342,
   "items": [
-    "autorig.cancel",
     "file.saveJson",
     "key.delete",
     "key.write",
-    "rig.pose.view",
-    "skel.quickRig.clear",
-    "skel.quickRig.commit",
-    "skel.quickRig.guess",
-    "skel.quickRig.pick",
-    "skel.quickRig.setMarker",
-    "skel.quickRig.setPreset",
-    "skin.influence.hold",
-    "skin.influence.holdAll",
-    "skin.influence.releaseAll",
-    "skin.influence.setActive",
-    "skin.influence.walk",
-    "skin.paint.mirrorToggle",
-    "skin.paint.mode",
-    "skin.testRotate.toggle",
-    "skin.weights.flood",
-    "ui.commandPalette",
-    "view.tool {\"panel\":\"viewport\",\"tool\":[\"jointTool\",\"insertJoint\",\"quickRigMarker\",\"socket\",\"shapeCv\",\"*\"]}",
-    "workspace.showPanel {\"panel\":\"paintWeights\"}",
-    "workspace.showPanel {\"panel\":\"quickRig\"}",
-    "workspace.showPanel {\"panel\":\"rigToolkit\"}"
+    "ui.commandPalette"
   ]
 }
