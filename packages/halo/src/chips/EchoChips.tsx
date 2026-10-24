@@ -89,6 +89,8 @@ export function EchoChips({
   if (last === null || params.length === 0) return null;
   const adjust = (name: string, stored: number | boolean): void => {
     setLive({});
+    // a scrub, a key step or a numpad value: one touch of the journeys' counter (AS-ST-4: J2 "⟨Segments⟩ scrub"; T8)
+    ctx.store.set((ui) => ({ touches: ui.touches + 1 }));
     void ctx.run('edit.adjustLast', { args: { [name]: stored } }).then(() => ctx.store.set({ form: null }));
   };
   // beside the result, never over it: right of the box when there is room, else below it

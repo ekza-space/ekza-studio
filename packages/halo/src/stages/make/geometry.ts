@@ -132,3 +132,77 @@ export function selectionCentroid(app: EditorApp, mesh: MeshId): Vec3 | null {
   }
   return toWorld(app, mesh, [sum[0] / verts.size, sum[1] / verts.size, sum[2] / verts.size]);
 }
+
+/** The world positions of the selected components' points on a mesh (faces' corners, edges' ends, points), capped. */
+export function selectedPoints(app: EditorApp, mesh: MeshId, cap = 4096): Vec3[] {
+  const data = app.meshes.get(mesh)?.data() ?? null;
+  const mode = app.session.getState().model.componentMode;
+  if (data === null || mode === 'object') return [];
+  const verts = new Set<number>();
+  let sel: ReturnType<EditorApp['components']['get']>;
+  try {
+    sel = app.components.get(mesh, mode);
+  } catch {
+    return [];
+  }
+  if (mode === 'face') {
+    const faceCount = data.faceCorner.length;
+    sel.faces.forEach((f) => {
+      if (f < 0 || f >= faceCount || verts.size >= cap) return;
+      const first = data.faceCorner[f] as number;
+      let c = first;
+      let guard = 0;
+      do {
+        verts.add(data.cornerVert[c] as number);
+        c = data.cornerNext[c] as number;
+        guard += 1;
+      } while (c !== first && guard < 4096);
+    });
+  } else if (mode === 'edge') {
+    const edgeCount = data.edgeVerts.length / 2;
+    sel.edges.forEach((e) => {
+      if (e < 0 || e >= edgeCount || verts.size >= cap) return;
+      verts.add(data.edgeVerts[e * 2] as number);
+      verts.add(data.edgeVerts[e * 2 + 1] as number);
+    });
+  } else {
+    sel.verts.forEach((v) => {
+      if (verts.size < cap) verts.add(v);
+    });
+  }
+  const out: Vec3[] = [];
+  for (const v of verts) {
+    const p = toWorld(app, mesh, [
+      data.position[v * 3] as number,
+      data.position[v * 3 + 1] as number,
+      data.position[v * 3 + 2] as number,
+    ]);
+    if (p !== null) out.push(p);
+  }
+  return out;
+}
+
+/** The selected components' box on screen (pane px, padded), or null when none shows. */
+export function componentBox(
+  app: EditorApp,
+  project: Project,
+  pad = 14,
+): { left: number; top: number; right: number; bottom: number } | null {
+  let box: { left: number; top: number; right: number; bottom: number } | null = null;
+  for (const mesh of app.session.getState().model.hilite) {
+    for (const p of selectedPoints(app, mesh)) {
+      const s = project(p as unknown as readonly [number, number, number]);
+      if (s === null) continue;
+      box =
+        box === null
+          ? { left: s.x - pad, top: s.y - pad, right: s.x + pad, bottom: s.y + pad }
+          : {
+              left: Math.min(box.left, s.x - pad),
+              top: Math.min(box.top, s.y - pad),
+              right: Math.max(box.right, s.x + pad),
+              bottom: Math.max(box.bottom, s.y + pad),
+            };
+    }
+  }
+  return box;
+}

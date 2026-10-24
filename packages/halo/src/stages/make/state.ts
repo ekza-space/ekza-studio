@@ -1,6 +1,5 @@
-// The Make stage's own UI state (STUDIO-TOUCH-SPEC §11; T8): which tray menu is open, *Select area* (the next drags
-// on the canvas draw a marquee, the twin of the Thumb key's Select more on empty space, §5.2.1), and the *Make a
-// character* starts card. Per app, never in the document or Pro's preferences; read by React through `useMakeState`.
+// The Make stage's own UI state (STUDIO-TOUCH-SPEC §11; T8): which tray menu is open and *Select area* (drags on the
+// canvas draw a marquee, the twin of the Thumb key's Select more on empty space, §5.2.1). Per app, never in the document or Pro's preferences; read by React through `useMakeState`.
 import type { EditorApp } from '@ekza-studio/editor-core';
 import { useSyncExternalStore } from 'react';
 
@@ -10,11 +9,9 @@ export interface MakeUi {
   readonly menu: MakeMenu;
   /** Drags on the canvas select an area (the select tool's marquee) instead of turning the view. */
   readonly selectArea: boolean;
-  /** The *Make a character* card is open (its starts, §9 J2). */
-  readonly starts: boolean;
 }
 
-const INITIAL: MakeUi = { menu: null, selectArea: false, starts: false };
+const INITIAL: MakeUi = { menu: null, selectArea: false };
 
 export interface MakeStore {
   get(): MakeUi;

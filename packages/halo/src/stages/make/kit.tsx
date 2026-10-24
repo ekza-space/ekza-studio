@@ -139,7 +139,15 @@ export function TrayMenu({
 /** The *Create with AI* mark (a sparkle; the Halo's own line icons have none). */
 export function Sparkle(): JSX.Element {
   return (
-    <svg aria-hidden="true" width={20} height={20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
+    <svg
+      aria-hidden="true"
+      width={20}
+      height={20}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+    >
       <path d="M12 3.5 13.8 10.2 20.5 12 13.8 13.8 12 20.5 10.2 13.8 3.5 12 10.2 10.2z" strokeLinejoin="round" />
       <path d="M19 3.5v3M17.5 5h3" strokeLinecap="round" />
     </svg>

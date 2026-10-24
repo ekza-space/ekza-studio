@@ -102,6 +102,8 @@ export const SHEET_OWNER = {
   palette: 'T8',
   /** Make editable's report (§6.7 `makeEditableReport`). */
   makeEditableReport: 'T8',
+  /** *Create with AI* (the owner's AI pipeline; a placeholder until G-d connects generation). */
+  createAi: 'T8',
   checks: 'T9',
   bones: 'T9',
   weights: 'T9',
@@ -155,6 +157,13 @@ export type ChromePart = keyof typeof CHROME_OWNER;
  * target is tapped (it asks for the target in the selection). Weld to… and Bridge are tool sessions instead.
  */
 export const TARGET_OPS: ReadonlySet<string> = new Set<string>(['scene.parent']);
+
+/**
+ * Operators other packages register later (T8: G-a's intake operators, MODELING-PLAN §7.2 — `mesh.reduce`,
+ * `mesh.normalize`, `mesh.paletteBake`). A petal or a tray may name one: it stays greyed with its reason until the
+ * operator is in the build, and its manifest entry lands with the operator (parity test 1 then asks for it).
+ */
+export const PENDING_OPERATORS: ReadonlySet<string> = new Set(['mesh.reduce', 'mesh.normalize', 'mesh.paletteBake']);
 
 /** Stage trays (§7.1): owned by the stage packages. */
 export const TRAY_OWNER: Readonly<Record<Stage, Owner>> = { make: 'T8', paint: 'T8', rig: 'T9', animate: 'T7' };

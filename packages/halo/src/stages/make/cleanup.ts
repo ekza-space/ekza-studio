@@ -27,7 +27,9 @@ export const REDUCE_BUDGETS = [
 export function reduceTargetParam(app: EditorApp): string | null {
   const def = app.operators.get(GA_OPS.reduce as OperatorId) as { readonly params?: readonly ParamDef[] } | undefined;
   const params = def?.params ?? [];
-  const named = params.find((p) => (p.kind === 'int' || p.kind === 'number') && /target|triangle|budget|count/i.test(p.name));
+  const named = params.find(
+    (p) => (p.kind === 'int' || p.kind === 'number') && /target|triangle|budget|count/i.test(p.name),
+  );
   return named?.name ?? null;
 }
 

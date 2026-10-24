@@ -26,7 +26,8 @@ export function ChoiceRow({
   const choices = verb.choices ?? [];
   const rowHeight = 56;
   const below = box === null ? height - insetBottom - rowHeight - 72 : box.bottom + 12;
-  const top = below + rowHeight < height - insetBottom ? below : Math.max(80, (box?.top ?? height / 2) - rowHeight - 64);
+  const top =
+    below + rowHeight < height - insetBottom ? below : Math.max(80, (box?.top ?? height / 2) - rowHeight - 64);
   const left = Math.min(Math.max(16, box === null ? width / 2 - 160 : (box.left + box.right) / 2 - 160), width - 336);
   return (
     <div
@@ -36,7 +37,11 @@ export function ChoiceRow({
       className="pointer-events-auto absolute"
       style={{ left: Math.max(16, left), top }}
     >
-      <Cluster className="flex max-w-[min(560px,calc(100vw-32px))] flex-wrap items-center gap-1 p-1" role="menu" aria-label={verb.label}>
+      <Cluster
+        className="flex max-w-[min(560px,calc(100vw-32px))] flex-wrap items-center gap-1 p-1"
+        role="menu"
+        aria-label={verb.label}
+      >
         {choices.map((choice) => {
           const poll = pollVerb(ctx.app, choice);
           const reason = poll === true ? null : poll.reason;

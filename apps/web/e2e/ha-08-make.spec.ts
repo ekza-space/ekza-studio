@@ -1,0 +1,194 @@
+import { expect, type Page, test, type TestInfo } from '@playwright/test';
+import { centre, makeSlice, meshIds, onCanvas, paneCentre, paneRect } from './helpers/halo-make';
+import { halo, haloMenu, loadCubeLadInMake, openHalo, PANE, petal } from './helpers/halo';
+import { call, runOk } from './helpers/test-api';
+import { fingerDrag, fingerTap } from './helpers/touch';
+
+// ha-08 Make (STUDIO-TOUCH-SPEC §11, §6.2, §7.1, §4.8; T8 exit test; the owner's clean-up focus of 2026-10-24) on
+// `chrome-touch`: an imported model is cleaned up by touch — the tray (selection level, Drag ▾, Cut ▾, Clean up ▾,
+// New shape ▾, Create with AI), a part's Halo (Edit shape · Move · Separate · Delete · Reduce ▾ · Rig it), Select area
+// (a marquee by finger), the Move ring dragged by finger, Multi-cut's session; G-a's Reduce greyed with its reason
+// until it is in the build; the cap handle drives the extrude session (one step per drag, Smart from the Thumb key);
+// *Create with AI* says plainly that generation is not connected. On `webkit-ipad` (compatibility only): Make boots
+// with its tray and the sheet opens by touch.
+
+const touchOnly = (info: TestInfo): void => test.skip(info.project.name !== 'chrome-touch', 'chrome-touch only (CDP)');
+
+async function tapId(page: Page, testId: string): Promise<void> {
+  await fingerTap(page, await centre(page, testId));
+}
+
+test.describe('ha-08: the Make stage', () => {
+  test('the tray and a part’s Halo clean up an imported model', async ({ page }, testInfo) => {
+    touchOnly(testInfo);
+    test.setTimeout(150_000);
+    await openHalo(page);
+    const meshes = await loadCubeLadInMake(page);
+    await expect(page.getByTestId('halo-tray')).toHaveAttribute('data-stage', 'make');
+    // at rest (nothing selected): within the §4.8 budget
+    await runOk(page, 'select.objects', { ids: [], mode: 'replace' });
+    await expect.poll(async () => (await halo(page)).visibleTargets).toBeLessThanOrEqual(22);
+
+    // Clean up ▾: G-a's Reduce greyed with its reason until it is in the build; Tidy runs `mesh.cleanup`
+    await tapId(page, 'halo-make-cleanup');
+    const menu = page.getByTestId('halo-make-menu-cleanUp');
+    await expect(menu).toBeVisible();
+    await expect(page.getByTestId('halo-make-menu-cleanUp-reduce')).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.getByTestId('halo-make-menu-cleanUp-separate')).toBeVisible();
+    await tapId(page, 'halo-make-cleanup');
+    await expect(menu).toHaveCount(0);
+
+    // a part: tap it, its Halo is the clean-up one
+    await runOk(page, 'view.frame', { what: 'all', paneId: PANE });
+    await fingerTap(page, await paneCentre(page));
+    await expect.poll(async () => (await halo(page)).noun?.kind).toBe('mesh');
+    const petals = (await halo(page)).petals;
+    expect(petals).toEqual(
+      expect.arrayContaining([
+        'view.tool:{"panel":"viewport","tool":"move"}',
+        'mesh.separate',
+        'scene.delete',
+        'mesh.reduce',
+      ]),
+    );
+    expect((await halo(page)).visibleTargets).toBeLessThanOrEqual(36);
+    // Reduce ▾ (G-a's `mesh.reduce`): greyed while every budget is, and a tap says why (§6.3)
+    const reduce = petal(page, 'Reduce');
+    await expect(reduce).toHaveAttribute('aria-disabled', 'true');
+    const reduceBox = await reduce.boundingBox();
+    if (reduceBox === null) throw new Error('no Reduce');
+    await fingerTap(page, { x: reduceBox.x + reduceBox.width / 2, y: reduceBox.y + reduceBox.height / 2 });
+    await expect(page.getByTestId('halo-toasts')).toContainText('Not in this build yet');
+
+    // Move: the ring comes, and a finger on its arrow moves the part (one step)
+    const move = await petal(page, 'Move').boundingBox();
+    if (move === null) throw new Error('no Move');
+    await fingerTap(page, { x: move.x + move.width / 2, y: move.y + move.height / 2 });
+    await expect.poll(async () => (await makeSlice(page)).tool).toBe('move');
+    const steps = (await call(page, 'history')).undo.length;
+    const pane = await paneRect(page);
+    const arrow = await call(page, 'screenOfManipulator', PANE, 'tx');
+    if (arrow !== null) {
+      const at = { x: pane.x + arrow.x, y: pane.y + arrow.y };
+      await fingerDrag(page, at, { x: at.x + 60, y: at.y }, 10);
+      await expect.poll(async () => (await call(page, 'history')).undo.length).toBe(steps + 1);
+    } else {
+      testInfo.annotations.push({ type: 'manipulator', description: 'no tx grab point reported' });
+    }
+
+    // back to Select through the tray's Drag ▾, the move undone (the part is at the centre again)
+    await tapId(page, 'halo-make-drag');
+    await tapId(page, 'halo-make-menu-drag-select');
+    await expect.poll(async () => (await makeSlice(page)).tool).toBe('select');
+    if (arrow !== null) await runOk(page, 'edit.undo');
+
+    // Delete the part from its Halo (one step); Undo brings it back
+    await fingerTap(page, await paneCentre(page));
+    await expect.poll(async () => (await halo(page)).noun?.kind).toBe('mesh');
+    const del = await petal(page, 'Delete').boundingBox();
+    if (del === null) throw new Error('no Delete');
+    const before = (await meshIds(page)).length;
+    await fingerTap(page, { x: del.x + del.width / 2, y: del.y + del.height / 2 });
+    await expect.poll(async () => (await meshIds(page)).length).toBe(before - 1);
+    await runOk(page, 'edit.undo');
+    await expect.poll(async () => (await meshIds(page)).length).toBe(before);
+    expect(meshes.length).toBeGreaterThan(0);
+  });
+
+  test('Select area draws a marquee by finger; Cut ▾ opens Multi-cut’s session', async ({ page }, testInfo) => {
+    touchOnly(testInfo);
+    test.setTimeout(150_000);
+    await openHalo(page);
+    await loadCubeLadInMake(page);
+    await runOk(page, 'view.frame', { what: 'all', paneId: PANE });
+    await fingerTap(page, await paneCentre(page));
+    await expect.poll(async () => (await halo(page)).noun?.kind).toBe('mesh');
+    await tapId(page, 'halo-pick-face');
+    await expect.poll(async () => (await call(page, 'state')).mode).toBe('face');
+    // Drag ▾ › Select area: a finger drag over the model selects faces instead of turning the view
+    await tapId(page, 'halo-make-drag');
+    await tapId(page, 'halo-make-menu-drag-selectArea');
+    await expect.poll(async () => (await makeSlice(page)).selectArea).toBe(true);
+    const camera0 = await call(page, 'cameraOf', PANE);
+    const c = await paneCentre(page);
+    // from a point on the model the Halo does not cover, up and across it
+    const from = { x: c.x + 90, y: c.y + 90 };
+    expect(await onCanvas(page, from)).toBe(true);
+    await fingerDrag(page, from, { x: c.x - 90, y: c.y - 60 }, 12);
+    await expect
+      .poll(async () => Object.values((await call(page, 'model')).selected).some((s) => s.face.length > 0))
+      .toBe(true);
+    expect((await call(page, 'cameraOf', PANE)).position).toEqual(camera0.position);
+    // Cut ▾ › Multi-cut: its session bar
+    await tapId(page, 'halo-make-cut');
+    await tapId(page, 'halo-make-menu-cut-multiCut');
+    await expect(page.getByTestId('halo-session')).toHaveAttribute('data-session', 'multiCut');
+    await tapId(page, 'halo-session-cancel');
+    await expect(page.getByTestId('halo-session')).toHaveCount(0);
+  });
+
+  test('the cap handle: one step per drag, the Thumb key’s Smart starts a new extrude', async ({ page }, testInfo) => {
+    touchOnly(testInfo);
+    test.setTimeout(150_000);
+    await openHalo(page);
+    await loadCubeLadInMake(page);
+    await tapId(page, 'halo-pick-face');
+    await runOk(page, 'view.frame', { what: 'all', paneId: PANE });
+    await fingerTap(page, await paneCentre(page));
+    await expect.poll(async () => (await halo(page)).noun?.kind).toBe('faces');
+    const pull = await petal(page, 'Pull').boundingBox();
+    if (pull === null) throw new Error('no Pull');
+    await fingerTap(page, { x: pull.x + pull.width / 2, y: pull.y + pull.height / 2 });
+    await expect(page.getByTestId('halo-cap-handle')).toBeVisible();
+    const steps = (await call(page, 'history')).undo.length;
+    const drag = async (px: number): Promise<void> => {
+      const cap = (await makeSlice(page)).cap;
+      if (cap === null) throw new Error('no cap');
+      const h = await centre(page, 'halo-cap-handle');
+      await fingerDrag(page, h, { x: h.x + cap.dx * px, y: h.y + cap.dy * px }, 10);
+    };
+    await drag(50);
+    await expect.poll(async () => Number((await call(page, 'lastOp'))?.args['localTranslateZ'])).toBeGreaterThan(0);
+    const first = Number((await call(page, 'lastOp'))?.args['localTranslateZ']);
+    await drag(40);
+    await expect.poll(async () => Number((await call(page, 'lastOp'))?.args['localTranslateZ'])).toBeGreaterThan(first);
+    // two drags: still the one extrude step (each drag is one Adjust Last)
+    expect((await call(page, 'history')).undo.length).toBe(steps);
+    // Smart (the Thumb key's drag meaning on the cap, Pro's Shift at drag start): a new extrude from the cap
+    await expect.poll(async () => (await halo(page)).thumb.drag).toBe('smart');
+    await tapId(page, 'halo-thumb');
+    await drag(40);
+    await expect.poll(async () => (await call(page, 'history')).undo.length).toBe(steps + 1);
+    expect((await call(page, 'lastOp'))?.id).toBe('mesh.extrude');
+    // ✓ Done ends the session and keeps it
+    await tapId(page, 'halo-session-done');
+    await expect.poll(async () => (await makeSlice(page)).extrude).toBe(false);
+    await expect(page.getByTestId('halo-cap-handle')).toHaveCount(0);
+    expect(haloMenu).toBeDefined();
+  });
+
+  test('Create with AI says generation is not connected; a photo can be attached', async ({ page }, testInfo) => {
+    test.skip(testInfo.project.name === 'chrome', 'touch projects');
+    await openHalo(page, '&stage=make');
+    await expect(page.getByTestId('halo-tray')).toHaveAttribute('data-empty', '');
+    const ai = page.getByTestId('halo-make-ai');
+    if (testInfo.project.name === 'chrome-touch') await fingerTap(page, await centre(page, 'halo-make-ai'));
+    else await ai.tap();
+    const sheet = page.getByTestId('halo-sheet-createAi');
+    await expect(sheet).toBeVisible();
+    await expect(page.getByTestId('halo-ai-status')).toContainText('not connected');
+    await expect(page.getByTestId('halo-ai-create')).toBeDisabled();
+    await page.getByTestId('halo-ai-prompt').fill('A low-poly sword');
+    await expect(page.getByTestId('halo-ai-create')).toBeDisabled();
+    await sheet.locator('input[type="file"]').setInputFiles({
+      name: 'ref.png',
+      mimeType: 'image/png',
+      buffer: Buffer.from(
+        '89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8ffff3f0005fe02fe0dc7d6e10000000049454e44ae426082',
+        'hex',
+      ),
+    });
+    await expect(page.getByTestId('halo-ai-photo-name')).toContainText('ref.png');
+    await expect(page.getByTestId('halo-ai-budget-hero')).toBeVisible();
+  });
+});

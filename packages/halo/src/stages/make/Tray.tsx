@@ -14,6 +14,7 @@ import { en } from '../../i18n/en';
 import { makeWords } from '../../i18n/make';
 import { useDocumentVersion, useSessionValue } from '../../shell/hooks';
 import type { StageTrayProps } from '../../shell/stageParts';
+import { startCall, type StartChoice } from '../../home/model';
 import { EMPTY_NOUN } from '../../verbs/nouns';
 import { VERB_TABLE } from '../../verbs/table';
 import { GA_OPS, isLive, REDUCE_BUDGETS, reduceArgs } from './cleanup';
@@ -29,6 +30,9 @@ const PICK: readonly { readonly value: ComponentMode; readonly label: string }[]
   { value: 'edge', label: en.tray.edges },
   { value: 'face', label: en.tray.faces },
 ];
+
+/** The template starts of *Make a character* (Home's, T11) that run in Make. */
+const STARTS: readonly StartChoice[] = ['smooth', 'blocky'];
 
 const DRAG_TOOLS: readonly { readonly tool: ToolId; readonly label: string }[] = [
   { tool: VIEWPORT_TOOL.select, label: w.select },
@@ -54,7 +58,9 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
   useDocumentVersion(app);
   const file = useRef<HTMLInputElement>(null);
 
-  const reason = (text: string): void => ctx.toasts.push({ key: 'reason', text });
+  const reason = (text: string): void => {
+    ctx.toasts.push({ key: 'reason', text });
+  };
   const run = (op: string, args?: unknown): void => {
     ms.set({ menu: null });
     void ctx.run(op, args);
@@ -83,7 +89,7 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
   });
 
   const meshes = app.store.list('meshes').filter((m) => m.deleted === null);
-  if (meshes.length === 0) return <EmptyMake controller={controller} file={file} />;
+  if (meshes.length === 0) return <EmptyMake controller={controller} compact={compact} file={file} />;
 
   // Mirror edits: the hilite in a component mode, else the selected meshes (`model.symmetry.set`'s own targets)
   const targets = mode === 'object' ? objects.filter((id) => id.startsWith('msh_')) : hilite;
@@ -111,7 +117,8 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
       run: () => {
         touch(ctx);
         ms.set({ selectArea: true, menu: null });
-        if (tool !== VIEWPORT_TOOL.select) void ctx.run('view.tool', { panel: PANEL.viewport, tool: VIEWPORT_TOOL.select });
+        if (tool !== VIEWPORT_TOOL.select)
+          void ctx.run('view.tool', { panel: PANEL.viewport, tool: VIEWPORT_TOOL.select });
       },
     },
     {
@@ -173,14 +180,11 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
   const shapeItems: MenuItem[] = [
     // the primitives in the verb table's words (empty space's *New shape ▾*, §6.2)
     ...(VERB_TABLE.empty.find((p) => p.id === 'newShape')?.menu ?? []).map((c) => item(c.op, c.plain, c.op, c.args)),
-    {
-      id: 'character',
-      label: makeWords.empty.makeCharacter,
-      run: () => {
-        touch(ctx);
-        ms.set({ menu: null, starts: true });
-      },
-    },
+    // the character starts (Home's *Make a character*, T11's `startCall`)
+    ...STARTS.map((start) => {
+      const call = startCall(start);
+      return item(start, en.home.starts[start]?.[0] ?? start, call?.op ?? 'mesh.create.template', call?.args);
+    }),
   ];
 
   const menus: Record<Exclude<typeof menu, null>, { label: string; items: readonly MenuItem[] }> = {
@@ -217,34 +221,26 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
         <TrayChip
           testId="halo-make-drag"
           label={dragLabel}
-          icon={<Icon name="select" />}
           menu
           open={menu === 'drag'}
           onPress={() => toggleMenu('drag')}
         />
-        <TrayChip
-          testId="halo-make-mirror"
-          label={w.mirrorEdits}
-          pressed={mirrorOn}
-          disabledReason={mirrorReason}
-          onReason={reason}
-          onPress={() => {
-            touch(ctx);
-            void ctx.run('model.symmetry.set', { mode: mirrorOn ? 'off' : 'object-x' });
-          }}
-        />
-        <TrayChip
-          testId="halo-make-cut"
-          label={w.cut}
-          icon={<Icon name="cut" />}
-          menu
-          open={menu === 'cut'}
-          onPress={() => toggleMenu('cut')}
-        />
+        {/* §4.8: with nothing to mirror the chip would only say why; it shows with a shape selected */}
+        {mirrorReason === null ? (
+          <TrayChip
+            testId="halo-make-mirror"
+            label={w.mirrorEdits}
+            pressed={mirrorOn}
+            onPress={() => {
+              touch(ctx);
+              void ctx.run('model.symmetry.set', { mode: mirrorOn ? 'off' : 'object-x' });
+            }}
+          />
+        ) : null}
+        <TrayChip testId="halo-make-cut" label={w.cut} menu open={menu === 'cut'} onPress={() => toggleMenu('cut')} />
         <TrayChip
           testId="halo-make-cleanup"
           label={w.cleanUp}
-          icon={<Icon name="options" />}
           menu
           open={menu === 'cleanUp' || menu === 'reduce'}
           onPress={() => toggleMenu('cleanUp')}
@@ -253,7 +249,6 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
           <TrayChip
             testId="halo-make-new"
             label={w.newShape}
-            icon={<Icon name="shape" />}
             menu
             open={menu === 'newShape'}
             onPress={() => toggleMenu('newShape')}
@@ -289,7 +284,6 @@ function EmptyMake({
   file,
 }: StageTrayProps & { readonly file: RefObject<HTMLInputElement | null> }): JSX.Element {
   const { ctx } = controller;
-  const ms = makeStore(ctx.app);
   return (
     <Cluster
       data-halo-chrome=""
@@ -299,15 +293,19 @@ function EmptyMake({
       className="pointer-events-auto flex max-w-[1100px] flex-wrap items-center justify-center gap-2 p-[5px]"
     >
       <span className="px-2 text-touch text-fg-2">{makeWords.empty.title}</span>
-      <TrayChip
-        testId="halo-make-character"
-        label={makeWords.empty.makeCharacter}
-        icon={<Icon name="pencil" />}
-        onPress={() => {
-          touch(ctx);
-          ms.set({ starts: true, menu: null });
-        }}
-      />
+      {STARTS.map((start) => (
+        <TrayChip
+          key={start}
+          testId={`halo-make-start-${start}`}
+          label={en.home.starts[start]?.[0] ?? start}
+          icon={<Icon name="pencil" />}
+          onPress={() => {
+            touch(ctx);
+            const call = startCall(start);
+            if (call !== null) void ctx.run(call.op, call.args);
+          }}
+        />
+      ))}
       <TrayChip
         testId="halo-make-ai"
         label={makeWords.empty.createAi}

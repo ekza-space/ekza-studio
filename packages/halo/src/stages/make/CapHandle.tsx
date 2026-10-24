@@ -9,7 +9,7 @@ import type { AbsorbGesture, EditorApp } from '@ekza-studio/editor-core';
 import { beginSmartExtrude } from '@ekza-studio/editor-core';
 import { type Point, thumbReduce } from '@ekza-studio/ui/touch';
 import { type JSX, useEffect, useRef, useState } from 'react';
-import { en } from '../../i18n/en';
+import { makeWords } from '../../i18n/make';
 import { currentRow, meaningsOf } from '../../input/situation';
 import type { ShellContext } from '../../shell/context';
 import { useSessionValue } from '../../shell/hooks';
@@ -56,7 +56,9 @@ export function capNow(ctx: ShellContext): CapGeometry | null {
 }
 
 function begin(app: EditorApp, smart: boolean): AbsorbGesture | null {
-  return smart ? beginSmartExtrude(app, { panel: 'viewport', paneId: PANE }) : app.extrude.beginAbsorb('move', 'component');
+  return smart
+    ? beginSmartExtrude(app, { panel: 'viewport', paneId: PANE })
+    : app.extrude.beginAbsorb('move', 'component');
 }
 
 export function CapHandle({ ctx }: { readonly ctx: ShellContext }): JSX.Element | null {
@@ -65,13 +67,17 @@ export function CapHandle({ ctx }: { readonly ctx: ShellContext }): JSX.Element 
   const drag = useRef<Drag | null>(null);
   const [dragging, setDragging] = useState(false);
   // the cap follows the camera and the drag: measured every frame while a session is open
-  const cap = useProjected(
+  const live = useProjected(
     session !== null,
     () => capNow(ctx),
     (a, b) => nearPoint(a?.handle ?? null, b?.handle ?? null) && nearPoint(a?.at ?? null, b?.at ?? null),
   );
   useEffect(() => () => drag.current?.gesture?.cancel(), []);
-  if (session === null || cap === null || (breathing && !dragging)) return null;
+  // a Smart drag ends the open session as it starts (§5.8): the handle stays under the finger until it lifts
+  const held = dragging ? (drag.current?.cap ?? null) : null;
+  const shown = (session === null ? null : live) ?? held;
+  if (shown === null || (breathing && !dragging)) return null;
+  const cap = shown;
   const angle = (Math.atan2(cap.dir.y, cap.dir.x) * 180) / Math.PI + 90;
 
   const end = (commit: boolean): void => {
@@ -110,7 +116,7 @@ export function CapHandle({ ctx }: { readonly ctx: ShellContext }): JSX.Element 
       <button
         type="button"
         data-testid="halo-cap-handle"
-        aria-label={en.make.capHandle}
+        aria-label={makeWords.handles.cap}
         data-dir={`${cap.dir.x.toFixed(3)},${cap.dir.y.toFixed(3)}`}
         className="pointer-events-auto absolute flex touch-none items-center justify-center rounded-full border-2 border-white bg-accent-fill text-on-accent shadow-touch select-none"
         style={{ left: cap.handle.x - SIZE / 2, top: cap.handle.y - SIZE / 2, width: SIZE, height: SIZE }}

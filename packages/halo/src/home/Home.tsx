@@ -23,6 +23,9 @@ import {
   startCall,
 } from './model';
 import { homeServices } from './start';
+// T8 (the owner's AI pipeline): *Create with AI* is one more start of *Make a character* (a lazy sheet in Make)
+import { CREATE_WITH_AI_ENTRY, openCreateWithAi } from '../stages/make/ai/open';
+import { makeWords } from '../i18n/make';
 
 /** The pickers' list where `accept` is honoured (every desktop browser); iOS gets none and the bytes decide (S10). */
 const ACCEPT = '.glb,.gltf,.vrm,.vrma,.ekzanim,.json,model/gltf-binary,model/gltf+json';
@@ -392,6 +395,26 @@ export function Home({
                 </li>
               );
             })}
+            {panel === 'starts' && CREATE_WITH_AI_ENTRY ? (
+              <li>
+                <TouchButton
+                  className="min-h-[72px] w-full flex-col items-start justify-center gap-0.5 px-4 text-left"
+                  data-testid="halo-home-start-ai"
+                  disabled={busy !== null}
+                  onClick={() => {
+                    touch();
+                    setPanel(null);
+                    void controller.enterStage('make').then(() => {
+                      controller.leaveHome();
+                      openCreateWithAi(ctx);
+                    });
+                  }}
+                >
+                  <span className="font-semibold">{makeWords.starts.ai}</span>
+                  <span className="text-touch-label font-normal text-fg-2">{makeWords.starts.aiDetail}</span>
+                </TouchButton>
+              </li>
+            ) : null}
           </ul>
         )}
 

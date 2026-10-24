@@ -117,8 +117,8 @@ export const VERB_TABLE: Readonly<Record<NounKind, readonly PetalDef[]>> = {
     { id: 'resetPose', plain: 'Reset pose', op: 'pose.resetToRest', stages: ['animate'], icon: 'rotate-ccw' },
   ],
   // T8 (the owner's clean-up focus, 2026-10-24): a mesh object's first layer cleans an imported or generated model —
-  // Move ▾ (the rings), Separate, Delete, Reduce ▾ (G-a's `mesh.reduce`, greyed until it is in the build) — and goes
-  // on to Rig it; Duplicate, Mirror and Paint are in its More (ST-T8-4)
+  // Move (the ring), Separate, Delete, Reduce ▾ (G-a's `mesh.reduce`, greyed until it is in the build) — and goes on
+  // to Rig it; Duplicate, Mirror and Paint are in its More (ST-T8-4)
   mesh: [
     {
       id: 'editShape',
@@ -128,6 +128,7 @@ export const VERB_TABLE: Readonly<Record<NounKind, readonly PetalDef[]>> = {
       stages: ['make'],
       icon: 'square-dashed',
     },
+    // the Move ring (Turn and Scale: the tray's *Drag ▾* and More)
     {
       id: 'move',
       plain: 'Move',
@@ -135,11 +136,6 @@ export const VERB_TABLE: Readonly<Record<NounKind, readonly PetalDef[]>> = {
       args: { panel: 'viewport', tool: 'move' },
       stages: ['make'],
       icon: 'move-horizontal',
-      menu: [
-        choice('Move', 'view.tool', { panel: 'viewport', tool: 'move' }),
-        choice('Turn', 'view.tool', { panel: 'viewport', tool: 'rotate' }),
-        choice('Scale', 'view.tool', { panel: 'viewport', tool: 'scale' }),
-      ],
     },
     { id: 'separate', plain: 'Separate', op: 'mesh.separate', stages: ['make'], icon: 'scissors' },
     { id: 'delete', plain: 'Delete', op: 'scene.delete', stages: ['make'], icon: 'trash' },

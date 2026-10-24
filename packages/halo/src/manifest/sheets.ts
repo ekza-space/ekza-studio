@@ -55,6 +55,7 @@ export const SHEET_SECTIONS: Readonly<Record<SheetId, readonly string[] | null>>
   library: ['search', 'kinds', 'starterSet', 'fromFile', 'cards'],
   palette: null,
   makeEditableReport: null,
+  createAi: null,
   checks: null,
   bones: null,
   weights: null,
