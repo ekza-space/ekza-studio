@@ -301,6 +301,8 @@ export const ALLOWED = {
       '@playwright/test',
       '@tailwindcss/postcss',
       '@types/three',
+      // STUDIO-TOUCH-SPEC §20.7 ha-15, AS-ST-14 (T12, ST-INT-6): axe's WCAG 2.2 AA run over Ekza Studio's sheets.
+      'axe-core',
       'gltf-validator',
       'playwright',
       'tailwindcss',

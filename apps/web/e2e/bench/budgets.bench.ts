@@ -654,10 +654,14 @@ test('autosave write, Seed-san × 10 clips (main thread)', async ({ page }) => {
   );
 });
 
-/** Script responses of one page load until the empty state shows and the network is idle (gzip -9 per file). */
+/**
+ * Script responses of one page load of `route` until its empty state shows and the network is idle (gzip -9 per
+ * file): `/editor`'s drop zone, or `/app`'s Halo shell and Home (STUDIO-TOUCH-SPEC §20.6, T2's P5 at T12).
+ */
 async function captureRouteScripts(
   page: Page,
   origin: string,
+  route: 'editor' | 'app' = 'editor',
 ): Promise<{ files: string[]; raw: number; gzip: number; gzip6: number }> {
   const scripts = new Map<string, Buffer>();
   page.on('response', async (response) => {
@@ -668,8 +672,13 @@ async function captureRouteScripts(
       // A redirect or an aborted request has no body.
     }
   });
-  await page.goto('/editor');
-  await expect(page.getByTestId('dropzone')).toBeVisible({ timeout: 60_000 });
+  await page.goto(`/${route}`);
+  if (route === 'app') {
+    await expect(page.locator('[data-shell="ekza-halo-shell"]')).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByTestId('halo-home')).toBeVisible({ timeout: 60_000 });
+  } else {
+    await expect(page.getByTestId('dropzone')).toBeVisible({ timeout: 60_000 });
+  }
   await page.waitForLoadState('networkidle');
   let raw = 0;
   let gzip = 0;
@@ -745,5 +754,51 @@ test('editor route JS (gzip, no fixtures)', async ({ page, baseURL }) => {
       `${kb(first.raw)} raw, ${kb(first.gzip)} gzip -9, ${kb(first.gzip6)} gzip -6${verdict(firstCheck)}; later ` +
       `visit: ${again.files.length} scripts, ${kb(again.gzip)} gzip -9${verdict(againCheck)} (budget ≤ 900 kB gzip; ` +
       `M2a target ≤ 850 kB for the first visit, M2A-SPEC §5.21.2)`,
+  );
+});
+
+test('app route JS (gzip, no fixtures; STUDIO-TOUCH-SPEC §20.6)', async ({ page, baseURL }) => {
+  const origin = new URL(baseURL ?? 'http://localhost').origin;
+  // `/app`'s first visit opens Home (no first-run dialog, §17). Up to network idle, so the capture includes the idle
+  // prefetch of Halo's lazy chunks (S23); check:size's number is the initial scripts alone (the gate's measure)
+  const first = await captureRouteScripts(page, origin, 'app');
+  const isE2eBuild = await page.evaluate(() =>
+    fetch('/e2e/vrma-check', { method: 'HEAD' }).then((response) => response.ok),
+  );
+  const nextDir = fileURLToPath(new URL('../../.next', import.meta.url));
+  const gate = existsSync(nextDir) ? checkSize(nextDir, { route: 'app' }) : null;
+  const firstFiles = [
+    ...(gate?.initial.map((entry) => entry.file) ?? []),
+    ...(gate?.firstVisit.flatMap((group) => group.files) ?? []),
+  ].sort();
+  const check =
+    gate === null
+      ? null
+      : {
+          total: gate.total,
+          sameFiles: first.files.join() === firstFiles.join(),
+          difference: (first.gzip - gate.total) / gate.total,
+        };
+  record(
+    'app-route-js',
+    {
+      e2eBuild: isE2eBuild,
+      firstVisit: {
+        scripts: first.files.length,
+        rawBytes: first.raw,
+        gzipBytes: first.gzip,
+        gzipDefaultLevelBytes: first.gzip6,
+        files: first.files,
+        checkSize: check,
+      },
+    },
+    `/app JS (${isE2eBuild ? 'e2e build' : 'production build'}), first visit with the idle prefetch: ` +
+      `${first.files.length} scripts, ` +
+      `${kb(first.raw)} raw, ${kb(first.gzip)} gzip -9, ${kb(first.gzip6)} gzip -6` +
+      (check === null
+        ? ''
+        : ` (check:size ${kb(check.total)}, ${(check.difference * 100).toFixed(2)} %, ` +
+          `${check.sameFiles ? 'same scripts' : 'different scripts'})`) +
+      ' (gate 5,000,000 B, SIZE-1; target 660,000 B reported)',
   );
 });

@@ -4,9 +4,9 @@
 // - every T6b sheet opens as a named dialog; every target in it is at least 44 × 44 px; every input's text is at
 //   least 16 px; its close button and footer actions are inside the viewport; nothing overflows sideways;
 // - no floating item (the Path, the status corner, the Next chip) covers the selection's on-screen point;
-// - axe (WCAG 2.0 / 2.1 / 2.2 A and AA rules) finds no violation in an open sheet when axe-core is available: the
-//   repository has no axe dependency (T4's ST-T4-13: the offline store has none), so the spec reads
-//   `EKZA_AXE_PATH` (a local `axe.min.js`) or a resolvable `axe-core`, and records a skip annotation without one.
+// - axe (WCAG 2.0 / 2.1 / 2.2 A and AA rules) finds no violation in an open sheet: `axe-core` is a web
+//   devDependency since T12 (ST-INT-6; T4's ST-T4-13 had no registry), so the run is part of the gate;
+//   `EKZA_AXE_PATH` (a local `axe.min.js`) still overrides it, and a checkout without it records a skip annotation.
 // Since the integration (T6-INT) every sheet opens from the real shell at `/app` (`openSheetFromShell`: the tray's
 // ⋯, the breadcrumb's Numbers, the project menu, the character's Halo in Rig).
 import { existsSync, readFileSync } from 'node:fs';
@@ -140,7 +140,7 @@ test('axe finds no WCAG 2.2 A/AA violation in the open sheets', async ({ page },
   if (axe === null) {
     testInfo.annotations.push({
       type: 'skip',
-      description: 'axe-core is not installed (offline store): set EKZA_AXE_PATH to a local axe.min.js (ST-T4-13)',
+      description: 'axe-core is not installed (pnpm install): or set EKZA_AXE_PATH to a local axe.min.js (ST-INT-6)',
     });
     test.skip(true, 'axe-core not available');
     return;

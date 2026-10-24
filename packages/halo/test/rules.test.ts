@@ -5,7 +5,10 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { animateWords } from '../src/i18n/animate';
+import { CHANNEL_LABELS } from '../src/i18n/channels';
 import { en } from '../src/i18n/en';
+import { makeWords, paintWords } from '../src/i18n/make';
+import { rigWords } from '../src/i18n/rig';
 import { DISCLOSURE } from '../src/manifest/disclosure';
 import { PLAIN_LABELS } from '../src/manifest/labels';
 import { entriesOf, isSurfaceEntry } from '../src/manifest/types';
@@ -156,13 +159,23 @@ function strings(node: unknown, path: string[] = []): { readonly path: string; r
 }
 
 /**
- * The words a user reads at L0–L2: the shell's catalogue (`i18n/en.ts`), the manifest's plain labels
+ * The words a user reads at L0–L2: the shell's catalogue (`i18n/en.ts`), every stage's catalogue (`i18n/animate.ts`,
+ * `make.ts` with Paint's, `rig.ts`, the plain channel names of `channels.ts`), the manifest's plain labels
  * (`manifest/labels.ts`, More and search), its per-argument `plain` words, and the verb table's petals, ▾ choices and
- * in-place variants (`verbs/table.ts`) — one vocabulary (T6-INT: the lint covers T6b's tables too, P-T6B-2).
+ * in-place variants (`verbs/table.ts`) — one vocabulary (T6-INT: the lint covers T6b's tables too, P-T6B-2; T12 folds
+ * the stage packages' own lints in here, P-T7-3, P-T8-5).
  */
 function vocabulary(): { readonly path: string; readonly text: string }[] {
-  // P-T7-3 (T10): the Animate stage's own catalogue is linted with the shell's, under `animate.`
-  const all = [...strings(en), ...strings(animateWords).map((s) => ({ path: `animate.${s.path}`, text: s.text }))];
+  const under = (prefix: string, node: unknown) =>
+    strings(node).map((s) => ({ path: `${prefix}.${s.path}`, text: s.text }));
+  const all = [
+    ...strings(en),
+    ...under('animate', animateWords),
+    ...under('make', makeWords),
+    ...under('paint', paintWords),
+    ...under('rig', rigWords),
+    ...Object.entries(CHANNEL_LABELS).map(([channel, label]) => ({ path: `channels.${channel}`, text: label.plain })),
+  ];
   for (const [op, text] of Object.entries(PLAIN_LABELS)) all.push({ path: `labels.${op}`, text });
   for (const [op, value] of Object.entries(DISCLOSURE)) {
     for (const entry of entriesOf(value)) {
@@ -185,10 +198,9 @@ describe('user vocabulary: one word, one kind of thing (§1.3, ST-32)', () => {
   const all = vocabulary();
   const where = (word: RegExp): string[] => all.filter((s) => word.test(s.text)).map((s) => s.path);
 
-  it('covers the catalogue, the manifest labels and the verb table', () => {
-    expect(all.some((s) => s.path.startsWith('labels.'))).toBe(true);
-    expect(all.some((s) => s.path.startsWith('plain.'))).toBe(true);
-    expect(all.some((s) => s.path.startsWith('table.'))).toBe(true);
+  it('covers the catalogue, every stage’s catalogue, the manifest labels and the verb table', () => {
+    const prefixes = ['animate.', 'make.', 'paint.', 'rig.', 'channels.', 'labels.', 'plain.', 'table.'];
+    expect(prefixes.filter((prefix) => !all.some((s) => s.path.startsWith(prefix)))).toEqual([]);
   });
 
   it('“Move” is never a clip; “Animation” is only a clip', () => {
@@ -199,7 +211,8 @@ describe('user vocabulary: one word, one kind of thing (§1.3, ST-32)', () => {
       expect(path).toMatch(
         // T11: Home's Continue cards, Bring a model's animation files, Share's destinations and slots, the recipes
         // T10: the agent's Edit grant in §14's words; T7's Animations row, + New, an animation's verbs, the Library
-        /^(home\.|intake\.|share\.|recipes\.|dialogs\.applyPoseAsRest|labels\.(clip\.|file\.importAnimation|autorig\.clip\.|target\.slot\.)|plain\.(target\.slot\.|workspace\.showPanel)|table\.empty\.newAnimation|ask\.grantEdit$|animate\.(dock\.|clip\.|library\.|thread\.(clearRange|noClip)$))/,
+        // T9: the Rig-it card's starter set
+        /^(home\.|intake\.|share\.|recipes\.|dialogs\.applyPoseAsRest|labels\.(clip\.|file\.importAnimation|autorig\.clip\.|target\.slot\.)|plain\.(target\.slot\.|workspace\.showPanel)|table\.empty\.newAnimation|ask\.grantEdit$|animate\.(dock\.|clip\.|library\.|thread\.(clearRange|noClip)$)|rig\.card\.addAnimations$)/,
       );
     }
   });
@@ -213,7 +226,7 @@ describe('user vocabulary: one word, one kind of thing (§1.3, ST-32)', () => {
       'plain.select.mirror',
       'table.rigDot.mirror',
     ]);
-    expect(where(/\bnew shape\b/i)).toEqual(['table.empty.newShape']);
+    expect(where(/\bnew shape\b/i)).toEqual(['make.tray.newShape', 'table.empty.newShape']);
   });
 
   it('the selection meanings are the Thumb key’s, and never start with “Add”', () => {
@@ -227,7 +240,7 @@ describe('user vocabulary: one word, one kind of thing (§1.3, ST-32)', () => {
 
   it('no DCC jargon at L0 or L1 (Pro names appear one layer down, from the registry)', () => {
     const jargon =
-      /\b(extrude|tween|breakdown|ripple|euler|tangents?|IK|FK|influences?|bind pose|lambert|blinn|tris)\b/i;
+      /\b(extrude|tween|breakdown|ripple|euler|tangents?|IK|FK|influences?|bind pose|lambert|blinn|tris|keyframes?|dope sheet|graph editor|decimate|retopo\w*)\b/i;
     expect(all.filter((s) => jargon.test(s.text)).map((s) => `${s.path}: ${s.text}`)).toEqual([]);
   });
 });

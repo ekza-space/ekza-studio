@@ -1,8 +1,9 @@
 # Ekza Studio — feature catalogue
 
 What the product can do today, by category: one line per feature, where it lives in the UI and since which release.
-Live at [studio.ekza.io](https://studio.ekza.io); this file describes **v0.5.1** (2026-10-23, the tree of `dev` at the
-time of writing). Machine-readable copy: [FEATURES.summary.json](FEATURES.summary.json). For how things are built see
+Live at [studio.ekza.io](https://studio.ekza.io); this file describes **v0.7.0** (the release candidate on `dev`,
+2026-10-25: Ekza Studio's Simple layout, AI generation and clean-up, the character contract — see the
+[draft release notes](releases/v0.7.0.md)). Machine-readable copy: [FEATURES.summary.json](FEATURES.summary.json). For how things are built see
 [ARCHITECTURE.md](../ARCHITECTURE.md) and the specs linked per section; for what comes next see [ROADMAP](ROADMAP.md)
 and [TODO](../TODO.md).
 
@@ -11,6 +12,7 @@ and [TODO](../TODO.md).
 | Status | Meaning |
 |---|---|
 | `v0.x.y` | Shipped in that release (still in the current one) |
+| **Beta** | Shipped and usable; the release gate still has an open item (for Ekza Studio's Simple layout: the real-iPad run) |
 | **Experimental** | In the code and usable, but its acceptance test is still pending or it is a stretch item |
 | **Next release** | Built on an integration branch, not on `dev` yet |
 | **Planned (Mx)** | Specified or on the roadmap, not built; Mx is the milestone in [ROADMAP](ROADMAP.md) |
@@ -27,12 +29,17 @@ and [TODO](../TODO.md).
 | `v0.4.0` | 2026-10-22 | M6b MVP — Rig & Skin workspace |
 | `v0.5.0` | 2026-10-23 | Auto-Rig mode (and the A-pose path in Studio) |
 | `v0.5.1` | 2026-10-23 | Auto-Rig size gate (0.3–3 m) |
+| `v0.6.0` | 2026-10-24 | M-AI — AI control through MCP (`ekza-studio-mcp`), lighter first load, this catalogue |
+| `v0.6.1` | 2026-10-24 | Neutral product and feature names (TM-1…TM-4); the touch-first design spec |
+| `v0.7.0` | (to be tagged) | Ekza Studio's Simple layout (touch-first, beta) with Studio Pro as its Pro layout; AI generation and model clean-up; the character contract and the OMOBA hero package |
 
 ## At a glance
 
 | Category | Key capabilities | Status |
 |---|---|---|
-| [Two modes](#1-overview-and-the-two-modes) | Start chooser: full **Studio** or the five-step **Auto-Rig** wizard, one shared document and undo history | `v0.5.0` |
+| [One studio, two layouts](#1-overview-one-studio-two-layouts-and-auto-rig) | **Ekza Studio** (the Simple layout, the front door) and **Ekza Studio Pro**, plus the five-step **Auto-Rig** wizard — one shared document and undo history | `v0.5.0`; layouts `v0.7.0` |
+| [Ekza Studio (Simple layout)](#13-ekza-studio-the-simple-layout) | Touch-first and Pencil-first: touch a thing and its verbs appear; Make · Paint · Rig · Animate, then Share; every Pro capability one layer down | `v0.7.0` **Beta** |
+| [AI generation and clean-up](#14-ai-generation-and-model-clean-up) | Words or a photo → a generated model through a self-hosted gateway → cleaned for a game in one step → Rig it → animate | `v0.7.0` |
 | [Workspaces and UI](#2-workspaces-and-ui) | Model / Animate / Rig & Skin tabs, dockview panels, layout presets, focus mode, industry-standard DCC hotkeys, marking menus, command palette | `v0.1.0`–`v0.5.0`; Review tab planned (V1) |
 | [Modeling](#3-modeling-model-workspace) | Low-poly box modeling: primitives, templates, component modes, extrude session, bevel, loops, multi-cut, symmetry, soft selection, snapping, palette colour, Mesh Check, static GLB export | `v0.3.0` |
 | [Rig & Skin](#4-rig--skin) | Quick Rig markers, VRM skeleton templates, Create Skeleton with auto control rig, Bind Skin, weight painting, test poses, Validation gate, VRM 1.0 export | `v0.4.0` (A-pose path `v0.5.0`) |
@@ -41,24 +48,28 @@ and [TODO](../TODO.md).
 | [Shading](#7-shading) | Every palette swatch is a Lambert or Blinn shader; exported as glTF PBR | `v0.3.1` |
 | [Import / export](#8-import-and-export) | GLB, VRM 0.x/1.0, VRMA, `.ekzanim`; bake into the original file, VRMA, animation GLB, static GLB, VRM 1.0 character, OMOBA kit; profiles and lints | `v0.1.0`–`v0.5.0` |
 | [Project and data](#9-project-and-data) | `.ekzanim` projects, autosave + crash recovery, transactional undo, collaboration-ready document model | `v0.1.0`, `v0.2.0` |
-| [Ekza ecosystem](#10-ekza-ecosystem) | Space/OMOBA-ready exports (Tier 0), Ekza metadata and slots, OMOBA runtime lints; Hub publish planned | `v0.1.0`, `v0.4.0`; publish planned (M4a) |
-| [AI control via MCP](#11-ai-control-via-mcp-m-ai) | `ekza-studio-mcp` server: an AI agent (Claude Code, …) edits, rigs, animates and exports through undoable `AI: …` steps | **Next release** |
+| [Ekza ecosystem](#10-ekza-ecosystem) | Space/OMOBA-ready exports (Tier 0), Ekza metadata and slots, OMOBA runtime lints; game targets from a game's contract and the OMOBA hero package; Hub publish planned | `v0.1.0`, `v0.4.0`, `v0.7.0`; publish planned (M4a) |
+| [AI control via MCP](#11-ai-control-via-mcp-m-ai) | `ekza-studio-mcp` server: an AI agent edits, rigs, animates and exports through undoable `AI: …` steps | `v0.6.0` |
 | [Platform and limits](#12-platform-and-limits) | Chrome/Edge, local-only and telemetry-free, performance budgets, bundle gates, MIT | `v0.1.0`+ |
-| [Not yet](#13-known-limitations-and-not-yet) | FBX/BVH/OBJ, UV editor, constraints, layers, collaboration, AI generation, … | Planned |
+| [Not yet](#15-known-limitations-and-not-yet) | FBX/BVH/OBJ, UV editor, constraints, layers, collaboration, AI generation, … | Planned |
 
 ---
 
-## 1. Overview and the two modes
+## 1. Overview: one studio, two layouts, and Auto-Rig
 
 Ekza Studio is an open-source, browser-based 3D package for glTF and VRM characters: model low-poly meshes, rig and
-skin them, animate with a professional DCC-grade workflow and export to glTF/VRM/VRMA. It has two front ends over
-**one app, one document and one undo history** ([ADR 0021](adr/0021-autorig-mode.md)).
+skin them, animate with a professional DCC-grade workflow and export to glTF/VRM/VRMA. Since `v0.7.0` it is **one
+studio with two layouts** — **Ekza Studio** (the Simple layout, touch-first, the front door) and **Ekza Studio Pro**
+(the docked, hotkey-driven layout of earlier releases) — plus the five-step **Auto-Rig** wizard, all over **one app,
+one document and one undo history** ([ADR 0021](adr/0021-autorig-mode.md), [ADR 0023](adr/0023-studio-touch-ui.md)).
 
 | Feature | What it does | Where | Status |
 |---|---|---|---|
-| Start chooser | Landing page with two cards: **Start Auto-Rig** and **Open Studio** | `/` | `v0.5.0` |
-| Remembered choice | "Remember my choice on this device" skips the chooser next time; `/?chooser=1` shows it again | `/`; Edit › Preferences… › *Start in* (Ask / Auto-Rig / Studio) | `v0.5.0` |
-| Studio | The full package: Model, Animate and Rig & Skin workspaces | `/editor` (`?ws=` picks the workspace) | `v0.1.0` |
+| Start chooser | A first visit to `/` opens Ekza Studio's Home on every device; `/?chooser=1` lists **Ekza Studio**, **Ekza Studio Pro** and **Rig a model for me** (`v0.5.0`: two cards, Auto-Rig and Studio) | `/`, `/?chooser=1` | `v0.5.0`; first visit `v0.7.0` |
+| Remembered choice | "Remember my choice on this device" makes `/` open that layout next time; unticking it opens Ekza Studio again; the layout switch updates it | `/?chooser=1`; Pro: Edit › Preferences… › *Start in* (Default (Ekza Studio) / Ekza Studio / Ekza Studio Pro / Rig a model for me); Ekza Studio: Settings › Start in (explains and links the chooser) | `v0.5.0`; Ekza Studio `v0.7.0` |
+| Ekza Studio | The Simple layout: one full-screen canvas, the Halo verbs, the Path, the Thread ([§13](#13-ekza-studio-the-simple-layout)) | `/app` | `v0.7.0` **Beta** |
+| Studio | The Pro layout, titled **Ekza Studio Pro**: Model, Animate and Rig & Skin workspaces | `/editor` (`?ws=` picks the workspace) | `v0.1.0`; title `v0.7.0` |
+| Layout switch | ▤ *Pro layout* / ▤ *Simple layout* on the same page: the document, undo history, selection, time and camera stay; Pro arrives on the matching workspace and says *Same project, every panel at once · Undo still works*; on a touch-only device one line first says Pro is laid out for a mouse and keyboard | Ekza Studio: top bar ▤ Pro layout; Pro: status line ▤ Simple layout, File › and Help › *Switch to the Simple Layout* | `v0.7.0` |
 | Auto-Rig | Five-step auto-rig wizard from a static humanoid to an animated VRM | `/autorig` (`?step=`, `?sample=`) | `v0.5.0` |
 | Switch Studio → Auto-Rig | Hands the current document (selection, else visible meshes, else the character) to the wizard, with undo | File › Auto-Rig This Model…; Help › Switch to Auto-Rig; first-run dialog | `v0.5.0` |
 | Switch Auto-Rig → Studio | Same document and undo history into Rig & Skin (Animate from step ④); or a copy in a new tab | header **Open in Studio ▸**; `⋯` › Open in Studio (new tab) | `v0.5.0` |
@@ -384,12 +395,14 @@ tiers: [ADR 0010](adr/0010-ekza-integration-tiers.md).
 | Ekza Hub | Upload the VRM to Hub by hand (Hub is the publishing site; Studio does not upload) | manual |
 | Publish to Hub | One-click "Publish avatar to Ekza" (T3) | Planned (M4a; hidden until the Hub path exists) |
 | Typed animation assets, open from Ekza | Upload as `ekza:animation`, open from Ekza (T1) | Planned (M4a) |
+| Game targets (character contract) | Bind a character to a game's contract (`ekza.game-contract.v1`; OMOBA's bundled and pinned): every slot of the game's kit with its status (● ○ ⚠ ⊘), timing to aim for, *Game default ▶*, *From library…*, *Use clip…*; Validation rows with fixes ([CHARACTER-CONTRACT-SPEC](CHARACTER-CONTRACT-SPEC.md), [ADR 0024](adr/0024-character-contract.md)) | Pro: Windows › **Target**; Auto-Rig ④ *For a game…*; Ekza Studio: Share › OMOBA | `v0.7.0` |
+| OMOBA hero package | A VRM 1.0 with your animations and `ekza_package_v1` (profile `ekza/omoba-humanoid-v2`), the contract's byte lints, named timeline markers, a developer zip | Pro: Target panel › *Export package*; Export dialog; Auto-Rig ⑤ *OMOBA hero package* | `v0.7.0` |
 
 ## 11. AI control via MCP (M-AI)
 
-**In integration, coming next release.** Not on `dev` yet: built on `mai/port` and integrated on `mai/int`. Spec:
-`docs/MCP-SPEC.md` v0.3 §0.4 and ADR 0022 on those branches; on `dev`, [ADR 0018](adr/0018-agent-bridge-mcp.md) and
-[MCP-SPEC](MCP-SPEC.md) v0.2.
+**Shipped in `v0.6.0`** (toolset `1.0.0-mvp.3` since `v0.6.1`, 37 tools: [agent-tools-reference](agent-tools-reference.md);
+setup: [agents.md](agents.md)). Spec: [MCP-SPEC](MCP-SPEC.md), [ADR 0018](adr/0018-agent-bridge-mcp.md). In Ekza Studio
+the agent is reached from search › *Ask AI* (§13.3), on a computer (Chrome or Edge).
 
 | Feature | What it does |
 |---|---|
@@ -411,18 +424,84 @@ resume after a dropped connection, weight-paint tools for agents, npm publish.
 
 | Topic | Fact |
 |---|---|
-| Browsers | Chrome and Edge supported; Firefox and Safari follow in V1 |
-| Devices | Studio: best on a desktop (Rig & Skin edits need ≥ 1024 px). Auto-Rig: desktop and tablet full, phone without weight painting |
+| Browsers | Chrome and Edge supported; **Ekza Studio's Simple layout also on Safari 26+ on iPad** (beta: compatibility is tested on WebKit, the real-iPad run is the owner's), Pro on Safari best-effort; Firefox in V1 |
+| Devices | Ekza Studio: iPad in landscape and portrait with fingers and the Pencil, desktop with a mouse and keyboard; phones work but are best-effort. Pro: best on a desktop (Rig & Skin edits need ≥ 1024 px). Auto-Rig: desktop and tablet full, phone without weight painting |
 | Local-only | Files never leave the browser; no analytics, error reporting or third-party requests; autosave in IndexedDB |
 | Language | English (Auto-Rig strings are in one message table; `ru`/`zh` planned) |
 | Stack | Next.js 16 shell, React, three.js / React Three Fiber, @pixiv/three-vrm, glTF Transform, dockview, Canvas2D Graph Editor, AnimX curve engine |
-| Bundle gates (gzip, first visit) | `/editor` ≤ 900,000 B, `/autorig` ≤ 660,000 B, enforced in CI; dockview never loads on `/autorig` before *Open in Studio* |
+| Bundle gates (gzip, first visit) | One 5,000,000 B gate on every route (`/editor`, `/autorig`, `/app`; the owner's SIZE-1, 2026-10-24), enforced by `check:size`; the lazy boundaries stay — dockview never loads on `/autorig` or `/app`, no route loads another shell's code. Measured at `v0.7.0`: see the [release notes](releases/v0.7.0.md#sizes) |
 | Performance budgets | Idle = 0 frames (gate); pose eval ≤ 0.5 ms; 1 VRM × 4 panes playback ≤ 8 ms/frame; drag 1,000 keys ≤ 4 ms; Seed-san (10.9 MB) open ≤ 3 s; VRMA bake 10 s @ 30 fps ≤ 200 ms; bind 3k points ≤ 200 ms; Auto-rig ≤ 1–2.5 s — measured in [ROADMAP](ROADMAP.md#m1-budgets-architecture-14) |
 | Model limits | Auto-Rig: warns > 60k, refuses > 200k triangles; human size 0.3–3 m. VRM export: ≤ 50 MiB, JSON ≤ 4 MiB, ≤ 4,096 nodes, ≤ 64 humanoid bones. Bevy: ≤ 256 joints per skin. Generic export ≤ 256 MiB |
 | Licences | Code MIT; AnimX port Apache-2.0; fixtures CC0-1.0 or VRM Public License 1.0; clip library CC0 (Quaternius); third-party notices under Help › About |
-| Quality gate | `pnpm run ci`: format, lint, typecheck, layering, fixtures, licences, unit tests, build, size gate, Playwright e2e in Chrome |
+| Quality gate | `pnpm run ci`: format, lint, typecheck, layering, fixtures, licences, unit tests, build, size gate, generation boundary, Playwright e2e in Chrome, Chrome with touch (iPad sizes, CDP multi-touch and Pencil) and WebKit as an iPad (compatibility), axe (WCAG 2.2 AA) over Ekza Studio's sheets |
 
-## 13. Known limitations and not yet
+## 13. Ekza Studio: the Simple layout
+
+The touch-first layout of the same studio ([STUDIO-TOUCH-SPEC](STUDIO-TOUCH-SPEC.md), [ADR 0023](adr/0023-studio-touch-ui.md);
+internal name *Halo*). Route `/app`, the front door since `v0.7.0`, **beta** (Help › About says so). It adds no logic of
+its own: every change is the same operator Pro runs, so files, undo and exports are the same (Halo's exports are tested
+byte-equal to Pro's and Auto-Rig's). English only at GA.
+
+### 13.1 The canvas and how to touch it
+
+| Feature | What it does | Where | Status |
+|---|---|---|---|
+| Halo verbs | Touch anything — a part, a joint, a key, a curve, an animation, a swatch, a warning — and up to six verbs in plain words appear next to it; ⋯ More lists every operator for it with its Pro name and hotkey; a long-press (right-click) gives the same verbs as a flick ring | canvas | `v0.7.0` |
+| Search or ask | *Do or find…* reaches every operator by name, offers recipes (*Wave*, *Loop it*, *Rig it for me*, *Fix where it bends badly*, *Add animations*) and *Ask AI* | top bar | `v0.7.0` |
+| Path | Make · Paint · Rig · Animate switch tools and lighting, never lock anything; readiness glyphs and one status count from one list of checks; the Next chip (*Rig it for me ▸ → Add animations ▸ → Share for … ▸*) | top bar | `v0.7.0` |
+| Pencil and fingers | The Pencil makes things, fingers move the view; a finger drag moves what is selected or a handle, else orbits; double-tap frames; two-finger tap undoes; palm rejection while the Pencil works; *Reduce gestures* turns the gestures off | Settings › Input | `v0.7.0` |
+| Thumb key | One on-screen key like Shift (tap: next action, double-tap: lock, hold: while held), labelled with what the next tap and drag will do; it carries every modifier and held key Pro's tools read | lower corner | `v0.7.0` |
+| Numbers and chips | Echo chips beside the result for adjustable operators, pre-run forms (✓ to run) for the others, distance scrub and a numpad; the Numbers sheet is Pro's Channels and Attributes | beside the selection; breadcrumb › Numbers | `v0.7.0` |
+| Sheets | More, Numbers, Scene, View, Settings (Pro's preferences at touch size), Health, Help (gestures, glyphs, shortcuts, About with the beta note), About this character | project menu; the noun's Halo | `v0.7.0` |
+| Sessions | Modal tools show one bar: ✕ Cancel · tool · hint · ✓ Done; leaving a tool commits it | top of the canvas | `v0.7.0` |
+| Accessibility | 44 pt targets, 16 px inputs, named dialogs, live announcements of selections; axe (WCAG 2.2 AA) clean in the gate | everywhere | `v0.7.0` |
+
+### 13.2 Animate
+
+| Feature | What it does | Where | Status |
+|---|---|---|---|
+| Thread | The timeline in **frames** by default (seconds in Settings › Time), a ruler with a tick on every frame and numbers that never overlap, keys as marks; Rec on by default as this layout's own setting (Pro's Auto Key untouched) | bottom strip | `v0.7.0` |
+| Animations row | The character's animations as chips: switch cycles in one tap; *+ New* (30 / 60 / 100 frames); Play, Loop it, Rename, Duplicate, Settings | above the Thread | `v0.7.0` |
+| Keys | Pro's Dope Sheet at touch size: marquee, retime by drag, bands, the key Halo docked in the header | Thread › Keys | `v0.7.0` |
+| Curves | Pro's Graph Editor by touch and Pencil: *Ease ▾*, *Fewer keys*, *Fix flips*, *Cycle ▾*, ⟨Time⟩ ⟨Value⟩ ⟨In⟩ ⟨Out⟩ chips, ⇆ Before, per-axis pinch | Thread › Curves | `v0.7.0` |
+| Reach posing | Drag a hand or a foot and the limb follows; one drag is one undo step, keyed at the playhead with Rec on | canvas, Animate | `v0.7.0` |
+| Library | The CC0 clip library: preview on the character, Speed, Trim, Swap sides, *Add starter set* | Animate › Library | `v0.7.0` |
+| History | ↶'s long-press: the steps, *Undo to here*, *Compare* (hold), *Revert this*; an AI run is one group with *Undo all* | ↶ long-press; project menu › History | `v0.7.0` |
+| Ask AI | The MCP agent from a computer (Chrome or Edge): pairing with plain grants, its confirm prompts, a live activity line under the search pill, *Undo all*, *Restore the project as it was before the AI*; on an iPad an honest card and the recipes | search › Ask AI | `v0.7.0` |
+
+### 13.3 Make, Paint and Rig
+
+| Feature | What it does | Where | Status |
+|---|---|---|---|
+| Make | Selection level, *Drag ▾* (Select · Move · Turn · Scale · Select area · Snap · Falloff), *Create with AI* (§14), *Mirror edits*, *Cut ▾*, *Clean up ▾* (for a game in two touches), *New shape ▾*; a part's Halo cleans up (*Edit shape · Move · Separate · Delete · Reduce ▾ · Rig it*); the extrude cap handle; reference planes | Path › Make | `v0.7.0` |
+| Paint | Swatches in the tray (the active one in view), *Finish ▾* Matte · Shiny, *Fill part*, *Pick colour*, the palette sheet | Path › Paint | `v0.7.0` |
+| Rig it for me | One card on the canvas: *For: OMOBA & Ekza Space · Game engine · Just exploring*, the dots guessed, *Rig it*, the story line, *Test with: Walk · Sword · Dance*, the starter set — the same operator log as Auto-Rig ①–⑤ | Rig tray; the Next chip; search | `v0.7.0` |
+| Adjust dots | Front and side panes on the same canvas; drag a dot, its Halo (*Re-guess*, *Mirror to other side*, *Clear dots*) | Rig card › Adjust dots | `v0.7.0` |
+| Weights | The brush with **Pencil pressure** (no gaps on fast strokes), *Who owns this?* under a held finger, *This area follows*, the bend test (*Fix where it bends badly*: 7 touches), Checks, Bones and Weights sheets | Rig › Skin | `v0.7.0` |
+
+### 13.4 Home, Share and files
+
+| Feature | What it does | Where | Status |
+|---|---|---|---|
+| Home | Continue cards from autosave, *Try a sample*, *Bring a model* (the file's bytes decide what it is), *Make a character* (templates; *Create with AI* where a gateway is enabled), *Rig a model for me*, ▤ Pro layout; no modal on first open | `/app` | `v0.7.0` |
+| Resume | A reload (iPadOS under memory pressure) restores the document, stage, time, selection and view camera silently; other unsaved work is Home › Continue | on load | `v0.7.0` |
+| Share | Destination first (OMOBA & Ekza Space, Game engine, Just exploring), its checks with fixes, *Export … to Files* byte-equal to Pro's and Auto-Rig's; *Save project to Files* is separate; on iPad the system share sheet | top bar Share ⤴ | `v0.7.0` |
+
+## 14. AI generation and model clean-up
+
+The owner's pipeline: words or a photo → a generated model → cleaned for a game → *Rig it* → animate
+([ADR 0017](adr/0017-ai-generation-boundary.md), [ai-generation.md](ai-generation.md) for self-hosting). Nothing is sent
+anywhere unless a gateway is configured and the person presses *Create*; every spend is shown first.
+
+| Feature | What it does | Where | Status |
+|---|---|---|---|
+| Clean-up operators | Local, no provider: *Clean up for a game* (`mesh.intake`, one undo step) — reduce to a triangle budget without cracking seams, normalize (stand up, centre, ground, size), bake colours to the palette, downsize textures | Pro: Mesh › Intake…, Reduce…, Normalize…, Palette Bake…, Downsize Textures…; Ekza Studio: Make › Clean up ▾ | `v0.7.0` |
+| Generation gateway | A self-hosted gateway (`gen-gateway`, `gen-core` client) with adapters for two text/image-to-3D services, a token, spend caps, CSP; off by default (404) | server builds with `GEN_GATEWAY_ENABLED=1`, or a gateway URL at build time | `v0.7.0` (tested against mock providers; live providers not yet exercised) |
+| Generate panel | Words or a picture (re-encoded, no metadata), size presets, the service and its terms, the plan, the price line, jobs with progress, *Bring it in* (cleaned), *Use these in Auto-Rig* | Pro: File › Generate with AI… | `v0.7.0` |
+| Create with AI | The same flow at touch size; *Rig it* hands the cleaned meshes to the Rig-it card in one touch | Ekza Studio: Make › Create with AI; Home › Make a character | `v0.7.0` |
+| AI disclosure | The generator is recorded in exports (`ekza_model_v1.provenance.generator`) and shown as a *Made with AI* badge | exports; the result card | `v0.7.0` |
+
+## 15. Known limitations and not yet
 
 From the README's "said plainly" lists, [TODO](../TODO.md) (Parked, After the turnkey release), [ROADMAP](ROADMAP.md),
 [DECISIONS-OPEN](DECISIONS-OPEN.md) and the `test.fixme` stretch scenarios.
@@ -439,6 +518,7 @@ From the README's "said plainly" lists, [TODO](../TODO.md) (Parked, After the tu
 | Rig & Skin | Constraints (parent/point/orient/aim, Attach Prop, sockets), control-shape editing, Joint tool, Component Editor weight table, weight transfer/inpainting, rig edits on imported avatars | M6b after the MVP |
 | Auto-Rig | Humanoids only (no quadrupeds or tails), symmetric bodies, no facial expressions or spring bones, only base-colour textures written, decimation over 200k triangles, Publish to Hub | later |
 | Collaboration | Live sessions with presence and claims; accounts and permissions | M3, M4b |
-| AI generation | Text/image-to-3D through provider adapters | M7 |
+| AI generation | Live providers exercised end to end (keys and the hosted gateway are the owner's); retopology; a provider's own rig made editable (`char.makeEditable`) | M7 follow-ups |
+| Ekza Studio | The real-iPad release run (the owner's); Russian strings; a recipe stepper card with *Resume*; Numbers pinned beside the curves on wide screens; phones in the gate | after `v0.7.0` |
 | Splines | Splines and generators | M8 |
-| Platform | Firefox and Safari, Review workspace, offline static build (NFR-09) | V1 |
+| Platform | Firefox, Pro on Safari, Review workspace, offline static build (NFR-09) | V1 |

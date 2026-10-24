@@ -629,9 +629,21 @@ export class ViewportManager {
   setPointerMenus(handler: PanePointerMenus | null): void {
     this.pointerMenus = handler;
   }
+  /**
+   * STUDIO-TOUCH-SPEC §16.1, AS-ST-10 (T12): removes `handler` only while it is still the installed one. A same-page
+   * switch mounts the next shell before the leaving one's disposer runs, so a plain `setPointerMenus(null)` there
+   * removed the arriving shell's menus (Studio Pro's marking menus after a round trip through Ekza Studio).
+   */
+  clearPointerMenus(handler: PanePointerMenus): void {
+    if (this.pointerMenus === handler) this.pointerMenus = null;
+  }
   /** AUTORIG-SPEC §8.1 (D3): installs (or with null removes) a shell's navigation override. */
   setNavigationOverride(o: NavigationOverride | null): void {
     this.navOverride = o;
+  }
+  /** Removes `o` only while it is still the installed override (a leaving shell's disposer; T12, as above). */
+  clearNavigationOverride(o: NavigationOverride): void {
+    if (this.navOverride === o) this.navOverride = null;
   }
 
   /**
@@ -1136,6 +1148,36 @@ export class ViewportManager {
     const pane = this.panes.get(paneId);
     if (pane === undefined) throw new EkzaError('unsupported', `No viewport pane '${paneId}'`);
     return snapshotOf(this.resolve(pane).nav);
+  }
+
+  /**
+   * STUDIO-TOUCH-SPEC J10 (T12, P-T11-3): a pane's view camera — its position, orbit pivot and zoom — to keep and put
+   * back later (a shell's resume after a reload). Null for an unknown pane, or a pane looking through a scene camera
+   * (that camera is the document's; its own record keeps it).
+   */
+  viewState(paneId: string): NavState | null {
+    const pane = this.panes.get(paneId);
+    if (pane === undefined) return null;
+    const resolved = this.resolve(pane);
+    return resolved.kind === 'view' ? resolved.nav.saveState() : null;
+  }
+
+  /**
+   * Puts a pane's view camera back where `viewState` found it, as the person's own view (it is not framed again when a
+   * character finishes loading). False for an unknown pane, a scene camera, or a state that is not finite.
+   */
+  setViewState(paneId: string, state: NavState): boolean {
+    const pane = this.panes.get(paneId);
+    if (pane === undefined) return false;
+    const finite = [...state.position, ...state.target, state.zoom].every((v) => Number.isFinite(v));
+    if (!finite || state.zoom <= 0) return false;
+    const resolved = this.resolve(pane);
+    if (resolved.kind !== 'view') return false;
+    resolved.nav.restoreState(state);
+    resolved.view.touched = true;
+    this.picker.forget(paneId);
+    this.invalidate();
+    return true;
   }
 
   /**

@@ -422,7 +422,7 @@ export const THIRD_PARTY_NOTICES_URL = '/THIRD_PARTY_NOTICES.txt';
 export interface AboutInfo {
   readonly name: string;
   readonly version: string;
-  /** The beta note (§17: About carries it). */
+  /** The beta note (§17, §21 phase R: the release ships as "Ekza Studio" with a beta note in Help › About). */
   readonly beta: string;
   /** §1.1's positioning line. */
   readonly positioning: string;
@@ -434,7 +434,7 @@ export function aboutInfo(): AboutInfo {
   return {
     name: 'Ekza Studio',
     version: EDITOR_VERSION,
-    beta: 'Simple layout — beta. Everything you make here opens in the Pro layout too.',
+    beta: 'The Simple layout is new and in beta. Everything you make here opens in the Pro layout too, with the same undo history. Save your project to Files now and then.',
     positioning: 'One studio, two layouts. Simple: one thing at a time, by touch. Pro: every panel at once.',
     licence: 'MIT',
     noticesHref: THIRD_PARTY_NOTICES_URL,

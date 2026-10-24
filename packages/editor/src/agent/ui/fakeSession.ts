@@ -10,10 +10,11 @@ import {
   createAgentToolRuntime,
   type Grants,
 } from '@ekza-studio/agent-tools';
-import type { CharacterId, ClipId } from '@ekza-studio/doc';
+import type { CharacterId, ClipId, DocSnapshot } from '@ekza-studio/doc';
 import type { EditorApp, RunActor } from '@ekza-studio/editor-core';
 import { createStore, type StoreApi } from 'zustand/vanilla';
 import type { AgentAuditRow, AgentSessionState, AgentStatus } from '../types';
+import { type BeforeAgent, takeBeforeAgent } from '../beforeAgent';
 import type { AgentSession } from '../session';
 import type { AgentSessionControls, AgentSessionExtraView } from './runtime';
 
@@ -32,6 +33,8 @@ export interface FakeAgentSession extends AgentSession, Required<AgentSessionCon
   /** Runs a tool as the paired agent (status must be `paired`). */
   call(tool: string, args: unknown): Promise<AgentToolResult<unknown>>;
   setState(patch: Partial<AgentSessionState>): void;
+  /** The document before this pairing's first edit (§5.13; T12, P-T10-4), as the live session keeps it. */
+  beforeAgentSnapshot(): DocSnapshot | null;
 }
 
 const AUDIT_MAX = 500;
@@ -129,6 +132,8 @@ export function createFakeAgentSession(app: EditorApp, opts: FakeSessionOptions 
     runtime ??= createAgentToolRuntime({ app, host, actor });
     return runtime;
   };
+  /** The document before this pairing's first edit, as the live session keeps it (§5.13; T12, P-T10-4). */
+  let before: BeforeAgent | null = null;
 
   const updateRow = (n: number, patch: Partial<AgentAuditRow>): void => {
     set({ audit: store.getState().audit.map((row) => (row.n === n ? { ...row, ...patch } : row)) });
@@ -187,7 +192,11 @@ export function createFakeAgentSession(app: EditorApp, opts: FakeSessionOptions 
     accept(grants) {
       if (store.getState().status !== 'claimed') return;
       extra.setState({ claim: null });
-      set({ status: 'paired', code: null, actor, grants: { ...grants, read: true } });
+      before = null;
+      set({ status: 'paired', code: null, actor, grants: { ...grants, read: true }, beforeAgent: null });
+    },
+    beforeAgentSnapshot() {
+      return before?.snapshot ?? null;
     },
     deny() {
       extra.setState({ claim: null });
@@ -240,6 +249,11 @@ export function createFakeAgentSession(app: EditorApp, opts: FakeSessionOptions 
           },
         };
       } else {
+        const kind = runtimeOf().tools.find((t) => t.name === tool)?.kind;
+        if (kind !== undefined && kind !== 'read' && before === null) {
+          before = takeBeforeAgent(app);
+          set({ beforeAgent: { at: before.at, approxBytes: before.approxBytes } });
+        }
         result = await runtimeOf().call(tool, args, { signal: new AbortController().signal });
       }
       updateRow(n, {

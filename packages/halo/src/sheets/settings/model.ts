@@ -272,7 +272,7 @@ function sectionExtras(app: EditorApp, id: string, controls: readonly SettingsCo
     case 'startIn':
       return {
         intro:
-          'The front page opens the layout it was asked to remember, or lets you choose. Choose there and tick Remember; untick it to be asked again. Studio Pro has the same choice in Preferences › Start in.',
+          'The front page opens Ekza Studio, unless it was asked to remember another layout. Choose there and tick Remember; untick it to open Ekza Studio again. Studio Pro has the same choice in Preferences › Start in.',
         links: [{ kind: 'href', label: 'Open the chooser ▸', href: '/?chooser=1' }],
       };
     case 'input':

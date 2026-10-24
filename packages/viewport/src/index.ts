@@ -59,6 +59,8 @@ export {
 } from './input/tolerance';
 // AUTORIG-SPEC §8.1 (D3): a shell's per-press navigation override (`ViewportManager.setNavigationOverride`).
 export type { NavGesture, NavigationOverride, NavPointerInput } from './navigation/override';
+/** A pane view's camera state (`ViewportManager.viewState` / `setViewState`; STUDIO-TOUCH-SPEC J10, T12). */
+export type { NavState } from './navigation/NavigationController';
 // AUTORIG-SPEC §8.1, §8.3 (D3), moved from Auto-Rig by STUDIO-TOUCH-SPEC §20.3 item 1 (T1): Simple navigation and the
 // two-finger stage (a lazy chunk of `installSimpleNavigation`).
 export {

@@ -7,7 +7,7 @@
 import type { ControlId } from '@ekza-studio/doc';
 import type { EditorApp, HaloStage } from '@ekza-studio/editor-core';
 import { type CompassSlot, type Point, ringSlots, slotToward } from '@ekza-studio/ui/touch';
-import type { ArbiterFollow, ArbiterTap, PickResult } from '@ekza-studio/viewport';
+import { type ArbiterFollow, type ArbiterTap, BRUSH_TOOLS, type PickResult } from '@ekza-studio/viewport';
 import { en } from '../i18n/en';
 import { tapHooked } from '../input/claims';
 import type { ShellContext } from '../shell/context';
@@ -211,6 +211,22 @@ export function createGrammar(deps: GrammarDeps): Grammar {
     void ctx.run('select.controls', { ids: [id], mode: add ? 'add' : 'replace' });
   };
 
+  /**
+   * The body part under a manipulator handle that is not selected yet (§6.1 "tap = select", T12 P-T7-7): the nearest
+   * control (its shape, or the character mesh it drives) among the candidates under the finger; null when there is
+   * none, or when it is the selected one (a tap on the selected part's own handle stays the tool's).
+   */
+  const partUnderHandle = (x: number, y: number): string | null => {
+    const selected = app.session.getState().selection.controls;
+    const first = candidatesAt(x, y)
+      .map((c) => (c.kind === 'control' ? c.control : c.kind === 'mesh' ? c.control : null))
+      .find((id): id is ControlId => id !== null);
+    return first === undefined || selected.includes(first) ? null : first;
+  };
+
+  /** A brush is the active tool: a replayed click would be a dab (T12, P-T9-3). */
+  const brushActive = (): boolean => BRUSH_TOOLS.has(app.session.getState().tools.viewport);
+
   /** Replays the press as a click to the tool (a long-press on an unselected thing selects it first, §6.1). */
   const replayClick = (): boolean => {
     const vm = ctx.vm();
@@ -275,6 +291,17 @@ export function createGrammar(deps: GrammarDeps): Grammar {
       settle = setTimeout(resolveTap, SETTLE_MS);
       // a stage package may take the tap first (T8: a reference image plane, which the tools never pick)
       if (tapHooked(app, tap)) return 'consumed';
+      // T12 (P-T7-7): a tap on a manipulator handle over another body part selects that part — a handle is for
+      // dragging. Animate's Reach does it through its own press (`stages/animate/reach.ts`), so it is left to it there.
+      if (tap.hit?.kind === 'manipulator' && stage() !== 'animate') {
+        const under = partUnderHandle(tap.x, tap.y);
+        if (under !== null) {
+          const add = store.get().thumb.latch !== 'off';
+          selectControl(under, add);
+          if (add) void Promise.resolve().then(deps.consumeThumb);
+          return 'consumed';
+        }
+      }
       // after the replayed click (the tool read the meaning's modifiers): a `once` latch is used up
       if (store.get().thumb.latch !== 'off') void Promise.resolve().then(deps.consumeThumb);
       return 'select';
@@ -301,7 +328,9 @@ export function createGrammar(deps: GrammarDeps): Grammar {
         // §6.2: the manipulator is a noun of its own (Space, Size, Pivot), reached by a long-press on it
         store.set({ focus: { kind: 'manipulator', id: null } });
       } else if (control !== null && !selected.controls.includes(control)) selectControl(control);
-      else if (control === null) replayClick();
+      // T12 (P-T9-3): with a brush active the replayed click would paint a dab: the ring opens on what is selected
+      else if (control === null && !brushActive()) replayClick();
+      else if (control === null) spaceRing = currentNoun() === null;
       openRing(at);
       return ringFollow(at);
     },

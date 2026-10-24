@@ -81,22 +81,12 @@ const AUTO_RIG_OPERATOR: OperatorDef<{ readonly subject?: boolean; readonly reme
 };
 
 /**
- * STUDIO-TOUCH-SPEC §1.1, ST-30 (T3): Pro's own chrome names it "Ekza Studio Pro" once the Simple layout ships as
- * Ekza Studio; T12 turns this on with `HALO_ENTRY` (until then it stays "Ekza Studio", as shipped).
+ * STUDIO-TOUCH-SPEC §1.1, ST-30 (T3): Pro's own chrome names it "Ekza Studio Pro" now that the Simple layout ships as
+ * Ekza Studio; T12 turned it on with `HALO_ENTRY` (ST-INT-1). Off, Pro would show the v0.6 name "Ekza Studio".
  */
-export const PRO_TITLE: boolean = false;
+export const PRO_TITLE: boolean = true;
 /** The name Pro's chrome shows (the menu bar's mark). */
 export const PRO_NAME = PRO_TITLE ? 'Ekza Studio Pro' : 'Ekza Studio';
-
-/**
- * Pro's switch to the Simple layout (the File › and Help › items, the status line's button) is visible once Halo ships
- * (`PRO_TITLE`, T12); until then only e2e pages and `?simple=1` show it, so `dev` can carry the touch shell unreleased.
- */
-export function simpleLayoutSwitch(): boolean {
-  if (PRO_TITLE) return true;
-  if (typeof window === 'undefined') return false;
-  return /[?&](e2e|simple)=1(&|$)/.test(window.location.search);
-}
 
 /** The lazy half of the Simple layout switch (`./haloSwitch`); null when it cannot load (the switch still happens). */
 const loadHaloSwitch = (): Promise<typeof HaloSwitch | null> => import('./haloSwitch').catch(() => null);
@@ -395,8 +385,6 @@ export function shellMenuItems(
       workspaces: ANIMATE_LIKE,
     });
   });
-  if (!simpleLayoutSwitch())
-    return items.filter((item) => item.id !== 'shell.file.halo' && item.id !== 'shell.help.halo');
   return items;
 }
 

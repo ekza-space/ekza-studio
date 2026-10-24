@@ -173,5 +173,12 @@ describe('check:size on /app (STUDIO-TOUCH-SPEC §20.6, T2)', () => {
     const recorded = readBaseline(BASELINE_FILE);
     expect(recorded?.routes?.['app']).toMatchObject({ gate: 5_000_000, target: 660_000, enforce: true });
     expect(recorded?.routes?.['app']?.pending).toBeUndefined();
+    // T12 (ST-INT-10) recorded the merged measure, the way D7 recorded `/autorig`'s: a number under the gate, with its
+    // provenance
+    const app = recorded?.routes?.['app'] as { total?: unknown; recorded?: unknown } | undefined;
+    expect(typeof app?.total).toBe('number');
+    expect(app?.total as number).toBeGreaterThan(600_000);
+    expect(app?.total as number).toBeLessThanOrEqual(5_000_000);
+    expect(String(app?.recorded)).toMatch(/^2026-10-25, T12/);
   });
 });

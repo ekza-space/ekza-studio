@@ -122,8 +122,10 @@ against Pro, the framing the owner ruled out. v0.2:
   next time", Preferences › Start in and `entry-contract.test.ts` change together (T2).
 - **Default ST-2 (changed in v0.2).** Owner question OQ-2: confirm that a first visit on a desktop also opens Ekza
   Studio (the alternative keeps today's chooser for fine-pointer first visits).
-- Until the release gate (T12), `/app` is reachable by URL only and `/` behaves as today. The new entry and the "Ekza
-  Studio Pro" title land together at T12 (ST-30).
+- Until the release gate (T12), `/app` was reachable by URL only and `/` behaved as before. The new entry and the
+  "Ekza Studio Pro" title landed together at T12 (ST-30, ST-INT-1): `HALO_ENTRY` is on in its three copies (the
+  landing's `apps/web/app/entry.ts`, Studio Pro's `dialogs/entryChoice.ts`, Halo's `shell/entry.ts`, pinned together by
+  `entry-contract.test.ts`), `PRO_TITLE` is on and Pro's *Simple layout* switch is unconditional.
 
 ### 1.3 Naming rules
 
@@ -828,9 +830,9 @@ Petal names are plain words (P8). The **Pro name** is shown in grey in More and 
 | Noun (how you get it) | Drag does | Halo petals, in slot order | Highlights in ⋯ More (the full list is derived, §6.3) |
 |---|---|---|---|
 | **Empty space**: tap nothing (docked in the tray) | Orbit / marquee | Make: *New shape ▾*, *Template ▾*, *Reference ▾*, *Select area*, *Paste*, *Show all*. Paint: *Palette ▾*, *Pick colour*, *Fill part*. Rig: *Rig it for me*, *Add skeleton ▾*, *Checks*, *All joints*, *Bind skin*. Animate: *+ New animation*, *Library*, *Key all*, *All controls*, *Reset pose* | Select all / invert, Pick only… (selection mask), Snap, Selection options, Show ▾ |
-| **Mesh object** (Make) | Move | *Edit shape* (to Faces), *Duplicate*, *Mirror*, *Paint* (go to Paint), *Rig it* (go to Rig), ⋯ — on an imported character mesh the first petal is *Make editable* | Delete, Group, Parent to…, Unparent, Combine (2+ meshes; it moves up to a petal), Separate, Symmetrize, Triangulate, Quadrangulate, Cleanup, Freeze / Reset / Apply transforms, Turn / Move / Scale rings, Pivot ▾, UV ▾, Normals ▾, Export selected…, Hide, Isolate, Numbers |
-| **Faces** | Tweak | *Pull* (Extrude ⌘E), *Inset*, *Bevel* (⌘B), *Colour* (active swatch), *Delete*, ⋯ | Bridge (rises when two border loops exist), Extract, Duplicate face, Fill hole, Select ▾ (Loop · Ring · Shell · Grow · Shrink), Convert ▾, Select by swatch, UV ▾, Flip normals |
-| **Edges** | Tweak | *Loop cut* (Insert Edge Loop), *Bevel*, *Merge ▾*, *Slide*, *Bridge* (two borders), ⋯ | Smooth / Sharp (soften / harden), Normal angle, Offset loop, Connect, Spin, Collapse, Delete edge & vertices, Select ▾ (Loop · Ring · Border) |
+| **Mesh object** (Make) | Move | *Edit shape* (to Faces), *Move*, *Separate*, *Delete*, *Reduce ▾*, *Rig it* (go to Rig), ⋯ — clean-up first (ST-T8-4: imported and generated models); on an imported character mesh the first petal is *Make editable* | Duplicate, Mirror, Paint (go to Paint), Group, Parent to…, Unparent, Combine (2+ meshes; it moves up to a petal), Symmetrize, Triangulate, Quadrangulate, Cleanup, Freeze / Reset / Apply transforms, Turn / Move / Scale rings, Pivot ▾, UV ▾, Normals ▾, Export selected…, Hide, Isolate, Numbers |
+| **Faces** | Tweak | *Pull* (Extrude ⌘E), *Inset*, *Bevel* (⌘B), *Colour* (active swatch), *Delete*, *Separate*, ⋯ | Bridge (rises when two border loops exist), Extract, Duplicate face, Fill hole, Select ▾ (Loop · Ring · Shell · Grow · Shrink), Convert ▾, Select by swatch, UV ▾, Flip normals |
+| **Edges** | Tweak | *Loop cut* (Insert Edge Loop), *Bevel*, *Merge ▾*, *Slide*, *Bridge* (two borders), *Delete*, ⋯ | Smooth / Sharp (soften / harden), Normal angle, Offset loop, Connect, Spin, Collapse, Delete edge & vertices, Select ▾ (Loop · Ring · Border) |
 | **Vertices** | Tweak | *Merge ▾* (merge / to centre / by distance), *Weld to…* (Target Weld), *Slide*, *Connect*, *Delete*, ⋯ | Average, Collapse, Delete edge & vertices, Grow · Shrink, Convert ▾ |
 | **Image plane** | Move | *Opacity*, *Size*, *Lock*, *Hide*, *Delete*, ⋯ | Offset, Replace image… (a T5a wrapper: delete then import, one undo step), Numbers › Image plane |
 | **Character** (the breadcrumb root, or the mesh in Rig › Character) | — | Animate: *Copy pose* (→ *Paste ▾*), *Mirror ▾*, *Reset to rest*, *Key all*, ⋯. Rig: *Checks*, *Bind / Bind again*, *Make a character* (on loose meshes), *Parts & fingers*, *About this character*, ⋯ | Pin / Plant / Unpin feet, Mirror cycle, Update control rig, Add limb IK, Apply pose as rest, T-stance, Straighten to T-pose, Reset test pose, Render thumbnail, Make active (scenes with several characters) |
@@ -845,12 +847,17 @@ Petal names are plain words (P8). The **Pro name** is shown in grey in More and 
 | **Channel row** (Numbers or the Keys layer) | Scrub the value | *Key this channel*, *Lock*, *Reset to default*, *Show only this*, ⋯ | Unlock, Show in Curves, Copy value. With several rows selected (Thumb *Select more*): *Key selected channels* and a group scrub |
 | **Animation chip** (`[Wave ▾]` in the Animations row) | — | *Play*, *Loop it*, *Rename*, *Duplicate ▾* (plain, or + swap sides), *Settings*, ⋯ | Mirror cycle (half-cycle offset), Use as… (OMOBA slot), Make active, Delete |
 | **Library card** (Library drawer) | — | *Preview*, *Speed*, *Trim*, *Swap sides*, *Add*, ⋯ | Stay in place, Arms out, Stop preview, Add starter set, Search, Category |
-| **Swatch** (Paint tray) | Drop onto a part = colour it | *Edit colour*, *Finish ▾* (Matte / Shiny), *Select faces*, *Replace with active*, *Rename*, ⋯ | Remove, New material, Gloss ⟨ ⟩, Specular colour, Recent colours |
+| **Swatch** (Paint tray; its Halo docks above the tray as a verb bar, ST-T8-8) | Drop onto a part = colour it | *Edit colour*, *Finish ▾* (Matte / Shiny), *Select faces*, *Replace with active*, *Rename*, ⋯ | Remove, New material, Gloss ⟨ ⟩, Specular colour, Recent colours |
 | **Health dot** (on the model; in the Health sheet) | — | *Fix*, *Show me*, *Why?*, ⋯ | The rule id and profile (for developers) |
 | **History step** (History ribbon) | — | *Undo to here*, *Compare* (hold), *Revert this*, *Adjust* (the latest adjustable step only), *Show*, ⋯ | Undo all (an AI or recipe group), Redo, Copy as text |
 | **Camera** (puck sheet › Cameras, or the Scene sheet) | — | *Look through*, *Copy view here*, *Lock*, *Lens ⟨FOV⟩*, ⋯ | Focal length, Clip planes, Ortho height |
 | **Manipulator** (long-press it) | Its handle | *Space ▾* (object / world / gimbal), *Size*, *Pivot ▾*, *Drag anywhere* (replaces middle-drag anywhere), ⋯ | Pivot centre / bottom / reset / bake / numeric |
-| **Rig dot** (Rig it, Adjust dots session) | Move it | *Re-guess*, *Mirror to other side*, *Remove*, ⋯ | Snap to centre, Pick from view |
+| **Rig dot** (Rig it, Adjust dots session) | Move it | *Re-guess*, *Mirror to other side*, *Clear dots* (`skel.quickRig.clear` clears every dot, T9), ⋯ | Snap to centre, Pick from view |
+
+As built (T7–T9, recorded at T12): a tap on a manipulator handle over another body part selects that part — a handle is
+for dragging (§6.1 "tap = select"; Animate through Reach's press, the other stages in the grammar, P-T7-7). Paint's
+tray shows at most five swatches; *Fill part* is the Thumb key's lock and *Pick* its one-tap *Pick colour* (ST-T8-9).
+The Checks petals of a mesh and a character open the Checks sheet (T9).
 
 ### 6.3 ⋯ More, disabled reasons and Options
 
@@ -1313,7 +1320,8 @@ never imports Pro's `TimeSliderView`.
 ### 10.4 Keys (layer 1, the Dope Sheet)
 
 - Rows go Summary → body part → control → **channel**, each at least 36 pt tall, over Pro's `DopeSheetController`
-  behind a touch adapter (§20.3 item 8).
+  behind a touch adapter (§20.3 item 8). As built (T7): the controller's rows are drawn 1.8× (`attachDopeSheetTouch`'s
+  scale), which gives the 36 pt rows without a second row model; Curves uses the same scale (T10).
 - A finger or the Pencil: a drag on empty space is a marquee, a drag on a key retimes it, a long-press then a drag draws
   a band. Two fingers scroll the rows and pan or pinch time.
 - The header holds a *Select · Move · Scale* segmented control, *Push later keys* (`key.toggleRipple`), *Select area*,
@@ -1477,8 +1485,11 @@ ST-T10-1 … ST-T10-8).
 
 ### 12.4 Weights: the break-finder flow
 
-1. **Find it.** Pose segment **Test**, then ▶ *Bend test*: the motion test, or a ⟨Bend <joint>⟩ scrub chip that replaces
-   the E-key ring. In Test, dragging any joint test-rotates it and never writes a key.
+1. **Find it.** Pose segment **Test**, then ▶ *Bend test*: the forearms and shins swing through their bend in the test
+   pose (ST-T9-5: the rig chunk's test-pose gesture — never a key, never the document; not Auto-Rig's motion test),
+   *Pause here* keeps the pose as one *Test Pose* step, *Play again* swings again from rest. A ⟨Bend <joint>⟩ scrub chip
+   that replaces the E-key ring is not built (T9 follow-up). In Test, dragging any joint test-rotates it and never
+   writes a key.
 2. **Name it.** Finger-hold the bad spot: *Who owns this?* shows the top three influences with their values at that
    point. This covers `skin.influence.pickDominant` and `skin.paint.sample`, without I or Shift+I.
 3. **Paint it.** Tap a bone. The brush tray shows:
@@ -2145,37 +2156,66 @@ Halo follows the Auto-Rig pattern (ADR 0021).
 
 ### 20.2 Package layout
 
+As built at T12 (the plan of v0.2 was the same parts; the WPs recorded each change in their wp-notes, P-T6A-7, P-T7-6,
+P-T8-5, P-T9-4, P-T10-1, P-T11-7). The stage packages plug into the frame through one seam (`shell/stageParts.ts`,
+ST-T8-3: per stage `{Tray, Layer, install}`, its sheets and its test-API slice, all lazy) instead of a `StageDef` per
+stage; Home's intake is `intake/`, not `home/intake/`.
+
 ```
 packages/halo/src/
-  index.ts              HaloShell + marker
-  shell/                controller.ts (arrival: takeWorkspace / takeSubject / ?stage; host.mount({kind:'halo', leave,
-                        handoffState}); session mirror; touch-action / overscroll policy with a disposer; recovery
-                        hook), Frame.tsx (container-query layout), TopBar, ProjectMenu, prefetch.ts (idle chunk prefetch)
-  canvas/               HaloPane.tsx (WizardPane-style: paneSetup → registerPane; ids pane-single / pane-side),
-                        overlay.ts (stage display overlay through vm.setDisplayOverlay)
-  input/                arbiter.ts (ArbiterConfig + handlers), routing.ts (Shared / Pencil edits / Pencil only),
-                        modifierMap.ts, thumb/, loupe/
-  path/                 Path.tsx, readiness.ts (pure, one list), destinations.ts, nextChip.ts
-  stages/{make,paint,rig,animate}/   stage.ts (StageDef), Tray.tsx — non-initial stages are lazy
+  index.ts              HaloShell + marker, setGenerationGateway
+  shell/                HaloShell.tsx, Frame.tsx (container-query layout), TopBar.tsx (+ the live AI line, T12),
+                        ProjectMenu.tsx, Sheets.tsx (the sheet host), Tray.tsx (the stand-in tray under the stage
+                        trays), StageLayer.tsx, PathParts.tsx (Path, status corner, Next chip, Next actions),
+                        controller.ts (arrival, host.mount, test-API slices), store.ts, context.ts, hooks.ts, stage.ts,
+                        stageParts.ts (the stage seam), mirror.ts (sessionStorage mirror), keys.ts (the halo key
+                        scope), entry.ts (the remembered front door, `HALO_ENTRY`), coach.ts, targets.ts (the
+                        visible-target counter), readiness.ts, prefetch.ts (idle chunk prefetch)
+  canvas/               HaloPane.tsx (pane-single / pane-side), ViewPuck.tsx, overlay.ts (stage display overlay)
+  input/                arbiter.ts (ArbiterConfig + handlers), install.ts, claims.ts (whose a drag is; stage claims,
+                        tap hooks), situation.ts, modifierMap.ts, thumb.ts, ThumbKeyView.tsx, manipScale.ts,
+                        InputSettings.tsx (Settings › Input, lazy)
+  path/                 Path.tsx, StatusCorner.tsx, readiness.ts (pure, one list), destinations.ts, nextChip.ts
+  stages/animate/       AnimateDock.tsx, AnimationsRow.tsx, ClipSettings.tsx, DockedHalo.tsx, TimeChip.tsx, icons.tsx,
+                        start.ts, rec.ts (Rec as the shell override), model.ts, reach.ts, ui.ts, slice.ts,
+                        sheetContext.ts
+  stages/make/          index.ts, install.ts, Tray.tsx, Layer.tsx, CapHandle.tsx, ValueHandle.tsx, kit.tsx,
+                        cleanup.ts (G-a's intake calls), geometry.ts, state.ts, useProjected.ts;
+                        ai/ (CreateWithAiSheet.tsx, availability.ts, open.ts), report/ (ReportSheet.tsx)
+  stages/paint/         index.ts, install.ts, Tray.tsx, model.ts
+  stages/rig/           index.ts, Tray.tsx, Layer.tsx, RigTray.tsx, RigCard.tsx, RigOverlay.tsx, DotsPanes.tsx,
+                        SkinCards.tsx, start.ts, model.ts, ui.ts, slice.ts, cardOpen.ts, dock.ts, dotLabels.ts,
+                        openers.ts, poll.ts
   verbs/                nouns.ts (resolveNoun), table.ts (curated petals), derive.ts (More from manifest + poll)
-  halo/                 HaloBar, HaloRing (./overlays geometry), Breadcrumb, TargetMode (verb → target)
-  chips/                EchoChips, forms.ts (pre-run forms), scrub.ts (distance scrub), bind.ts (edit.adjustLast,
-                        NumericTarget)
-  session/              SessionBar (leave = Done)
-  dialogs/              watcher.ts (session.dialog → Halo surfaces, §6.7)
-  thread/strip/         layer 0 (eager, own Canvas2D over editor-core queries)
-  thread/band/          band + key-drag models from curve-editor (lazy), the focused band source
-  thread/keys/          layer 1 (lazy; curve-editor DopeSheet adapter)
-  thread/curves/        layer 2 (lazy; curve-editor Graph adapter)
-  sheets/               more, numbers, scene, library, health, share, about, history, settings (from the prefs
-                        descriptor table), view, help, ask — all lazy
-  palette/              Halo's touch palette view over the host palette controller
-  recipes/              rigIt (over editor-core autorigFlow), addAnimations, loopIt, wave, fixForOmoba, fixBend
-  home/                 Home, Continue, intake/ (byte sniffing → autorigFlow routing)
-  manifest/             disclosure.ts, proOnly.ts, plumbing.ts, searchOnly.baseline.json, labels.ts
-  i18n/en.ts, i18n/channels.ts
-packages/halo/test/     parity helpers, manifest lints, vocabulary lint, modifierMap (real tools), nouns/verbs on
-                        fixture apps, readiness, dialogs map, channel values, recipes, layout
+  halo/                 HaloLayer.tsx, Breadcrumb.tsx, ChoiceRow.tsx (▾ choices), TargetMode.tsx (verb → target),
+                        grammar.ts, run.ts, verbSource.ts, geometry.ts, icons.tsx
+  chips/                EchoChips.tsx, FormChips.tsx (pre-run forms), NumpadPanel.tsx
+  session/              SessionBar.tsx, sessions.ts (leave = Done)
+  dialogs/              watcher.ts (session.dialog → Halo surfaces, §6.7), map.ts, answers.ts, ConfirmCard.tsx
+  thread/               TimeSettings.tsx, units.ts; strip/ (Thread.tsx, ThreadStrip.tsx, model.ts: layer 0 and the
+                        ruler), band/source.ts (the focused band source), keys/KeysLayer.tsx (layer 1, lazy),
+                        curves/ (CurvesLayer.tsx, CurveHalo.tsx, KeyChips.tsx, model.ts, probe.ts: layer 2, lazy)
+  history/              probe.ts, undoPress.ts (↶'s long-press), activity.ts (the live AI line's slot, T12)
+  generate/             binding.ts (Create with AI over the Generate flow, M7 G-d)
+  sheets/               more, numbers, scene, view, settings, health, help, about (T6b); library (T7); palette (T8);
+                        checks, bones, weights (T9); history, ask (T10; ask/activity.ts follows the agent, T12);
+                        share (T11: ShareSheet.tsx, GameTarget.tsx, model.ts, bake.ts) — all lazy
+  palette/              Palette.tsx (search, recipes, Ask AI)
+  recipes/              recipe.ts, index.ts, rigIt.ts, rigOffers.ts, fixBend.ts, addAnimations.ts, loopIt.ts, wave.ts,
+                        fixForOmoba.ts
+  home/                 Home.tsx, model.ts, start.ts (recovery hook, storage card), resume.ts (J10, with the view
+                        camera since T12), save.ts, slice.ts
+  intake/               intake.ts (byte sniffing → autorigFlow routing), flowHost.ts (one flow state per app)
+  manifest/             disclosure.ts, labels.ts, paramSurfaces.ts, proOnly.ts, plumbing.ts, dialogs.ts, census.ts,
+                        check.ts, probe.ts, sheets.ts, sheetLoaders.ts, types.ts, searchOnly.baseline.json
+  i18n/                 en.ts (the shell), animate.ts, make.ts (Make and Paint), rig.ts, channels.ts
+packages/halo/test/     rules (operator-only writes, preferences, lazy modules, the one vocabulary lint over every
+                        catalogue, the visible-target counter), contracts, grammar, keys-and-mirror, modifier-map,
+                        manip-scale, dialogs, manifest/, verbs/, path/, sheets/, features-map, animate-*, curves-journey,
+                        t10-curves-history, make-paint, rig-stage, rig-journeys, share-bytes, t11-share-home,
+                        generate-binding, t12-integration
+apps/web/e2e/           ha-00 … ha-15, ha-J1 … ha-J10 (J4f and J6f inside J4 and J6), ha-J1-generated, ha-parity,
+                        ha-gen-create-with-ai, ha-t3-pro-switch, ha-t12-release
 ```
 
 ### 20.3 Shared extractions and kernel changes (additive)
@@ -2193,7 +2233,7 @@ packages/halo/test/     parity helpers, manifest lints, vocabulary lint, modifie
 | 9 | **`@ekza-studio/editor/models`**, a subpath that re-exports the React-free view models: outliner (`model`, `modelTree`, `sceneSelection`), the Channels panel (`readout`, `states`, `nudge`, `kit/kernel`), graph `model`, clips `settings`, palette `model`, toolkit `slider`, the VRM Meta dialog model. Not `timeline/state.ts` or `placement.ts`, which are React hooks. Measured against `/editor` after each; the T1a spike decides between re-export and a React-free package (§20.6). | editor | Halo | T5c |
 | 10 | **Auto-Rig's orchestration and progress into `editor-core`.** `editor-core/src/autorigFlow`: intake routing and the first-fix order (stand up → scale → freeze → centre → face), the `runAutoRig` argument rules (straighten from the recorded start pose, rigid parts, the rebind confirm, busy and progress), the motion-test driver, and export target naming (from `autorig/src/steps/{model,rig,motion,export}`). `autorig/src/progress` moves to `editor-core/src/progress`. Auto-Rig re-imports both (AS-ST-15). | editor-core, autorig | Halo readiness, recipes, Auto-Rig | T5b (flow), T5c (progress) |
 | 11 | **Route unions and navigation** (§20.4): `ShellRoute` + `'halo'`; `NavigationRequest.from`, `then?`; `HandoffInfo.halo`; `MountedShell.kind`. `routeHref` maps every route explicitly (today any non-`studio` route goes to `/autorig`). `handoff.ts`, test-api params, `DialogHost`, the `EditorShell` first-run suppression, the entry-choice unions, `entry-contract.test`. A host-level `shell.navigate` operator, agent-denied; `autorig.navigate` stays with its agent schema unchanged. | editor-core, editor, apps/web | all shells | T2 |
-| 12 | **Host re-homing** of shell-neutral registrations that only Pro makes today: the marking-menu definitions; rig menu items and `rig.snap.projectedCenter` / `rig.jointSize.set`; the data parts of `registerModelSelectUi` / `registerModelTransformUi`; agent UI hooks; `view.selectionMask`, `view.toggleFullscreen`. `promptRecovery` moves to the host with a hook each shell provides (Pro: its Recovery dialog; Halo: Home › Continue; Auto-Rig: as today). `watchRigViewOnly` stays Pro-only. They become idempotent, lazy, host-level registrations. | editor | Halo, Auto-Rig | T3 |
+| 12 | **Host re-homing** of shell-neutral registrations that only Pro makes today: the marking-menu definitions; rig menu items and `rig.snap.projectedCenter` / `rig.jointSize.set`; the data parts of `registerModelSelectUi` / `registerModelTransformUi`; agent UI hooks; `view.selectionMask`, `view.toggleFullscreen`. `promptRecovery` moves to the host with a hook each shell provides (Pro: its Recovery dialog; Halo: Home › Continue; Auto-Rig: as today). `watchRigViewOnly` stays Pro-only. They become idempotent, lazy, host-level registrations — as built (T3, P-T3-5): lazy, once per app, the view operators at once, Model's marking menus and Rig & Skin's menus and settings on their workspace's first entry; the recovery hook is `provideRecoveryHook(app, {firstRun, offer})`. | editor | Halo, Auto-Rig | T3 |
 | 13 | **Key scope from `lastPanel`** for non-mouse pointers (`createHost.ts:233`, `useWindowInput.ts`). | editor host | every shell | T2 |
 | 14 | **UI touch kit**: `[data-density=touch]` tokens (rows and hits 44, input text 16); primitives Sheet, Segmented, ScrubChip, Numpad, LongPress, Loupe (chips) and a generic radial arc in `@ekza-studio/ui/touch` (so `/editor` pays nothing); the shell `touch-action` / `overscroll-behavior` policy class; `uiScale` actually read. | ui | Halo, Auto-Rig later | T4 |
 | 15 | **Platform services**: `FileService.save() → SaveTicket` and a host-level `SavePrompt` (§20.4); `sniffFileKind(bytes)`; a `storage.persist()` request; `host/memoryProfile.ts`, read by `StudioHost` before `GLHost` mounts, on every route (DPR cap, `antialias`); the texture cap at GPU upload (`viewport/src/gl/textureCap.ts`, new); the web manifest scoped to `/app`. | editor, viewport, apps/web | every shell on iPad | T0 |
@@ -2204,6 +2244,14 @@ packages/halo/test/     parity helpers, manifest lints, vocabulary lint, modifie
 | 20 | **Tool-modifier rows**: `keymap/toolModifiers.ts` gains the rows it lacks (joint D, skin B/M/N/I, Quick Rig X, Graph Shift axis, time-slider Shift band and Mod copy); the conformance test covers every `TOOL_HOLD_CODES` entry. | editor-core keymap | modifierMap tests, docs | T1 (first day) |
 
 ### 20.4 Contracts (sketch; normative after T1a and T2)
+
+As built (T2's P7, recorded at T12): `then` is **`arrival`** (`NavigationRequest.arrival`, `HostNavigation.takeArrival`);
+the code adds `ShellKind` (`ShellRoute` without `'chooser'`), `HaloStage`, `MountedShell.haloState`,
+`HostNavigation.takeHalo` and, at T12, `takeFrom` (the shell a same-page switch left: Pro's arrival toast, P-T11-4),
+`HostShell.notePointer`; `PrefsStore.override?` and `FileService.save?` are optional. The sketch below keeps v0.2's
+names where the code renamed them; the code (`editor-core/src/types.ts`, `editor/src/host/types.ts`) is the reference.
+`ViewportManager` gained `viewState(paneId)` / `setViewState(paneId, state)` at T12 (J10's camera, P-T11-3), and the
+agent session `beforeAgentSnapshot()` (P-T10-4).
 
 ```ts
 // editor-core (additive) — owned by T2
@@ -2441,7 +2489,8 @@ the checkbox *"Ekza Studio path (manifest entry) added or not needed"*.
   - `ekza-halo-shell` is banned from `editor` and `autorig`;
   - `ROUTE_INITIAL_MARKERS.app = ['ekza-studio-host', 'ekza-halo-shell']`;
   - `size-baseline.json` `routes.app` is an unenforced placeholder at T2 and enforced at T12 (the Auto-Rig D0→D7
-    pattern);
+    pattern) — as built: the owner's SIZE-1 (2026-10-24) made every route's gate 5,000,000 B, enforced, with the
+    targets and allowances report-only; T12 recorded the merged measure, **736,853 B** (ST-INT-10);
   - `apps/web/test/halo-size.test.ts` is modelled on `ar-size.test.ts`, and the route is added to `budgets.bench.ts`.
 - **`/editor` and `/autorig` gain 0 B from the route.** The shared extractions and Pro's lazy *Simple layout* items are
   measured after every merge and recorded in one re-baseline row (**ST-B1**, AR-B1 pattern).

@@ -169,12 +169,12 @@ export function installInput(ctx: ShellContext, grammar: Grammar, vm: ViewportMa
       installStage();
   });
 
-  vm.setNavigationOverride(
-    mouseOverride(app, vm, ctx, (press) => {
-      empty = press;
-    }),
-  );
-  vm.setPointerMenus(ringMenus(ctx, grammar));
+  const override = mouseOverride(app, vm, ctx, (press) => {
+    empty = press;
+  });
+  vm.setNavigationOverride(override);
+  const menus = ringMenus(ctx, grammar);
+  vm.setPointerMenus(menus);
 
   // C15 / S21: a trackpad pinch dollies inside the canvas; a touchscreen pinch is the arbiter's (two pointers held)
   let lastScale = 1;
@@ -207,8 +207,9 @@ export function installInput(ctx: ShellContext, grammar: Grammar, vm: ViewportMa
       offInput();
       offStage?.();
       offStage = null;
-      vm.setNavigationOverride(null);
-      vm.setPointerMenus(null);
+      // only this shell's own hooks: the next shell of a same-page switch may have installed its own already (T12)
+      vm.clearNavigationOverride(override);
+      vm.clearPointerMenus(menus);
       offSource();
       thumb.dispose();
     },

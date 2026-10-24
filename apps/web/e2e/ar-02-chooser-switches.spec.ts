@@ -8,7 +8,7 @@ import { call, openEditor } from './helpers/test-api';
 // without meshes or a character and, with the Cube Lad imported, switches on the same page keeping the document (no
 // page load, the undo history kept, `?from=studio`) without loading the Rig & Skin chunk first; Help › Switch to
 // Auto-Rig works in an empty document; the first-run dialog's third answer switches and remembers Auto-Rig for `/`
-// only when ticked; Preferences › Start in sets what `/` opens (Ask shows the chooser).
+// only when ticked; Preferences › Start in sets what `/` opens (Default: Ekza Studio since T12, STUDIO-TOUCH-SPEC §1.2).
 
 const ENTRY_KEY = 'ekza-studio:entry:v1';
 const RIG_CHUNK_MARKER = 'ekza-rig-workspace';
@@ -83,15 +83,23 @@ test('the first-run third answer without the tick remembers nothing', async ({ p
   await page.getByTestId('firstrun-done').click();
   await expectAutoRigShown(page);
   expect(await remembered(page)).toBeNull();
+  // nothing remembered: `/` is a first visit, which opens Ekza Studio (§1.2)
   await page.goto('/');
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL(/\/app$/);
 });
 
-test('Preferences › Start in: Studio makes / open Studio, Ask brings the chooser back', async ({ page }) => {
+test('Preferences › Start in: Pro makes / open Pro, Default opens Ekza Studio again', async ({ page }) => {
   await openEditor(page);
   await runMenuItem(page, 'edit', 'shell.edit.prefs');
   const select = page.getByTestId('prefs-start-in');
   await expect(select).toHaveValue('ask');
+  // §1.2 (T12): Default (Ekza Studio) · Ekza Studio · Ekza Studio Pro · Rig a model for me
+  await expect(select.locator('option')).toHaveText([
+    'Default (Ekza Studio)',
+    'Ekza Studio',
+    'Ekza Studio Pro',
+    'Rig a model for me',
+  ]);
   await select.selectOption('studio');
   expect(await remembered(page)).toMatchObject({ choice: 'studio' });
   await page.goto('/');
@@ -106,9 +114,16 @@ test('Preferences › Start in: Studio makes / open Studio, Ask brings the choos
 
   await openEditor(page);
   await runMenuItem(page, 'edit', 'shell.edit.prefs');
+  await page.getByTestId('prefs-start-in').selectOption('halo');
+  expect(await remembered(page)).toMatchObject({ choice: 'halo' });
+  await page.goto('/');
+  await expect(page).toHaveURL(/\/app$/);
+
+  await openEditor(page);
+  await runMenuItem(page, 'edit', 'shell.edit.prefs');
+  await expect(page.getByTestId('prefs-start-in')).toHaveValue('halo');
   await page.getByTestId('prefs-start-in').selectOption('ask');
   expect(await remembered(page)).toBeNull();
   await page.goto('/');
-  await expect(page).toHaveURL(/\/$/);
-  await expect(page.getByTestId('entry-chooser')).toBeVisible();
+  await expect(page).toHaveURL(/\/app$/);
 });

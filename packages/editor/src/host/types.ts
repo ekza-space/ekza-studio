@@ -58,6 +58,11 @@ export interface HostNavigation extends NavigationPort {
   /** STUDIO-TOUCH-SPEC §16.3 (T2): the state of the Halo shell the last `go` left (or a received record's), once —
    *  Auto-Rig ① reads the destination and the finger preset when entered from Halo — else null. */
   takeHalo(): HaloHandoffState | null;
+  /**
+   * STUDIO-TOUCH-SPEC §16.1 (T12, P-T11-4): the shell the last same-page `go` left, once, else null (a received
+   * record's arrival says so in its own toast: the undo history starts there). Pro's arrival toast reads it.
+   */
+  takeFrom(): ShellKind | null;
   /** Host-internal: a received handoff record's info (its subject, workspace, arrival action and Halo state become the
    *  arrival's). */
   arrive(info: HandoffInfo): void;

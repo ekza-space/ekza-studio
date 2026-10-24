@@ -3,7 +3,8 @@ import { expect, type Page, test } from '@playwright/test';
 // The touch kit's gallery in the production build (/dev/touch; STUDIO-TOUCH-SPEC §21 T4, §18): 44 px targets and
 // 16 px input text in every state, the roles and names a screen reader needs, and the primitives' input — distance
 // scrub, numpad expressions, the Thumb key's tap / double-tap, the long-press ring, roving focus, the no-pan policy,
-// reduced motion. The axe run of the gallery is recorded in docs/wp-notes/halo-t4.md (axe-core is not a dependency).
+// reduced motion. The axe run of the gallery is recorded in docs/wp-notes/halo-t4.md (axe-core became a web
+// devDependency at T12, ST-INT-6; `ha-15` runs it over Halo's sheets in the gate).
 
 async function open(page: Page): Promise<void> {
   await page.goto('/dev/touch');

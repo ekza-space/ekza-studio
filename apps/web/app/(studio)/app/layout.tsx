@@ -15,7 +15,9 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   appleWebApp: { capable: true, title: 'Ekza Studio', statusBarStyle: 'black-translucent' },
-  icons: { apple: '/apple-touch-icon.png' },
+  // A segment's `icons` replaces the root's file-convention icon (`app/icon.svg`), so it is named again here: without
+  // it `/app` had no icon link and every first visit logged a `/favicon.ico` 404 (T12, ST-INT-4).
+  icons: { icon: [{ url: '/icon.svg', type: 'image/svg+xml' }], apple: '/apple-touch-icon.png' },
 };
 
 /** A segment layout below the shared `(studio)` one: it adds head tags only, so a switch keeps the host mounted. */

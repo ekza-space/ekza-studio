@@ -1,10 +1,10 @@
 // The remembered front door (STUDIO-TOUCH-SPEC §1.2, ST-2, ST-T3-5): using the layout switch updates the remembered
 // entry — from Halo, a remembered Ekza Studio (`'halo'`) becomes Pro (`'studio'`); Ask and Auto-Rig stay. The same key
-// and record as Studio Pro's `entryChoice.ts`, behind the same `HALO_ENTRY` flag (off until T12, when a stored
-// `'halo'` starts to mean something); the integration flips both copies (and `entry-contract.test.ts` pins this one).
+// and record as Studio Pro's `entryChoice.ts`, behind the same `HALO_ENTRY` flag (on since T12, ST-INT-1: a stored
+// `'halo'` means Ekza Studio); `apps/web/test/entry-contract.test.ts` pins this copy with the other two.
 
 export const ENTRY_KEY = 'ekza-studio:entry:v1';
-export const HALO_ENTRY = false;
+export const HALO_ENTRY = true;
 
 /** ▤ Pro layout from Halo: a remembered `'halo'` becomes `'studio'` (no write while `HALO_ENTRY` is off). */
 export function rememberProLayout(storage: Pick<Storage, 'getItem' | 'setItem'> | null = safeLocal()): void {

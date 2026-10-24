@@ -104,6 +104,18 @@ export function breadcrumbTop(box: Box | null, above: number): number {
 /** Where the arc's petals may start: under the breadcrumb (the chip above the selection stays readable). */
 export const BREADCRUMB_ROW = 44 + 8;
 
+/**
+ * The row the session bar or the target bar takes at the top of the canvas while it shows (§5.7, §6.4): a 44 pt
+ * control in a cluster with 5 px padding and a 1 px border, plus 8 px of air. The breadcrumb and the arc start below
+ * it, so the bar's hint is never covered (T12, P-T9-2).
+ */
+export const TOP_BAR_ROW = 44 + 2 * 5 + 2 + 8;
+
+/** The top the floating grammar may not go above: the top bar, and the session or target bar when one shows. */
+export function grammarTop(insetTop: number, barShown: boolean): number {
+  return barShown ? insetTop + TOP_BAR_ROW : insetTop;
+}
+
 /** Whether two boxes overlap (AS-ST-18: no floater intersects the selection). */
 export function overlaps(a: Box, b: Box): boolean {
   return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;

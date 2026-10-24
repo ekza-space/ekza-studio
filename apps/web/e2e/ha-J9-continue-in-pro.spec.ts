@@ -56,6 +56,10 @@ test('ha-J9: ▤ Pro layout continues on the same page — ≤ 2 touches on the 
   await expect(page).toHaveURL(new RegExp(`/editor\\?e2e=1&firstRun=1&ws=${workspace}&from=halo$`));
   // Pro's own first-run dialog stays away for a page that came from Halo
   await expect(page.getByTestId('firstrun-dialog')).toHaveCount(0);
+  // §16.1 (T12, P-T11-4): Pro says what stayed the same, once
+  await expect(
+    page.getByTestId('toast').filter({ hasText: 'Same project, every panel at once · Undo still works' }),
+  ).toHaveCount(1);
   // undo still works across the switch
   await runOk(page, 'edit.undo');
   expect((await call(page, 'history')).redo).toEqual(['Use Clip Walk']);

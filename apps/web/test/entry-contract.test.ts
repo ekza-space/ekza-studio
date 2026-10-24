@@ -6,9 +6,11 @@
 // the editor's sources name the same key, write `{ choice, at }` and accept the same choices; the page renders
 // the cards and the redirect script from `entry.ts`.
 //
-// STUDIO-TOUCH-SPEC §1.2 (T2): the choice gains `'halo'` (`/app`) behind `HALO_ENTRY`, one flag in both copies. While
-// it is off the landing is exactly today's (the same script byte for byte, two cards, a stored `'halo'` is Ask); on,
-// a first visit opens `/app`, a remembered Pro or Auto-Rig still wins, and `/?chooser=1` lists three rows.
+// STUDIO-TOUCH-SPEC §1.2 (T2): the choice gains `'halo'` (`/app`) behind `HALO_ENTRY`, one flag in all three copies —
+// the landing's, Studio Pro's and Halo's (`packages/halo/src/shell/entry.ts`, the ▤ Pro layout switch's write, P-T6A-5).
+// On since T12 (ST-INT-1): a first visit opens `/app`, a remembered Pro or Auto-Rig still wins, and `/?chooser=1` lists
+// three rows. Off, the landing would be the v0.6 one (the same script byte for byte, two cards, a stored `'halo'` is
+// Ask): the rollback is the three flags.
 import { readFileSync } from 'node:fs';
 import { createContext, runInContext } from 'node:vm';
 import { describe, expect, it } from 'vitest';
@@ -40,6 +42,20 @@ describe('the remembered-choice contract between the landing and Studio (§3.3)'
     expect(prefs).toContain("choice === 'autorig' || choice === 'studio' || (HALO_ENTRY && choice === 'halo')");
     expect(prefs).toContain(`export const HALO_ENTRY = ${String(HALO_ENTRY)};`);
     expect(prefs).toContain("export type EntryChoice = 'autorig' | 'studio' | 'halo';");
+  });
+
+  it("Halo's copy (the ▤ Pro layout switch's write) names the same key and record, and the same flag", () => {
+    const halo = read('../../../packages/halo/src/shell/entry.ts');
+    expect(halo).toContain(`export const ENTRY_KEY = '${ENTRY_KEY}';`);
+    expect(halo).toContain(`export const HALO_ENTRY = ${String(HALO_ENTRY)};`);
+    expect(halo).toContain(
+      "if (choice === 'halo') storage.setItem(ENTRY_KEY, JSON.stringify({ choice: 'studio', at: Date.now() }));",
+    );
+    expect(halo).toContain('if (!HALO_ENTRY || storage === null) return;');
+    // Pro's switch writes the reverse through Studio's module (`shell/haloSwitch.ts`)
+    const proSwitch = read('../../../packages/editor/src/shell/haloSwitch.ts');
+    expect(proSwitch).toContain("from '../dialogs/entryChoice'");
+    expect(proSwitch).toContain("if (HALO_ENTRY && readEntryChoice() === 'studio') writeEntryChoice('halo');");
   });
 
   it("the first-run dialog's remember writes the same record through Studio's module; so does Preferences", () => {
@@ -85,9 +101,10 @@ describe('the remembered-choice contract between the landing and Studio (§3.3)'
   });
 });
 
-describe('HALO_ENTRY off (until T12, ST-30): the landing is exactly today’s', () => {
-  it('is off, and the script is the one that shipped', () => {
-    expect(HALO_ENTRY).toBe(false);
+describe('HALO_ENTRY is on since T12 (ST-30, ST-INT-1); off would restore the v0.6 landing exactly', () => {
+  it('is on, `/` renders the new rule, and the off rule is still the script that shipped', () => {
+    expect(HALO_ENTRY).toBe(true);
+    expect(REDIRECT_SCRIPT).toBe(redirectScript(true));
     expect(redirectScript(false)).toBe(SHIPPED_SCRIPT);
   });
 

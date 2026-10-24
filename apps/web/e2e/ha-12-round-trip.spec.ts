@@ -10,6 +10,8 @@ import {
   tagGl,
 } from './helpers/ar-host';
 import { history, loaded, SHELL_MARKERS, scriptsOf } from './helpers/autorig';
+import { MODEL_PANE, openModel } from './helpers/m6a-model';
+import { emptySpot, openShiftRmbMenu } from './helpers/m6a-model-ops-ui';
 import { call, expectKernelStarted, runOk, waitForTestApi } from './helpers/test-api';
 
 // ha-12 skeleton (STUDIO-TOUCH-SPEC §16.1, §20.7, AS-ST-6; T2 exit test): an empty Halo shell mounts at `/app` under
@@ -173,4 +175,101 @@ test('Rec is a shell override of Auto Key: on in Halo, removed in Pro, back in H
   await navigate(page, { to: 'halo', from: 'studio' });
   await expectHaloShown(page);
   await expect.poll(async () => (await call(page, 'state')).autoKey).toBe(true);
+});
+
+/** Chords whose meaning in Pro's viewport must not change (AS-ST-10: the keymap). */
+const CHORDS = [
+  { code: 'Space' },
+  { code: 'KeyW' },
+  { code: 'KeyE' },
+  { code: 'KeyR' },
+  { code: 'KeyF' },
+  { code: 'KeyS' },
+  { code: 'KeyZ', mod: true },
+  { code: 'Digit1', alt: true },
+  { code: 'KeyK', mod: true },
+];
+
+// T12 (STUDIO-TOUCH-SPEC §22 AS-ST-10, §3 P10, §16.4): Pro is untouched by a round trip through Ekza Studio — the meaning
+// of its keys, a marking menu's definition (Shift+RMB over empty space in Model), every stored Pro key of the page's
+// storage namespace (preferences, layouts, presets: `ekza-animator:*`) and its panes are the same after Ekza Studio ran
+// its stages, opened its Settings and changed its own input settings (which live under `ekza-studio:` keys).
+test('AS-ST-10: Pro is untouched by a round trip through Ekza Studio', async ({ page }, info) => {
+  test.skip(info.project.name !== 'chrome', 'Pro’s marking menus are read with a mouse');
+  test.setTimeout(180_000);
+  const ns = `ha12-pro-${info.workerIndex}-${Date.now().toString(36)}`;
+  await openModel(page, `&ns=${ns}`);
+  await expectKernelStarted(page);
+  // a cube, so Ekza Studio shows its canvas (an empty document shows Home)
+  await runOk(page, 'mesh.create.cube');
+  await runOk(page, 'select.objects', { ids: [], mode: 'replace' });
+
+  const snapshot = async () => {
+    const keys = [];
+    for (const chord of CHORDS)
+      keys.push(await call(page, 'resolveKey', chord, { panel: 'viewport', paneId: MODEL_PANE }));
+    const menuId = await openShiftRmbMenu(page, await emptySpot(page));
+    const menu = await call(page, 'markingMenu');
+    const slots = Object.fromEntries(
+      Object.entries(menu?.slots ?? {}).map(([slot, item]) => [slot, `${item.label} | ${item.op} | ${item.enabled}`]),
+    );
+    await page.keyboard.press('Escape');
+    await page.mouse.up({ button: 'right' });
+    await page.keyboard.up('Shift');
+    await expect.poll(() => call(page, 'markingMenu')).toBeNull();
+    const stored = await page.evaluate(() =>
+      Object.fromEntries(
+        Object.keys(localStorage)
+          .filter((key) => key.includes('ekza-animator:'))
+          .sort()
+          .map((key) => [key, localStorage.getItem(key)]),
+      ),
+    );
+    const panes = (await call(page, 'panes')).map((pane) => ({
+      id: pane.id,
+      camera: pane.camera,
+      locked: pane.locked,
+    }));
+    return { keys, menu: { id: menuId, slots }, stored, panes };
+  };
+
+  const before = await snapshot();
+  expect(before.menu.id).not.toBeNull();
+  expect(Object.keys(before.menu.slots).length).toBeGreaterThan(3);
+
+  // into Ekza Studio: every stage, its Settings with Halo's own input settings changed, then ▤ Pro layout
+  await page.getByTestId('status-halo').click();
+  await expect.poll(() => call(page, 'mountedShell')).toBe('halo');
+  // Ekza Studio's own right-click ring works after Pro left (Pro's disposer removes only its own menus, T12)
+  const canvas = await emptySpot(page, 'pane-single');
+  await expect
+    .poll(async () => {
+      await page.mouse.click(canvas.x, canvas.y, { button: 'right' });
+      return page.getByTestId('halo-ring').count();
+    })
+    .toBeGreaterThan(0);
+  await page.keyboard.press('Escape');
+  for (const stage of ['Animate', 'Rig', 'Paint', 'Make'] as const) {
+    await page
+      .getByTestId('halo-path')
+      .getByRole('tab', { name: new RegExp(`^${stage}\\b`) })
+      .click();
+    await expect.poll(async () => (await call(page, 'halo'))?.stage).toBe(stage.toLowerCase());
+  }
+  await page.getByTestId('halo-project').click();
+  await page.getByTestId('halo-project-menu').getByRole('menuitem', { name: 'Settings', exact: true }).click();
+  await expect(page.getByTestId('halo-sheet-settings')).toBeVisible();
+  const reduce = page.getByTestId('halo-input-reduce');
+  await reduce.scrollIntoViewIfNeeded();
+  await reduce.click();
+  await expect(reduce).toHaveAttribute('aria-pressed', 'true');
+  await page.keyboard.press('Escape');
+  await expect.poll(async () => (await call(page, 'halo'))?.sheet).toBeNull();
+  await page.getByTestId('halo-pro-layout').click();
+  await expect.poll(() => call(page, 'mountedShell')).toBe('studio');
+  await expect(page.getByTestId('editor-shell')).toBeVisible();
+  await runOk(page, 'workspace.set', { workspace: 'model' });
+  await expect.poll(async () => (await call(page, 'state')).workspace).toBe('model');
+
+  expect(await snapshot()).toEqual(before);
 });
