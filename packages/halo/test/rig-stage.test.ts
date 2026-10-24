@@ -3,6 +3,9 @@
 // the bend test's swing and its edits; search's phrases for *Rig it for me* and *Fix where it bends badly*; the finger
 // detail of a destination; the Rig stage in the stage-parts seam; and, on Polybot (a bound VRM character), the bones a
 // skin spot follows, the bone list and the bend test's controls.
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
+import { QUICK_RIG_LABELS } from '@ekza-studio/editor-core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { rigWords } from '../src/i18n/rig';
 import { BUILT_OWNERS, SHEET_OWNER } from '../src/manifest/types';
@@ -12,6 +15,7 @@ import { DESTINATION_FINGERS, fingersOfPreset, subjectOfDocument } from '../src/
 import { fixBendOffer, rigItOffer } from '../src/recipes/rigOffers';
 import { SEARCH_RECIPES } from '../src/recipes';
 import { STAGE_MODULES } from '../src/shell/stageParts';
+import { RIG_DOT_LABELS } from '../src/stages/rig/dotLabels';
 import { bendTargets, bodyPartLabel, bonesAt, boneRows } from '../src/stages/rig/model';
 import { riggedCubeLad, staticFetch } from './support-rig';
 
@@ -101,6 +105,77 @@ describe('the Rig-it card’s rules', () => {
   it('body parts read as words', () => {
     expect(bodyPartLabel('leftUpperArm')).toBe('Left upper arm');
     expect(bodyPartLabel('hips')).toBe('Hips');
+  });
+  it('the dots are named as Pro names its markers', () => {
+    expect(RIG_DOT_LABELS).toEqual(QUICK_RIG_LABELS);
+  });
+});
+
+describe('the Rig stays out of /app’s initial scripts (§20.6, SIZE-1 lazy boundaries)', () => {
+  const SRC = new URL('../src', import.meta.url).pathname;
+  const CORE = new URL('../../editor-core/src', import.meta.url).pathname;
+
+  /** The Halo modules `src/index.ts` reaches by static value imports (`import()` is a lazy chunk). */
+  function eagerModules(): string[] {
+    const seen = new Set<string>();
+    const resolveSpec = (from: string, spec: string): string | null => {
+      if (!spec.startsWith('.')) return null;
+      const base = join(from, '..', spec);
+      for (const candidate of [base, `${base}.ts`, `${base}.tsx`, join(base, 'index.ts')]) {
+        try {
+          if (statSync(candidate).isFile()) return candidate;
+        } catch {
+          // not this one
+        }
+      }
+      return null;
+    };
+    const walk = (path: string): void => {
+      if (seen.has(path)) return;
+      seen.add(path);
+      for (const m of readFileSync(path, 'utf8').matchAll(/^(?:import|export)\s+(?!type\b)[^;]*?from\s+'([^']+)'/gms)) {
+        const next = resolveSpec(path, m[1] ?? '');
+        if (next !== null) walk(next);
+      }
+    };
+    walk(join(SRC, 'index.ts'));
+    return [...seen];
+  }
+
+  /** The values editor-core's rig operators and the Auto-Rig flow export (the Quick Rig, the skeleton builders). */
+  function rigValues(): Set<string> {
+    const names = new Set<string>();
+    const scan = (dir: string): void => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) scan(path);
+        else if (/\.tsx?$/.test(entry.name))
+          for (const m of readFileSync(path, 'utf8').matchAll(/^export (?:async )?(?:const|function|class) (\w+)/gm))
+            names.add(m[1] ?? '');
+      }
+    };
+    scan(join(CORE, 'operators/builtin/rig'));
+    scan(join(CORE, 'autorigFlow'));
+    return names;
+  }
+
+  it('no eager Halo module imports a Quick Rig or Auto-Rig value from editor-core', () => {
+    const rig = rigValues();
+    expect(rig.has('QUICK_RIG_LABELS')).toBe(true);
+    const leaks: string[] = [];
+    for (const path of eagerModules()) {
+      for (const m of readFileSync(path, 'utf8').matchAll(
+        /^import\s+(?!type\b)\{([^}]*)\}\s*from\s+'@ekza-studio\/editor-core'/gm,
+      )) {
+        for (const spec of (m[1] ?? '').split(',')) {
+          const name = spec.trim();
+          if (name === '' || name.startsWith('type ')) continue;
+          const local = name.split(/\s+as\s+/)[0] ?? name;
+          if (rig.has(local)) leaks.push(`${path.slice(SRC.length + 1)}: ${local}`);
+        }
+      }
+    }
+    expect(leaks).toEqual([]);
   });
 });
 

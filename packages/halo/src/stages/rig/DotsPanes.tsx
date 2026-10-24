@@ -6,7 +6,7 @@
 // `registerPane`): the page's arbiter takes their presses, a dot under a finger is a handle (the stage's claim), a
 // drag elsewhere pans the view, a tap places or picks a dot through the rig runtime as a click does in Pro. Nothing
 // here writes the document.
-import { PANEL, QUICK_RIG_LABELS, QUICK_RIG_MARKERS } from '@ekza-studio/editor-core';
+import { PANEL, QUICK_RIG_MARKERS } from '@ekza-studio/editor-core';
 import { Cluster, Segmented, TouchButton } from '@ekza-studio/ui/touch';
 import { type JSX, useLayoutEffect, useRef } from 'react';
 import { rigWords } from '../../i18n/rig';
@@ -14,6 +14,7 @@ import type { HaloController } from '../../shell/controller';
 import { type SizeClass, useSessionValue, useViewport } from '../../shell/hooks';
 import { PANE } from '../../shell/stage';
 import { aboveTray } from './dock';
+import { RIG_DOT_LABELS } from './dotLabels';
 import { DOTS_PANES, type RigStage } from './start';
 import { useRigUi } from './ui';
 
@@ -163,7 +164,7 @@ export function DotsChrome({
                 });
               }}
             >
-              {QUICK_RIG_LABELS[name]}
+              {RIG_DOT_LABELS[name]}
             </TouchButton>
           ))}
         </Cluster>

@@ -2,8 +2,9 @@
 // noun with a Halo (petals) and a ⋯ More list; `resolveNoun` reads the session selection (controls, joints, scene
 // objects, mesh components, keys, channels) and names the noun the Halo, the breadcrumb, More and Numbers show. Pure:
 // it reads the app, never writes it.
-import { type ComponentMode, type EditorApp, type HaloStage, QUICK_RIG_LABELS } from '@ekza-studio/editor-core';
+import type { ComponentMode, EditorApp, HaloStage } from '@ekza-studio/editor-core';
 import type { NounKind } from '../manifest/types';
+import { RIG_DOT_LABELS } from '../stages/rig/dotLabels';
 
 export interface Noun {
   readonly kind: NounKind;
@@ -86,7 +87,7 @@ export function resolveNoun(app: EditorApp, stage: HaloStage): Noun {
       kind: 'rigDot',
       id: quick.selected,
       ids: [quick.selected],
-      label: QUICK_RIG_LABELS[quick.selected] ?? quick.selected,
+      label: RIG_DOT_LABELS[quick.selected] ?? quick.selected,
       count: 1,
       character: null,
     };
