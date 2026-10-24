@@ -49,17 +49,17 @@ describe('the live AI activity line (§14, P-T10-3)', () => {
       offering: { text: 'AI: code K7Q', tone: 'busy' },
       paused: { text: 'AI paused', tone: 'idle' },
     };
-    const module = {
+    const agent = {
       pillView: (state: { readonly status: string; readonly working?: boolean }) =>
         state.status === 'paired' && state.working !== true ? views['idle'] : views[state.status],
     } as unknown as typeof AgentApi;
     const state = (status: string, working = false) => ({ status, working }) as unknown as AgentApi.AgentSessionState;
-    expect(topBarActivity(app, module, null)).toBeNull();
-    expect(topBarActivity(app, module, state('paired', true))).toEqual({ text: 'AI is editing: Pose' });
-    expect(topBarActivity(app, module, state('paired'))).toBeNull();
-    expect(topBarActivity(app, module, state('claimed'))).toEqual({ text: 'AI asks for access' });
-    expect(topBarActivity(app, module, state('offering'))).toBeNull();
-    expect(topBarActivity(app, module, state('paused'))).toBeNull();
+    expect(topBarActivity(app, agent, null)).toBeNull();
+    expect(topBarActivity(app, agent, state('paired', true))).toEqual({ text: 'AI is editing: Pose' });
+    expect(topBarActivity(app, agent, state('paired'))).toBeNull();
+    expect(topBarActivity(app, agent, state('claimed'))).toEqual({ text: 'AI asks for access' });
+    expect(topBarActivity(app, agent, state('offering'))).toBeNull();
+    expect(topBarActivity(app, agent, state('paused'))).toBeNull();
   });
 });
 
