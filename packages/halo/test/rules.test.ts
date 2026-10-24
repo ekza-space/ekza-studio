@@ -4,6 +4,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { animateWords } from '../src/i18n/animate';
 import { en } from '../src/i18n/en';
 import { DISCLOSURE } from '../src/manifest/disclosure';
 import { PLAIN_LABELS } from '../src/manifest/labels';
@@ -88,12 +89,12 @@ describe('lazy on /app (§20.6)', () => {
     return new Set([...seen].map((path) => path.slice(SRC.length + 1)));
   }
 
-  it('the manifest, the parity check, More and every sheet stay out of the initial scripts', () => {
+  it('the manifest, the parity check, More, every sheet, the intake and the recipes stay out of the initial scripts', () => {
     const eager = eagerModules();
     expect(eager.has('shell/Frame.tsx')).toBe(true);
     expect(eager.has('path/Path.tsx')).toBe(true);
     const lazy = [...eager].filter((path) =>
-      /^(manifest\/(disclosure|labels|paramSurfaces|check|census|probe|dialogs)|verbs\/derive|sheets\/|input\/(install|InputSettings)|palette\/)/.test(
+      /^(manifest\/(disclosure|labels|paramSurfaces|check|census|probe|dialogs)|verbs\/derive|sheets\/|input\/(install|InputSettings)|palette\/|intake\/|recipes\/)/.test(
         path,
       ),
     );
@@ -160,7 +161,8 @@ function strings(node: unknown, path: string[] = []): { readonly path: string; r
  * in-place variants (`verbs/table.ts`) — one vocabulary (T6-INT: the lint covers T6b's tables too, P-T6B-2).
  */
 function vocabulary(): { readonly path: string; readonly text: string }[] {
-  const all = strings(en);
+  // P-T7-3 (T10): the Animate stage's own catalogue is linted with the shell's, under `animate.`
+  const all = [...strings(en), ...strings(animateWords).map((s) => ({ path: `animate.${s.path}`, text: s.text }))];
   for (const [op, text] of Object.entries(PLAIN_LABELS)) all.push({ path: `labels.${op}`, text });
   for (const [op, value] of Object.entries(DISCLOSURE)) {
     for (const entry of entriesOf(value)) {
@@ -195,7 +197,9 @@ describe('user vocabulary: one word, one kind of thing (§1.3, ST-32)', () => {
     // the Animations panel, the product line
     for (const path of where(/\banimations?\b/i)) {
       expect(path).toMatch(
-        /^(home\.|dialogs\.applyPoseAsRest|labels\.(clip\.|file\.importAnimation|autorig\.clip\.|target\.slot\.)|plain\.(target\.slot\.|workspace\.showPanel)|table\.empty\.newAnimation)/,
+        // T11: Home's Continue cards, Bring a model's animation files, Share's destinations and slots, the recipes
+        // T10: the agent's Edit grant in §14's words; T7's Animations row, + New, an animation's verbs, the Library
+        /^(home\.|intake\.|share\.|recipes\.|dialogs\.applyPoseAsRest|labels\.(clip\.|file\.importAnimation|autorig\.clip\.|target\.slot\.)|plain\.(target\.slot\.|workspace\.showPanel)|table\.empty\.newAnimation|ask\.grantEdit$|animate\.(dock\.|clip\.|library\.|thread\.(clearRange|noClip)$))/,
       );
     }
   });

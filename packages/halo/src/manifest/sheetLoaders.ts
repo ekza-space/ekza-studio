@@ -17,7 +17,18 @@ export const SHEET_LOADERS: Readonly<Record<T6bSheetId, () => Promise<SheetModul
   about: () => import('../sheets/about'),
 };
 
-/** Prefetches every T6b sheet chunk (the shell calls it at idle and on `online`, S23); failures are retried later. */
+/** The stage packages' sheets (T7: the Library, §10.6; T10: History and Ask, §6.2, §14), beside T6b's. */
+export const STAGE_SHEET_LOADERS: Readonly<Record<'library' | 'history' | 'ask', () => Promise<SheetModule>>> = {
+  library: () => import('../sheets/library'),
+  history: () => import('../sheets/history'),
+  ask: () => import('../sheets/ask'),
+};
+
+/** Prefetches every sheet chunk (the shell calls it at idle and on `online`, S23); failures are retried later. */
 export function prefetchSheets(): Promise<void> {
-  return Promise.all(Object.values(SHEET_LOADERS).map((load) => load().catch(() => undefined))).then(() => undefined);
+  return Promise.all(
+    [...Object.values(SHEET_LOADERS), ...Object.values(STAGE_SHEET_LOADERS)].map((load) =>
+      load().catch(() => undefined),
+    ),
+  ).then(() => undefined);
 }

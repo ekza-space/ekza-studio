@@ -7,9 +7,11 @@ import type { JSX } from 'react';
 import { Icon } from '../halo/icons';
 import { commitSession } from '../session/sessions';
 import { en } from '../i18n/en';
+import { destinationOf } from '../path/destinations';
 import type { HaloController } from './controller';
 import { useSessionValue, type SizeClass } from './hooks';
 import { FramePath } from './PathParts';
+import { useUndoPress } from '../history/undoPress';
 import { useHaloStore } from './store';
 
 export function TopBar({
@@ -24,6 +26,8 @@ export function TopBar({
   const dirty = useSessionValue(app, (s) => s.dirty);
   const project = useSessionValue(app, (s) => s.projectName);
   const proLine = useHaloStore(store, (s) => s.proLine);
+  const undoPress = useUndoPress(controller);
+  const badge = destinationOf(useHaloStore(store, (s) => s.destination)).badge;
   const compact = size === 'compact';
   const name = project.trim() === '' ? en.top.untitled : project;
   return (
@@ -60,14 +64,14 @@ export function TopBar({
               icon={<Icon name="search" />}
               className="border-0 bg-transparent shadow-none"
               data-testid="halo-search"
-              onClick={() => store.set({ palette: true })}
+              onClick={() => store.set((ui) => ({ palette: true, touches: ui.touches + 1 }))}
             />
           ) : (
             <TouchButton
               variant="ghost"
               className="min-w-[200px] justify-start gap-2 font-normal text-fg-2"
               data-testid="halo-search"
-              onClick={() => store.set({ palette: true })}
+              onClick={() => store.set((ui) => ({ palette: true, touches: ui.touches + 1 }))}
             >
               <Icon name="search" />
               {en.top.search}
@@ -79,11 +83,23 @@ export function TopBar({
             variant="ghost"
             className={compact ? 'gap-1.5 px-3 text-fg' : 'gap-2 text-fg'}
             data-testid="halo-share"
-            // leaving for Share commits the open tool session (P15)
-            onClick={() => void commitSession(controller.ctx).then(() => store.set({ sheet: 'share', halo: null }))}
+            // leaving for Share commits the open tool session (P15); T11: one touch (J1 step 6)
+            onClick={() => {
+              store.set((s) => ({ touches: s.touches + 1 }));
+              void commitSession(controller.ctx).then(() => store.set({ sheet: 'share', halo: null }));
+            }}
           >
             <Icon name="share" />
             {en.top.share}
+            {/* §7.3: the destination is shown as a badge on Share ⤴ (T11) */}
+            {badge === null ? null : (
+              <span
+                className="rounded-full bg-accent-soft px-1.5 text-touch-label text-accent-text"
+                data-testid="halo-share-badge"
+              >
+                {badge}
+              </span>
+            )}
           </TouchButton>
         </Cluster>
         {compact ? (
@@ -92,7 +108,8 @@ export function TopBar({
             icon={<Icon name="undo" />}
             className="pointer-events-auto"
             data-testid="halo-undo"
-            onClick={() => controller.grammar.undo()}
+            // T10: a tap undoes, a long-press opens the History ribbon
+            {...undoPress}
           />
         ) : (
           <div className="pointer-events-auto relative">

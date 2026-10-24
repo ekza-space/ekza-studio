@@ -1,3 +1,13 @@
+export {
+  attachDopeSheetTouch,
+  type DopeSheetTouchOptions,
+  type TouchModifiers,
+} from './adapters/dopesheet';
+export {
+  attachGraphEditorTouch,
+  type GraphAxis,
+  type GraphEditorTouchOptions,
+} from './adapters/graph';
 export { buildChannelTree, CHANNEL_COLORS, channelNodes } from './channel-tree/buildChannelTree';
 export { channelColor, channelLabel } from './channel-tree/colors';
 export {
@@ -6,6 +16,7 @@ export {
   registerDopeSheetContributions,
 } from './dopesheet/contributions';
 export { aggregateHolds, holdIntervals } from './dopesheet/data';
+export { attachGraphEditor, focusedGraphEditor, focusGraphEditor, type GraphEditorHandle } from './focus';
 export { DopeSheetController, type DopeSheetRowState, type DopeSheetShow } from './dopesheet/DopeSheetController';
 export {
   DEFAULT_DOPE_VIEW,
@@ -29,6 +40,12 @@ export {
   TimeSliderController,
   type TimeSliderLayer,
 } from './timeline/TimeSliderController';
+export {
+  type BandSource,
+  type BandSourceHandle,
+  focusedBandSource,
+  provideBandSource,
+} from './timeline/contributions';
 export type { SliderLayout } from './timeline/layout';
 export type { TimelineTheme } from './timeline/theme';
 export {

@@ -31,6 +31,11 @@ import { arrivalStage, HALO_STAGES, PANE, parseStage, STAGE_BASICS, stageOfWorks
 import { createHaloStore, type HaloInput, type HaloStore, initialUi } from './store';
 import { countVisibleTargets } from './targets';
 import { coachMarks } from './coach';
+import { historyProbe } from '../history/probe';
+import { animateSlice } from '../stages/animate/slice';
+import { startAnimate } from '../stages/animate/start';
+import { homeSlice } from '../home/slice';
+import { startHome } from '../home/start';
 
 export interface HaloController {
   readonly ctx: ShellContext;
@@ -194,6 +199,8 @@ export function createHaloController(host: HostShell): HaloController {
     },
     enterStage,
     proLayout(force = false, arrival) {
+      // T11 (J9, AS-ST-4): every tap toward the Pro layout counts (the button, the one line's *Open anyway*)
+      store.set((s) => ({ touches: s.touches + 1 }));
       const ui = store.get();
       if (!force && !ui.proLineShown && coarseOnly()) {
         store.set({ proLine: true, proLineShown: true });
@@ -395,6 +402,11 @@ export function createHaloController(host: HostShell): HaloController {
         );
       }
 
+      // T7: the Animate stage (Rec as the shell override, the fitting manipulator, Reach, the Library, the band source)
+      disposers.push(startAnimate(controller));
+      // T11: Home › Continue (the recovery hook), the silent resume after a reload, the Share sheet (P-T6A-4)
+      disposers.push(startHome(controller));
+
       // the Halo's own operator: Pro's window chords say why they do nothing here (§5.8)
       if (app.operators.get(PRO_ONLY_KEY) === undefined) disposers.push(app.operators.register(proOnlyKeyDef));
 
@@ -501,6 +513,11 @@ export function createHaloController(host: HostShell): HaloController {
                 hideUi: ui.hideUi,
                 focus: ui.focus?.kind ?? null,
               },
+              animate: animateSlice(controller),
+              // T10: the open History ribbon's rows (null while it is closed)
+              history: historyProbe(app),
+              // T11: Continue, the resume record, the storage card, Share's prepared file
+              t11: homeSlice(controller),
               // T6b's slice (the harness's, now the frame's): the readiness list and the Next chip shown
               t6b: ((): Record<string, unknown> => {
                 const r = readinessSource.get();

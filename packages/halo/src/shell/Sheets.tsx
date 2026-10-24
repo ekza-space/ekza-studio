@@ -11,7 +11,7 @@ import { type ComponentType, type JSX, lazy, type ReactNode, Suspense, useMemo }
 import { startTarget } from '../halo/run';
 import { TARGET_OPS } from '../halo/verbSource';
 import { en } from '../i18n/en';
-import { SHEET_LOADERS } from '../manifest/sheetLoaders';
+import { SHEET_LOADERS, STAGE_SHEET_LOADERS } from '../manifest/sheetLoaders';
 import { type HaloSheetContext, type HaloSheetProps, T6B_SHEETS, type T6bSheetId } from '../manifest/sheets';
 import { resolveNoun } from '../verbs/nouns';
 import type { HaloController } from './controller';
@@ -21,11 +21,17 @@ import { useHaloStore } from './store';
 export type { HaloSheetContext, HaloSheetProps };
 
 const InputSettings = lazy(() => import('../input/InputSettings'));
+const TimeSettings = lazy(() => import('../thread/TimeSettings'));
 
 /** T6b's sheets, each its own chunk (§20.6). */
 const T6B: Readonly<Record<T6bSheetId, ComponentType<HaloSheetProps>>> = Object.fromEntries(
   T6B_SHEETS.map((id) => [id, lazy(SHEET_LOADERS[id])]),
 ) as unknown as Record<T6bSheetId, ComponentType<HaloSheetProps>>;
+
+/** The stage packages' sheets (T7's Library, T10's History and Ask), each its own chunk. */
+const STAGE: Readonly<Record<string, ComponentType<HaloSheetProps>>> = Object.fromEntries(
+  Object.entries(STAGE_SHEET_LOADERS).map(([id, load]) => [id, lazy(load)]),
+);
 
 const registry = new Map<string, ComponentType<HaloSheetProps>>();
 
@@ -40,9 +46,9 @@ export function registerHaloSheet(id: string, body: ComponentType<HaloSheetProps
   };
 }
 
-/** The body of a sheet id: a registered one, else T6b's, else null (not built yet). */
+/** The body of a sheet id: a registered one, else T6b's, else a stage package's, else null (not built yet). */
 export function sheetBody(id: string): ComponentType<HaloSheetProps> | null {
-  return registry.get(id) ?? (T6B as Readonly<Record<string, ComponentType<HaloSheetProps>>>)[id] ?? null;
+  return registry.get(id) ?? (T6B as Readonly<Record<string, ComponentType<HaloSheetProps>>>)[id] ?? STAGE[id] ?? null;
 }
 
 /** The Pro dialog a sheet's *Open in the Pro layout ▸* arrives at (§16.1). */
@@ -102,10 +108,18 @@ export function Sheets({
         startTarget(ctx, label, op as never);
         return true;
       },
+      // P-T7-2: a sheet's touches count for the journeys (§9, AS-ST-4)
+      touch: () => store.set((s) => ({ touches: s.touches + 1 })),
+      openMore: (moreNoun) => store.set({ sheet: 'more', sheetArgs: null, sheetNoun: moreNoun, halo: null }),
       renderSlot: (slot): ReactNode =>
         slot === 'halo.input' ? (
           <Suspense fallback={null}>
             <InputSettings store={store} setInput={(patch) => controller.setInput(patch)} />
+          </Suspense>
+        ) : slot === 'halo.time' ? (
+          // ST-T7-UNIT: Settings › Time (T7's seam)
+          <Suspense fallback={null}>
+            <TimeSettings controller={controller} />
           </Suspense>
         ) : null,
     };

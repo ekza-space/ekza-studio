@@ -15,7 +15,9 @@ export { CHANGE_JOURNAL_CAP } from './history/history';
 export { AGENT_OPERATOR_IDS, loadAgentOperators } from './operators/builtin/agentChunk';
 // STUDIO-TOUCH-SPEC §20.3 item 7 (T5a): the public UI wrappers of the AI-only operators (a lazy chunk, denied to agents).
 export {
+  loadReachSolver,
   loadUiWrappers,
+  type ReachSolver,
   UI_WRAPPER_IDS,
   type UiKeyScopeArgs,
   type UiLoopMethod,
@@ -519,6 +521,18 @@ export type {
   SkinWorkerRequest,
   SkinWorkerResponse,
 } from './rig/skinService';
+// M7 G-a (MODELING-PLAN §7.2; DECISIONS M7-GA-CONTRACT-*): the intake operators' contract, the worker host types
+// (type-only: the client and the bodies are lazy) and the params the Halo and the Generate panel read.
+export type { IntakeRun, IntakeWorkerHost, IntakeWorkerPort } from './intake/client';
+export {
+  DECIMATE_FIRST_ABOVE,
+  INTAKE_BUDGETS,
+  INTAKE_HEIGHTS,
+  type IntakeArgs,
+  type IntakeOutcome,
+  type IntakePreset,
+  type IntakeStepOutcome,
+} from './intake/types';
 // C10 (§5.22, §6.4): the character export's request defaults, checks and gating rows (the Export dialog's Character
 // section and the Rig Toolkit read them; the pipeline itself loads with the rig-workspace chunk).
 export {

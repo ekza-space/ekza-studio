@@ -10,6 +10,7 @@ import { filterEntries, type PaletteEntry, paletteEntries } from '@ekza-studio/e
 import { Sheet, SheetGroup, SheetRow } from '@ekza-studio/ui/touch';
 import { type JSX, useMemo, useState } from 'react';
 import { en } from '../i18n/en';
+import { matchRecipes, type RecipeOffer, SEARCH_RECIPES } from '../recipes';
 import type { HaloController } from '../shell/controller';
 import { PANE, stageOfWorkspace, workspaceOfStage } from '../shell/stage';
 import { useHaloStore } from '../shell/store';
@@ -35,6 +36,8 @@ export default function Palette({
   const { app, store } = ctx;
   const stage = useHaloStore(store, (s) => s.stage);
   const [query, setQuery] = useState('');
+  // a filled text field is one touch (§9), counted on its first letter
+  const [typed, setTyped] = useState(false);
   const entries = useMemo((): PaletteEntry[] => {
     const here = paletteEntries(app, CONTEXT);
     const seen = new Set(here.map((e) => e.op));
@@ -69,7 +72,14 @@ export default function Palette({
   const q = query.trim().toLowerCase();
   const doRows = filterEntries(entries, query).slice(0, q === '' ? 12 : MAX_ROWS);
   const thingRows = q === '' ? [] : things.filter((t) => t.label.toLowerCase().includes(q)).slice(0, 12);
+  // §8, §9.11 (T11): the recipes a phrase names (*wave twice*, *loop it*), above the operators
+  const recipeRows = matchRecipes(SEARCH_RECIPES, query);
   const close = (): void => store.set({ palette: false });
+  const runMatch = (offer: RecipeOffer): void => {
+    close();
+    store.set((s) => ({ touches: s.touches + 1 }));
+    void offer.run({ app, run: (op, args) => ctx.run(op, args), toast: (toast) => ctx.toasts.push(toast) });
+  };
   const runEntry = (entry: PaletteEntry): void => {
     close();
     const def = app.operators.get(entry.op);
@@ -129,14 +139,31 @@ export default function Palette({
         data-testid="halo-palette-input"
         className="mb-2 min-h-(--touch-hit) w-full rounded-touch border border-line-strong bg-field px-3 text-[16px] text-fg"
         value={query}
-        onChange={(event) => setQuery(event.currentTarget.value)}
+        onChange={(event) => {
+          if (!typed) {
+            setTyped(true);
+            store.set((s) => ({ touches: s.touches + 1 }));
+          }
+          setQuery(event.currentTarget.value);
+        }}
         onKeyDown={(event) => {
           if (event.key === 'Enter') {
+            const recipe = recipeRows[0];
+            if (recipe !== undefined) {
+              runMatch(recipe);
+              return;
+            }
             const first = doRows[0];
             if (first !== undefined && first.enabled) runEntry(first);
           }
         }}
       />
+      {recipeRows.length > 0 ? <SheetGroup>{en.recipes.group}</SheetGroup> : null}
+      {recipeRows.map((offer) => (
+        <div key={offer.id} data-testid={`halo-recipe-${offer.id}`}>
+          <SheetRow title={offer.title} detail={offer.detail} onClick={() => runMatch(offer)} />
+        </div>
+      ))}
       {thingRows.length > 0 ? <SheetGroup>{en.palette.things}</SheetGroup> : null}
       {thingRows.map((thing) => (
         <SheetRow
@@ -161,6 +188,26 @@ export default function Palette({
           />
         );
       })}
+      {/* §8, §14 (T10): a query can go to the AI agent — the Ask sheet keeps it and pairs the agent */}
+      {q === '' ? null : (
+        <div data-testid="halo-ask-ai">
+          <SheetGroup>{en.palette.ask}</SheetGroup>
+          <SheetRow
+            title={`${en.palette.ask}: “${query.trim()}”`}
+            detail={en.palette.askDetail}
+            onClick={() => {
+              close();
+              store.set((s) => ({
+                sheet: 'ask',
+                sheetArgs: { query: query.trim() },
+                sheetNoun: null,
+                halo: null,
+                touches: s.touches + 1,
+              }));
+            }}
+          />
+        </div>
+      )}
     </Sheet>
   );
 }
