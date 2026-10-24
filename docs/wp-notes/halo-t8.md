@@ -195,4 +195,24 @@ All are additive. Studio Pro never asks for them.
 
 ## Gate
 
-Recorded below after the run.
+`EKZA_E2E_PORT=3288 pnpm run ci` on `c5d7f8dc` (`dev` `2bde8c24` merged), local Chrome: **green**.
+- format, lint (oxlint type-aware), typecheck, check:deps (25 packages), check:fixtures, check:licenses;
+- unit tests: 26/26 turbo tasks (halo 27 files, 223 tests);
+- build, check:size, check:gen-boundary (no provider key name, host or gateway code in the static bundles);
+- e2e: **547 passed, 160 skipped, 0 failed, 0 flaky** (`chrome`, `chrome-touch`, `webkit-ipad`).
+
+Earlier runs on the same branch stopped on load timeouts with the machine at load average 70–110 (other agents'
+gates): `ekza-studio-mcp` tools-files (30 s), editor-core agent/keys, viewport m6a-transform Esc, halo animate-model,
+and in e2e ai-01-live, m2a-25 and the m6a-shell pixel probe. Each passed alone, and the run above passed whole. One
+real failure was fixed: editor-core's registration list lacked `select.imagePlane`.
+
+`check:size` (production build, gzip -9, first visit; SIZE-1 report-only, gate 5,000,000 B):
+
+| Route | `dev` `2bde8c24` (T10's 726,555 B + G-a's +323 B, as their wp-notes record) | T8 | Δ |
+|---|---|---|---|
+| `/editor` | ≈ 899,188 B | **899,420 B** | ≈ +232 B (`select.imagePlane` in the kernel) |
+| `/autorig` | ≈ 658,167 B | **658,396 B** | ≈ +229 B (the same) |
+| `/app` | ≈ 726,878 B | **731,523 B** | ≈ +4,645 B (the stage-parts seam, ChoiceRow, the swatch and plane bindings, the AI availability probe, the words) |
+
+Make, Paint, the palette, report and Create with AI sheets, and gen-core's client are lazy chunks; `/editor` and
+`/autorig` load no Halo module (the `halo-shell` boundary holds).
