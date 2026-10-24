@@ -15,6 +15,8 @@ import { fingerTap } from './helpers/touch';
 
 async function tap(page: Page, testId: string): Promise<void> {
   await expect(page.getByTestId(testId).first()).toBeVisible();
+  // the sheet scrolls: bring the control on screen before the finger lands
+  await page.getByTestId(testId).first().scrollIntoViewIfNeeded();
   await fingerTap(page, await centre(page, testId));
 }
 
@@ -28,6 +30,7 @@ async function answer(page: Page, testId: string): Promise<void> {
 async function chooseSegment(page: Page, group: string, label: RegExp): Promise<void> {
   const item = page.getByTestId(group).getByRole('radio', { name: label });
   await expect(item).toBeVisible();
+  await item.scrollIntoViewIfNeeded();
   const box = await item.boundingBox();
   if (box === null) throw new Error(`no ${group} ${String(label)}`);
   await fingerTap(page, { x: box.x + box.width / 2, y: box.y + box.height / 2 });

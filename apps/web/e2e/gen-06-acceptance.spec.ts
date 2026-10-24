@@ -61,6 +61,8 @@ test('§7.3: one picture → a rigged ≤ 3k-triangle, ≤ 16-colour humanoid �
     // Rig it: Auto-Rig with the generated meshes.
     await page.getByTestId('gen-post-rig-auto').click();
     await expect(page).toHaveURL(/\/autorig/, { timeout: 60_000 });
+    // Auto-Rig offers the model from Studio ("1 mesh from your Studio scene"): Use these.
+    await primary(page, /Use these/);
     await expect
       .poll(async () => (await autorig(page))?.subject.meshes.length ?? 0, { timeout: 60_000 })
       .toBeGreaterThan(0);
