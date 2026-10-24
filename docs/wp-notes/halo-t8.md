@@ -122,6 +122,7 @@ All are additive. Studio Pro never asks for them.
   - The generated `modelManifest.ts` regenerated.
   - `args.ts`: one row.
   - `test/m6a/foundation.test.ts`: 79 editor operators, plus the own-check row.
+  - `test/builtin/registration.test.ts`: `select.imagePlane` in the M6a list (not an undo step, `model` scope).
 - **`agent-tools`:** `select.imagePlane` is denied (the user's selection, like `select.objects`).
 - **`viewport`:**
   - `ImagePlaneLayer.corners(id)`;
@@ -152,6 +153,7 @@ All are additive. Studio Pro never asks for them.
 | `halo/src/sheets/share/model.ts` (T11) | Game engine without a character exports the scene's static GLB (Pro's Static request, `local/generic`) instead of "no character" | J6 "Game engine › Export Cube Lad.glb" on a model made in Make |
 | `halo/src/home/Home.tsx` (T11) | *Create with AI* as a 4th start of Make a character | The coordinator's request |
 | `halo/test/{manifest/manifest,verbs/derive,sheets/scene}.test.ts` | Pending operators skipped; the mesh's Move row; the plane row's select | Follow the curated rows |
+| `apps/web/e2e/ha-01-home-intake.spec.ts` (T11), `ha-02-grammar.spec.ts` (T6a) | ha-01: *Make a character* shows four buttons (the starts and *Create with AI*); ha-02: the part Halo's clean-up row has *Separate* where *Duplicate* was | Follow the Home start and ST-T8-4 |
 
 ## Patches for other packages
 

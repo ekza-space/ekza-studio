@@ -99,14 +99,16 @@ test('ha-01: Bring a model — a VRM is a character to animate; an animation nee
   await expect.poll(async () => (await halo(page)).stage).toBe('animate');
 });
 
-test('ha-01: Make a character offers three starts; Smooth body opens in Make (J2 step 1: 2 touches)', async ({
+test('ha-01: Make a character offers three starts and Create with AI; Smooth body opens in Make (J2 step 1: 2 touches)', async ({
   page,
 }, info) => {
   test.setTimeout(120_000);
   await openHalo(page);
   await press(page, 'halo-home-make', info);
   const starts = page.getByTestId('halo-home-starts');
-  await expect(starts.getByRole('button')).toHaveCount(3);
+  // the three starts, and Create with AI (T8, the owner's AI pipeline)
+  await expect(starts.getByRole('button')).toHaveCount(4);
+  await expect(starts.getByTestId('halo-home-start-ai')).toBeVisible();
   await press(page, 'halo-home-start-smooth', info);
   await expect(page.getByTestId('halo-home')).toHaveCount(0, { timeout: 60_000 });
   await expect.poll(async () => (await halo(page)).stage).toBe('make');
