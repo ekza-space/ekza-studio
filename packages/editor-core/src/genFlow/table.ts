@@ -9,6 +9,7 @@ import {
   type AssetId,
   type AssetProvenance,
   type CharacterId,
+  derivedId,
   type GeneratorProvenance,
   getTableDef,
   type MeshId,
@@ -115,6 +116,27 @@ export function putGeneration(
   return { ...existing, ...fields, deleted: null };
 }
 
+/**
+ * Whether `mesh` came from the record's model: one of its meshes, or one of them adopted into a character by the
+ * rig (Create Skeleton / Auto-Rig adopt a scene mesh as `derivedId('mesh', 'char.adopt', [character, source])` and
+ * soft-delete the source, M6B §5.1), so the link follows the mesh into its character.
+ */
+function fromRecord(store: ReadView, record: GenerationRecord, mesh: string): boolean {
+  if (record.meshes.includes(mesh as MeshId)) return true;
+  const owner = store.get('meshes', mesh as MeshId)?.owner;
+  const character = owner !== undefined && 'character' in owner ? owner.character : null;
+  if (character === null) return false;
+  return record.meshes.some((source) => derivedId('mesh', 'char.adopt', [character, source], '', 0) === mesh);
+}
+
+/** The live meshes made from a record's model: its own still in the scene, and those a rig adopted. */
+export function liveGeneratedMeshes(store: ReadView, record: GenerationRecord): MeshId[] {
+  return store
+    .list('meshes')
+    .filter((mesh) => fromRecord(store, record, mesh.id))
+    .map((mesh) => mesh.id);
+}
+
 /** The AI generator record of an asset, or null. */
 export function assetGenerator(store: ReadView, asset: AssetId): GeneratorProvenance | null {
   return store.get('assets', asset)?.provenance?.generator ?? null;
@@ -132,7 +154,7 @@ export function generatorOfExport(
   const records = generationRecords(store);
   if (records.length === 0) return null;
   for (const mesh of meshes) {
-    const record = records.find((r) => r.meshes.includes(mesh as MeshId));
+    const record = records.find((r) => fromRecord(store, r, mesh));
     const generator = record === undefined ? null : assetGenerator(store, record.asset);
     if (generator !== null) return generator;
   }
@@ -148,7 +170,7 @@ export function generatorOfExport(
 export function generatedMeshes(store: ReadView, meshes: readonly string[]): ReadonlySet<string> {
   const records = generationRecords(store);
   const out = new Set<string>();
-  for (const mesh of meshes) if (records.some((r) => r.meshes.includes(mesh as MeshId))) out.add(mesh);
+  for (const mesh of meshes) if (records.some((r) => fromRecord(store, r, mesh))) out.add(mesh);
   return out;
 }
 
@@ -188,6 +210,6 @@ export function badgeOf(provenance: AssetProvenance | null): GenBadge | null {
 
 /** The badge of a mesh made from a generated model, or null. */
 export function meshGenBadge(store: ReadView, mesh: string): GenBadge | null {
-  const record = generationRecords(store).find((r) => r.meshes.includes(mesh as MeshId));
+  const record = generationRecords(store).find((r) => fromRecord(store, r, mesh));
   return record === undefined ? null : badgeOf(store.get('assets', record.asset)?.provenance ?? null);
 }

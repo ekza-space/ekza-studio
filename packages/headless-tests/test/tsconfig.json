@@ -1,11 +1,17 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": ["../../../tooling/tsconfig/headless.json", "../../../tooling/tsconfig/test.json"],
+  "extends": [
+    "../../../tooling/tsconfig/headless.json",
+    "../../../tooling/tsconfig/test.json"
+  ],
   "compilerOptions": {
     "rootDir": "..",
     "outDir": "../.tsbuild/test"
   },
-  "include": ["./**/*", "../vitest.config.ts"],
+  "include": [
+    "./**/*",
+    "../vitest.config.ts"
+  ],
   "references": [
     {
       "path": "../../anim-core/src"
@@ -24,6 +30,12 @@
     },
     {
       "path": "../../mesh-core/src"
+    },
+    {
+      "path": "../../gen-core/src"
+    },
+    {
+      "path": "../../gen-gateway/src"
     }
   ]
 }

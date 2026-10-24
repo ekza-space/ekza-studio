@@ -30,7 +30,7 @@ import type { ApplyContext, EditorApp, OperatorContext, OperatorDef } from '../t
 import { GEN_PRESETS, type GenPresetId, isGenPreset, presetParams } from './presets';
 import { generatedAssetProvenance, intakeStepOp, promptProvenance } from './provenance';
 import { GEN_REASONS, type GenJobEntry, type GenSession, genSessionOf, isTerminalState } from './session';
-import { ensureGenerationTable, putGeneration } from './table';
+import { ensureGenerationTable, generationRecords, liveGeneratedMeshes, putGeneration } from './table';
 import type { GenImportArgs, GenImportResult, GenIntakeOutcome, GenJobResult, GenSubmitArgs } from './types';
 
 type AnyDef = OperatorDef<unknown, unknown, unknown>;
@@ -345,14 +345,9 @@ export function applyImport(ctx: ApplyContext, prepared: ImportPrepared): GenImp
 export function importedFrom(app: EditorApp, entry: GenJobEntry): { meshes: MeshId[]; character: CharacterId | null } {
   const artifact = modelArtifact(entry.job);
   if (artifact === undefined) return { meshes: [], character: null };
-  const id = `gen:${artifact.sha256}`;
-  const view = app.store as unknown as { get(table: string, id: string): unknown };
-  const record = view.get('ekza.generations', id) as
-    | { readonly meshes: readonly MeshId[]; readonly character: CharacterId | null; readonly deleted: unknown }
-    | undefined;
-  if (record === undefined || record.deleted !== null) return { meshes: [], character: null };
-  const meshes = record.meshes.filter((mesh) => app.store.get('meshes', mesh) !== undefined);
+  const record = generationRecords(app.store).find((r) => r.asset === artifact.sha256);
+  if (record === undefined) return { meshes: [], character: null };
   const character =
     record.character !== null && app.store.get('characters', record.character) !== undefined ? record.character : null;
-  return { meshes, character };
+  return { meshes: liveGeneratedMeshes(app.store, record), character };
 }

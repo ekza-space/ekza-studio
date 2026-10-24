@@ -573,6 +573,12 @@ importers:
       '@ekza-studio/editor-core':
         specifier: workspace:*
         version: link:../editor-core
+      '@ekza-studio/gen-core':
+        specifier: workspace:*
+        version: link:../gen-core
+      '@ekza-studio/gen-gateway':
+        specifier: workspace:*
+        version: link:../gen-gateway
       '@ekza-studio/io':
         specifier: workspace:*
         version: link:../io

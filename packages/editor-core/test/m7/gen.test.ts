@@ -108,7 +108,14 @@ function fakeClient(model: Uint8Array) {
     baseUrl: '/api/gen',
     providers: () => Promise.resolve(providers()),
     upload: (bytes, mime) =>
-      Promise.resolve({ upload: `up_${sha(bytes).slice(0, 8)}`, sha256: sha(bytes), mime, size: bytes.length, width: 64, height: 64 }),
+      Promise.resolve({
+        upload: `up_${sha(bytes).slice(0, 8)}`,
+        sha256: sha(bytes),
+        mime,
+        size: bytes.length,
+        width: 64,
+        height: 64,
+      }),
     quote: (req) =>
       Promise.resolve({
         provider: req.provider,
@@ -177,7 +184,9 @@ function fakeClient(model: Uint8Array) {
       progress: 100,
       revision: job.revision + 2,
       costUsd: 0.5,
-      artifacts: [{ role: 'model', sha256: modelSha, size: model.length, mime: 'model/gltf-binary', fileName: 'model.glb' }],
+      artifacts: [
+        { role: 'model', sha256: modelSha, size: model.length, mime: 'model/gltf-binary', fileName: 'model.glb' },
+      ],
       provenance: {
         kind: 'ai',
         digitalSourceType: 'trainedAlgorithmicMedia',
@@ -307,12 +316,16 @@ describe('the Generate flow (M7 G-d)', () => {
 
     flow.openPost(id);
     const result = (await flow.runPost()) as GenImportResult;
-    expect(result.outcome?.steps.map((step) => step.kind)).toEqual(['normalize', 'reduce', 'quadrangulate', 'paletteBake']);
+    expect(result.outcome?.steps.map((step) => step.kind)).toEqual([
+      'normalize',
+      'reduce',
+      'quadrangulate',
+      'paletteBake',
+    ]);
     expect(result.outcome?.triangles.after).toBeLessThanOrEqual(3000);
     expect(result.outcome?.colours).toBeLessThanOrEqual(16);
     expect(result.rig).toBe('auto-rig');
     expect(app.history.peekUndo()?.label).toBe('Import Generated Model');
-    expect(app.history.steps?.().undo.length ?? 1).toBeGreaterThan(0);
     // Tripo's +X facing became +Z: the model is taller than wide and its depth axis is Z.
     const asset = app.store.get('assets', fake.modelSha as AssetId);
     expect(asset?.provenance).toMatchObject({
@@ -406,10 +419,11 @@ describe('the Generate flow (M7 G-d)', () => {
     expect(exported.status).toBe('finished');
     const artifact = (exported as { value: readonly { bytes: Uint8Array; lints: readonly { code: string }[] }[] })
       .value[0];
-    const length = new DataView(artifact?.bytes.buffer as ArrayBuffer, (artifact?.bytes.byteOffset ?? 0) + 12, 4).getUint32(
-      0,
-      true,
-    );
+    const length = new DataView(
+      artifact?.bytes.buffer as ArrayBuffer,
+      (artifact?.bytes.byteOffset ?? 0) + 12,
+      4,
+    ).getUint32(0, true);
     const json = JSON.parse(new TextDecoder().decode(artifact?.bytes.subarray(20, 20 + length))) as {
       asset: { extras: { ekza_model_v1: { provenance: { generator: Record<string, unknown> } } } };
     };

@@ -1099,9 +1099,12 @@
                   "!vrm-validator",
                   "!ajv",
                   "!ajv/**",
-                  "!@ekza-studio/mesh-wasm"
+                  "!@ekza-studio/mesh-wasm",
+                  "!@ekza-studio/gen-core",
+                  "!@ekza-studio/gen-gateway",
+                  "!@ekza-studio/gen-gateway/testing"
                 ],
-                "message": "@ekza-studio/headless-tests tests may import only: @ekza-studio/anim-core, @ekza-studio/doc, @ekza-studio/doc/testing, @ekza-studio/rig, @ekza-studio/io, @ekza-studio/io/testing, @ekza-studio/editor-core, @ekza-studio/editor-core/testing, @pixiv/three-vrm, @pixiv/three-vrm-animation, gltf-validator, three, three/**, vitest, vitest/**, node:*, @ekza-studio/mesh-core, @ekza-studio/mesh-core/descriptors, @ekza-studio/mesh-core/testing, @ekza-studio/mesh-view, vrm-validator, ajv, @ekza-studio/mesh-wasm (ARCHITECTURE \u00a73)."
+                "message": "@ekza-studio/headless-tests tests may import only: @ekza-studio/anim-core, @ekza-studio/doc, @ekza-studio/doc/testing, @ekza-studio/rig, @ekza-studio/io, @ekza-studio/io/testing, @ekza-studio/editor-core, @ekza-studio/editor-core/testing, @pixiv/three-vrm, @pixiv/three-vrm-animation, gltf-validator, three, three/**, vitest, vitest/**, node:*, @ekza-studio/mesh-core, @ekza-studio/mesh-core/descriptors, @ekza-studio/mesh-core/testing, @ekza-studio/mesh-view, vrm-validator, ajv, @ekza-studio/mesh-wasm, @ekza-studio/gen-core, @ekza-studio/gen-gateway, @ekza-studio/gen-gateway/testing (ARCHITECTURE \u00a73)."
               },
               {
                 "regex": "^@ekza-studio/[^/]+/[^/]+/",
@@ -2421,9 +2424,11 @@
                   "!@modelcontextprotocol/client/**",
                   "!gltf-validator",
                   "!vrm-validator",
-                  "!node:*"
+                  "!node:*",
+                  "!@ekza-studio/gen-gateway",
+                  "!@ekza-studio/gen-gateway/testing"
                 ],
-                "message": "apps/web e2e specs may import only: @playwright/test, @ekza-studio/editor, @ekza-studio/io, @ekza-studio/io/testing (the M7 AI-like model), @ekza-studio/doc, ekza-studio-mcp, @ekza-studio/agent-evals, @modelcontextprotocol/client, gltf-validator, node:* (ARCHITECTURE \u00a73)."
+                "message": "apps/web e2e specs may import only: @playwright/test, @ekza-studio/editor, @ekza-studio/io, @ekza-studio/io/testing (the M7 AI-like model), @ekza-studio/doc, ekza-studio-mcp, @ekza-studio/agent-evals, @modelcontextprotocol/client, gltf-validator, node:*, @ekza-studio/gen-gateway and its /testing kit (the M7 E2E-GEN gateway in the test process) (ARCHITECTURE \u00a73)."
               },
               {
                 "regex": "^@ekza-studio/[^/]+/[^/]+/",

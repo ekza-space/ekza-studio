@@ -76,6 +76,7 @@ export {
   generationIdOf,
   generationRecords,
   generatorOfExport,
+  liveGeneratedMeshes,
   meshGenBadge,
   putGeneration,
   validateGeneration,
