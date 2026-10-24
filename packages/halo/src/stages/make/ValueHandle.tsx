@@ -48,7 +48,8 @@ export function valueRun(ctx: ShellContext): ValueRun | null {
   return { op: last.id, param, mesh, value };
 }
 
-function handleAt(ctx: ShellContext): Point | null {
+/** Where the value handle sits now (pane px), or null. */
+export function handleAt(ctx: ShellContext): Point | null {
   const run = valueRun(ctx);
   const vm = ctx.vm();
   if (run === null || vm === null) return null;

@@ -18,7 +18,7 @@ import { capNow } from './CapHandle';
 import { GA_OPS, REDUCE_BUDGETS, reduceArgs } from './cleanup';
 import { componentBox } from './geometry';
 import { makeStore } from './state';
-import { valueRun } from './ValueHandle';
+import { handleAt as valueHandleAt, valueRun } from './ValueHandle';
 
 /** The templates whose meshes start with Mirror edits on (the character starts and the proportion guides). */
 const MIRRORED_TEMPLATES: ReadonlySet<string> = new Set(['humanoidBody', 'humanoid']);
@@ -105,7 +105,8 @@ export function installMake(controller: HaloController): () => void {
     const project = (p: readonly [number, number, number]) => vm.project(PANE, p);
     let box: Box | null = componentBox(app, project);
     const cap = capNow(controller.ctx);
-    const points = cap === null ? [] : [cap.handle];
+    const value = valueHandleAt(controller.ctx);
+    const points = [...(cap === null ? [] : [cap.handle]), ...(value === null ? [] : [value])];
     for (const p of points) {
       const around = { left: p.x - 32, top: p.y - 32, right: p.x + 32, bottom: p.y + 32 };
       box =

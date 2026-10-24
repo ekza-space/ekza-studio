@@ -41,6 +41,9 @@ export function chipOf(param: ParamDef): {
   };
 }
 
+/** The room the Halo's arc needs on a side (the kit's `arcLayout`: 240 px, plus the gutter). */
+const ARC_ROOM = 260;
+
 /** At most this many chips float beside a result (§5.6: `⟨Distance 0.12 m⟩ ⟨Segments 2⟩`); the rest are Options. */
 export const MAX_ECHO = 3;
 
@@ -81,6 +84,8 @@ export function EchoChips({
   const { ctx } = controller;
   const last = useSessionValue(ctx.app, (s) => s.lastRun);
   const fine = useHaloStore(ctx.store, (s) => s.thumb.latch !== 'off');
+  const reduced = useHaloStore(ctx.store, (s) => s.halo?.reduced === true);
+  const handedness = useHaloStore(ctx.store, (s) => s.input.handedness);
   const [live, setLive] = useState<Readonly<Record<string, number>>>({});
   const [numpad, setNumpad] = useState<{ readonly name: string; readonly left: number; readonly top: number } | null>(
     null,
@@ -93,15 +98,15 @@ export function EchoChips({
     ctx.store.set((ui) => ({ touches: ui.touches + 1 }));
     void ctx.run('edit.adjustLast', { args: { [name]: stored } }).then(() => ctx.store.set({ form: null }));
   };
-  // beside the result, never over it: right of the box when there is room, else below it
+  // beside the result, never over it: right of the box when there is room, else below it — and below it when the
+  // reduced Halo's arc takes the right side (T8: no room on the preferred side, as the kit's arc decides it)
   const room = box === null ? 0 : width - box.right;
-  const left = box === null ? 16 : room >= 260 ? box.right + 20 : Math.max(16, box.left);
+  const arcRight =
+    reduced && box !== null && (handedness === 'right' ? box.left < ARC_ROOM : width - box.right >= ARC_ROOM);
+  const beside = room >= 260 && !arcRight;
+  const left = box === null ? 16 : beside ? box.right + 20 : Math.max(16, box.left);
   const top =
-    box === null
-      ? height - insetBottom - 120
-      : room >= 260
-        ? box.top
-        : Math.min(height - insetBottom - 60, box.bottom + 16);
+    box === null ? height - insetBottom - 120 : beside ? box.top : Math.min(height - insetBottom - 60, box.bottom + 16);
   const param = numpad === null ? null : (params.find((p) => p.name === numpad.name) ?? null);
   return (
     <div
@@ -137,7 +142,8 @@ export function EchoChips({
           />
         );
       })}
-      {last.repeatable ? (
+      {/* T8 (§4.8): beside the reduced Halo its *… again* petal is the repeat; one target, not two */}
+      {last.repeatable && !reduced ? (
         <ActionChip icon={<Icon name="again" />} onClick={() => void ctx.run('edit.repeatLast')}>
           {en.chips.again}
         </ActionChip>

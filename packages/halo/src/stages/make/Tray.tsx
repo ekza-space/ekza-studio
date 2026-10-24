@@ -231,6 +231,17 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
           open={menu === 'drag'}
           onPress={() => toggleMenu('drag')}
         />
+        {/* the AI pipeline's door, early in the row so a portrait tray shows it (the owner's priority) */}
+        <TrayChip
+          testId="halo-make-ai"
+          label={w.createAi}
+          icon={<Sparkle />}
+          onPress={() => {
+            touch(ctx);
+            ms.set({ menu: null });
+            openCreateWithAi(ctx);
+          }}
+        />
         {/* §4.8: with nothing to mirror the chip would only say why; it shows with a shape selected */}
         {mirrorReason === null ? (
           <TrayChip
@@ -260,16 +271,6 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
             onPress={() => toggleMenu('newShape')}
           />
         )}
-        <TrayChip
-          testId="halo-make-ai"
-          label={w.createAi}
-          icon={<Sparkle />}
-          onPress={() => {
-            touch(ctx);
-            ms.set({ menu: null });
-            openCreateWithAi(ctx);
-          }}
-        />
       </div>
       <TrayChip
         testId="halo-make-more"

@@ -28,7 +28,6 @@ export default function CreateWithAiSheet({ ctx }: HaloSheetProps): JSX.Element 
       ctx={ctx}
       id={CREATE_AI_SHEET}
       title={w.title}
-      {...(connected ? {} : { description: w.notConnected })}
       footer={
         <>
           <TouchButton className="flex-1" data-testid="halo-ai-close" onClick={() => ctx.close()}>
