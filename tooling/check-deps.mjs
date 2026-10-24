@@ -206,6 +206,9 @@ export const ALLOWED = {
       MESH_CORE,
       MESH_VIEW,
       MESH_WASM,
+      // M7 G-d: the Generate flow against the real gateway and the mock provider server (headless acceptance).
+      GEN_CORE,
+      GEN_GATEWAY,
       ...VRM,
       '@types/three',
       'gltf-validator',
@@ -251,6 +254,8 @@ export const ALLOWED = {
       UI,
       // M-AI: editor/src/agent/** (a React.lazy chunk; MCP-SPEC §2)
       AGENT_TOOLS,
+      // M7 G-d (ADR 0017 §2): the host's generation client, loaded with a dynamic import (oxlint: type imports only)
+      GEN_CORE,
       SCHEMATIC_RENDER,
       ...REACT,
       '@react-three/fiber',

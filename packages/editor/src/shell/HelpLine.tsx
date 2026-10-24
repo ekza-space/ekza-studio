@@ -4,10 +4,11 @@
 // the pointer (`⌘E Extrude` on macOS, `Ctrl+E Extrude` elsewhere), and the selection counts objects.
 import { type ComponentMode, type EditorApp, GLOBAL_SCOPE, PANEL, type SessionState } from '@ekza-studio/editor-core';
 import { cn, LoaderCircle } from '@ekza-studio/ui';
-import type { JSX } from 'react';
+import { type JSX, useSyncExternalStore } from 'react';
 import { useEditorApp, usePrefs, useSession } from '../hooks';
 import { helpHints } from '../input/keyboard';
 import { useShellUi } from './context';
+import { genTray, subscribeGenTray } from './genTraySlot';
 
 const MODE_LABEL: Readonly<Record<ComponentMode, string>> = {
   object: 'Object mode',
@@ -56,6 +57,8 @@ export function HelpLine(): JSX.Element {
   const selected = useSession((s) => s.selection.controls.length);
   const rig = useSession((s) => rigHelp?.(app, s))?.split('\u0001') ?? null;
   const navProfile = usePrefs((p) => p.navProfile);
+  // M7 G-d: the generation job tray, once the Generate chunk has loaded.
+  const renderGenTray = useSyncExternalStore(subscribeGenTray, genTray, genTray);
   const spaceBehaviour = usePrefs((p) => p.spaceBehaviour);
 
   const modelHints = workspace === 'model' ? helpHints(app, hover) : null;
@@ -98,6 +101,7 @@ export function HelpLine(): JSX.Element {
           {busy?.progress === null || busy?.progress === undefined ? null : ` ${Math.round(busy.progress * 100)}%`}
         </span>
       )}
+      {renderGenTray === null ? null : renderGenTray()}
       <span className="ekza-numeric shrink-0" data-testid="helpline-selection">
         {count === 0 ? 'Nothing selected' : `${count}${what === null ? '' : ` ${what}`} selected`}
       </span>

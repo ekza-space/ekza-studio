@@ -9,9 +9,20 @@
   },
   "include": ["./**/*", "../playwright.config.ts", "../next.config.ts", "../csp.ts", "../vitest.config.ts"],
   "references": [
-    { "path": "../../../packages/anim-core/src" },
-    { "path": "../../../packages/doc/src" },
-    { "path": "../../../packages/io/src" },
-    { "path": "../../../packages/editor/src" }
+    {
+      "path": "../../../packages/anim-core/src"
+    },
+    {
+      "path": "../../../packages/doc/src"
+    },
+    {
+      "path": "../../../packages/io/src"
+    },
+    {
+      "path": "../../../packages/editor/src"
+    },
+    {
+      "path": "../../../packages/gen-gateway/src"
+    }
   ]
 }

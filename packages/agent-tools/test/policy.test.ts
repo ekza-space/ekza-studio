@@ -192,6 +192,13 @@ const ARGS: Readonly<Record<string, ArgsOf>> = {
   'rig.addLimbIk': (fx) => ({ args: { character: fx.character, limbs: ['arm.L'] } }),
   'rig.setFootParams': (fx) => ({ args: { limb: 'leg.L', character: fx.character, params: { heelBack: 0.05 } } }),
   'rig.setRotateOrder': (fx) => ({ args: { control: controlOf(fx.app, fx.character, 'fk.hand.L'), order: 'zyx' } }),
+  // M7 G-d: generation (this fixture has no gateway: every one refuses before anything is sent)
+  'gen.submit': () => ({
+    args: { provider: 'tripo', op: 'text-to-model', prompt: 'a chair', maxCostUsd: 1, tier: 'paid' },
+  }),
+  'gen.retry': () => ({ args: { job: 'job_1' } }),
+  'gen.cancel': () => ({ args: { job: 'job_1' } }),
+  'gen.import': () => ({ args: { job: 'job_1' } }),
   // view access (exempt from the invariant; they must not end internal)
   'select.controls': (fx) => ({ args: { ids: [controlOf(fx.app, fx.character, 'fk.hand.L')], mode: 'replace' } }),
   'select.keys': (fx) => ({ args: { items: [{ key: fx.keys[0] }], mode: 'replace' } }),
@@ -317,6 +324,10 @@ const EXPECTED_D0: Readonly<Record<string, string>> = {
   'time.play': 'finished',
   'time.stop': 'finished',
   'time.setFrame': 'finished',
+  'gen.submit': 'refused: AI generation is not set up on this server',
+  'gen.retry': 'refused: AI generation is not set up on this server',
+  'gen.cancel': 'refused: AI generation is not set up on this server',
+  'gen.import': 'refused: AI generation is not set up on this server',
 };
 
 /**

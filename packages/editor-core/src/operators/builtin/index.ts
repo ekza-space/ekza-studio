@@ -13,6 +13,7 @@ import type { AnyOperator } from './define';
 import { EDIT_OPERATORS } from './edit';
 import { BUILTIN_EXPORTERS } from './exporters';
 import { FILE_OPERATORS } from './file';
+import { GEN_OPERATORS } from './gen';
 import { GRAPH_OPERATORS } from './graph';
 import { GRAPH_BUFFER_OPERATORS } from './graphBuffer';
 import { IK_OPERATORS } from './ik';
@@ -67,6 +68,8 @@ export const BUILTIN_OPERATORS: readonly AnyOperator[] = [
   ...KEYMAP_SHADOW_OPERATORS,
   ...MODEL_OPERATOR_PROXIES.content,
   // M-AI: the explicit-target operators register lazily (`agentChunk.ts`, MCP-SPEC §0.4).
+  // M7 G-d (MODELING-PLAN §7.2): the generation operators; their bodies are a lazy chunk (`genFlow/ops`).
+  ...GEN_OPERATORS,
 ];
 
 function disposeAll(disposers: Disposer[]): Disposer {

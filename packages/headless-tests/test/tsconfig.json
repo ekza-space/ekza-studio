@@ -24,6 +24,12 @@
     },
     {
       "path": "../../mesh-core/src"
+    },
+    {
+      "path": "../../gen-core/src"
+    },
+    {
+      "path": "../../gen-gateway/src"
     }
   ]
 }
