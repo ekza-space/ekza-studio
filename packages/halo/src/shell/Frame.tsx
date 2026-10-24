@@ -22,6 +22,7 @@ import { FrameNext, FramePath, FrameStatus } from './PathParts';
 import { TopBar } from './TopBar';
 import { Tray } from './Tray';
 import { useAnimateDock } from '../stages/animate/AnimateDock';
+import { useRigDock } from '../stages/rig/RigDock';
 import { useUndoPress } from '../history/undoPress';
 import { useHaloStore } from './store';
 
@@ -59,6 +60,8 @@ export function Frame({ controller }: { readonly controller: HaloController }): 
   const compact = size === 'compact';
   // T7 (P-T6A-4): Animate's tray is the Thread with the Animations row
   const animate = useAnimateDock(controller, size, height);
+  // T9 (P-T6A-4): Rig's tray, the Rig-it card, the dots panes and the Skin cards
+  const rig = useRigDock(controller, size);
   const undoPress = useUndoPress(controller);
   // the chrome's extent, for the floating grammar (pane px)
   const insetTop = size === 'regular' ? 128 : 76;
@@ -79,6 +82,7 @@ export function Frame({ controller }: { readonly controller: HaloController }): 
       className="absolute inset-0 z-(--z-chrome) overflow-hidden text-fg"
     >
       <HaloPane controller={controller} />
+      {home ? null : rig.panes}
       {locked && !home ? (
         <div
           aria-hidden="true"
@@ -145,9 +149,9 @@ export function Frame({ controller }: { readonly controller: HaloController }): 
             style={{ ...fade, bottom: 'var(--touch-inset-bottom)' }}
           >
             {/* ST-T7-18: in Animate the Next chip gives way while the Animations row shows two or more chips */}
-            {animate.hideNext ? null : <FrameNext controller={controller} />}
+            {animate.hideNext || rig.hideNext ? null : <FrameNext controller={controller} />}
             <div className="flex justify-center">
-              {animate.dock ?? <Tray controller={controller} compact={compact} />}
+              {animate.dock ?? rig.dock ?? <Tray controller={controller} compact={compact} />}
             </div>
             {compact ? (
               <div className="pointer-events-auto flex">
@@ -155,6 +159,7 @@ export function Frame({ controller }: { readonly controller: HaloController }): 
               </div>
             ) : null}
           </div>
+          {rig.overlay}
         </>
       )}
       <Sheets controller={controller} size={size} />

@@ -2,7 +2,7 @@
 // noun with a Halo (petals) and a ⋯ More list; `resolveNoun` reads the session selection (controls, joints, scene
 // objects, mesh components, keys, channels) and names the noun the Halo, the breadcrumb, More and Numbers show. Pure:
 // it reads the app, never writes it.
-import type { ComponentMode, EditorApp, HaloStage } from '@ekza-studio/editor-core';
+import { type ComponentMode, type EditorApp, type HaloStage, QUICK_RIG_LABELS } from '@ekza-studio/editor-core';
 import type { NounKind } from '../manifest/types';
 
 export interface Noun {
@@ -79,6 +79,18 @@ export function resolveNoun(app: EditorApp, stage: HaloStage): Noun {
   const session = app.session.getState();
   const selection = session.selection;
   const controls = selection.controls;
+  // T9 (§6.2 *Rig dot*): while Quick Rig is open in Rig, a selected dot is the noun (its Halo: Re-guess, Mirror …)
+  const quick = session.rig.quickRig;
+  if (stage === 'rig' && quick !== null && quick.selected !== null) {
+    return {
+      kind: 'rigDot',
+      id: quick.selected,
+      ids: [quick.selected],
+      label: QUICK_RIG_LABELS[quick.selected] ?? quick.selected,
+      count: 1,
+      character: null,
+    };
+  }
   if (stage === 'animate' && controls.length > 0) {
     const noun = controlNoun(app, controls);
     if (noun !== null) return noun;

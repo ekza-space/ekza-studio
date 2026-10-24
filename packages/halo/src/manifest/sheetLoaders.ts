@@ -17,11 +17,20 @@ export const SHEET_LOADERS: Readonly<Record<T6bSheetId, () => Promise<SheetModul
   about: () => import('../sheets/about'),
 };
 
-/** The stage packages' sheets (T7: the Library, §10.6; T10: History and Ask, §6.2, §14), beside T6b's. */
-export const STAGE_SHEET_LOADERS: Readonly<Record<'library' | 'history' | 'ask', () => Promise<SheetModule>>> = {
+/**
+ * The stage packages' sheets (T7: the Library, §10.6; T10: History and Ask, §6.2, §14; T9: Checks, Bones and Weights,
+ * §12), beside T6b's. T9's take the Rig stage as well (their host wraps them, `stages/rig/start.ts`): here they are
+ * loaded for the idle prefetch only.
+ */
+export const STAGE_SHEET_LOADERS: Readonly<
+  Record<'library' | 'history' | 'ask' | 'checks' | 'bones' | 'weights', () => Promise<SheetModule>>
+> = {
   library: () => import('../sheets/library'),
   history: () => import('../sheets/history'),
   ask: () => import('../sheets/ask'),
+  checks: () => import('../sheets/checks') as unknown as Promise<SheetModule>,
+  bones: () => import('../sheets/bones') as unknown as Promise<SheetModule>,
+  weights: () => import('../sheets/weights') as unknown as Promise<SheetModule>,
 };
 
 /** Prefetches every sheet chunk (the shell calls it at idle and on `online`, S23); failures are retried later. */

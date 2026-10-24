@@ -17,6 +17,17 @@ export const rigWords = {
     checks: 'Checks',
     checksCount: (n: number): string => `Checks ⚠${n}`,
     addSkeleton: 'Add skeleton',
+    skeletons: {
+      lite17: 'Simple (17 bones)',
+      core21: 'Body (21 bones)',
+      standard33: 'With thumbs (33 bones)',
+      full52: 'All fingers (52 bones)',
+    } as Record<string, string>,
+    joints: 'Joints',
+    jointTools: { jointTool: 'Draw joints', insertJoint: 'Insert a joint', socket: 'Add a socket' } as Record<
+      string,
+      string
+    >,
     bind: 'Bind skin',
     bindAgain: 'Bind again',
     pose: 'Pose',
@@ -76,12 +87,16 @@ export const rigWords = {
     adding: 'Adding…',
     added: 'Idle, Walk and Run are on the character',
     failed: 'Rigging stopped',
+    importedTitle: 'This character came with its own rig',
+    importedDetail: 'Use its rig to paint its weights and check it here; nothing is guessed again',
+    useItsRig: 'Use its rig',
     tryAgain: 'Try again',
   },
   dots: {
     session: 'Adjust dots',
     hint: 'drag a dot to where the joint should be',
     view: 'View',
+    pick: 'Dots',
     front: 'Front',
     side: 'Side',
     frontPane: 'Front · drag ↔ ↕',
@@ -91,6 +106,7 @@ export const rigWords = {
   paint: {
     session: 'Paint weights',
     hint: (bone: string): string => `${bone} · leaving keeps your strokes`,
+    sessionHint: 'paint where it bends badly · leaving keeps your strokes',
     pickBone: 'Pick a bone to paint',
     brush: 'Brush',
     replace: 'Replace',
@@ -105,10 +121,7 @@ export const rigWords = {
     mirror: 'Mirror',
     flood: 'Flood',
     show: 'Show',
-    showModes: { ramp: 'Ramp', greyscale: 'Grey', influences: 'Colours by bone', off: 'Off' } as Record<
-      string,
-      string
-    >,
+    showModes: { ramp: 'Ramp', greyscale: 'Grey', influences: 'Colours by bone', off: 'Off' } as Record<string, string>,
     follows: 'This area follows',
     previous: 'Previous bone',
     next: 'Next bone',
@@ -132,6 +145,7 @@ export const rigWords = {
     rig: 'Rig',
     nothing: 'Nothing to fix in the rig for',
     fix: 'Fix',
+    fixInOrder: 'Fix them in order',
     showMe: 'Show me',
     fixBend: 'Fix where it bends badly',
     fixBendDetail: 'Test the pose, find the spot, paint it, play again',
@@ -176,6 +190,13 @@ export const rigWords = {
     setWeight: 'Set weight…',
     setWeightOn: (bone: string): string => `Set weight of ${bone}`,
     noPoints: 'Select points first (Brush does › Select points)',
+  },
+  recipes: {
+    rigIt: 'Rig it for me',
+    rigItDetail: 'Guess the joints, check the dots, rig and skin, test it moving',
+    fixBend: 'Fix where it bends badly',
+    fixBendDetail: 'Bend it, hold the spot that breaks, paint that bone, play again',
+    noStage: 'open a model first',
   },
   session: {
     test: 'Test pose',

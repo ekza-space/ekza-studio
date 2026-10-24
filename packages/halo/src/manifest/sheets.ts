@@ -55,9 +55,9 @@ export const SHEET_SECTIONS: Readonly<Record<SheetId, readonly string[] | null>>
   library: ['search', 'kinds', 'starterSet', 'fromFile', 'cards'],
   palette: null,
   makeEditableReport: null,
-  checks: null,
-  bones: null,
-  weights: null,
+  checks: ['before', 'rig', 'fixBend'],
+  bones: ['list'],
+  weights: ['fix', 'brush', 'setWeight'],
   // T10 (§6.2, §14): the History ribbon's steps and AI groups; the Ask sheet's request, connection, grants, the AI's
   // activity and its revert-all
   history: ['steps', 'groups'],

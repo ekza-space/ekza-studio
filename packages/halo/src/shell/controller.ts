@@ -36,6 +36,8 @@ import { animateSlice } from '../stages/animate/slice';
 import { startAnimate } from '../stages/animate/start';
 import { homeSlice } from '../home/slice';
 import { startHome } from '../home/start';
+import { rigSlice } from '../stages/rig/slice';
+import { startRig } from '../stages/rig/start';
 
 export interface HaloController {
   readonly ctx: ShellContext;
@@ -406,6 +408,8 @@ export function createHaloController(host: HostShell): HaloController {
       disposers.push(startAnimate(controller));
       // T11: Home › Continue (the recovery hook), the silent resume after a reload, the Share sheet (P-T6A-4)
       disposers.push(startHome(controller));
+      // T9: the Rig stage (its sessions, the dots' claim, the skin spot, the Checks / Bones / Weights sheets)
+      disposers.push(startRig(controller));
 
       // the Halo's own operator: Pro's window chords say why they do nothing here (§5.8)
       if (app.operators.get(PRO_ONLY_KEY) === undefined) disposers.push(app.operators.register(proOnlyKeyDef));
@@ -518,6 +522,8 @@ export function createHaloController(host: HostShell): HaloController {
               history: historyProbe(app),
               // T11: Continue, the resume record, the storage card, Share's prepared file
               t11: homeSlice(controller),
+              // T9: the Rig-it card, the dots session, the paint session, the skin spot, the bend test
+              rig: rigSlice(controller),
               // T6b's slice (the harness's, now the frame's): the readiness list and the Next chip shown
               t6b: ((): Record<string, unknown> => {
                 const r = readinessSource.get();

@@ -9,26 +9,22 @@
 // (`stages/rig/RigCard.tsx`) renders the state; a headless test drives the same functions over a recording host and
 // compares the log with Auto-Rig's (`test/rig-journeys.test.ts`).
 //
-// The flow host is one per app (`haloFlow`): the person's runs (`run`) and the flow's bookkeeping (`quiet`) through
-// the shell's funnels; its U state (subject, start pose, parts, painted since bind) in memory, never in the document.
-// Home's intake (T11) is meant to run `intakeModel` on the same host, so a model brought in from Home is the card's
-// subject with its start pose; without one, the card takes the subject from the document (as Auto-Rig's *From
-// Studio* does) and checks it once (`autorig.inspect`).
+// The flow host is Home's (`intake/flowHost.ts`, T11's P-T11-1): one flow state per app, so the subject, the intake
+// report and the start pose Home's intake recorded are what the card rigs; the person's runs go through the shell's
+// funnel, the flow's bookkeeping runs quietly. Without a live subject (a model made in Make, a project, a page that
+// skipped Home) the card takes it from the document as Auto-Rig's *From Studio* does and checks it once
+// (`autorig.inspect`).
 import type { CharacterId, MeshId } from '@ekza-studio/doc';
 import {
   type AutoRigFingers,
   type AutoRigFlowHost,
-  type AutoRigFlowRun,
   type AutoRigRigPlan,
   type AutoRigRigStage,
   type AutoRigSubject,
-  addLibraryClip,
-  autoRigFlowHost,
   cancelRig,
   chooseFingers,
   DEFAULT_MOTION_CLIP,
   type EditorApp,
-  memoryAutoRigFlowStore,
   type MotionTest,
   openMarkers,
   quickRigCommitArgs,
@@ -39,6 +35,7 @@ import {
   startMotionTest,
   takeHandedSubject,
 } from '@ekza-studio/editor-core';
+import { starterSteps } from './addAnimations';
 
 /** The finger detail a destination asks for (§12.2 step 1): OMOBA needs a thumb bone on each hand. */
 export const DESTINATION_FINGERS: Readonly<Record<string, AutoRigFingers>> = { omoba: 'thumb' };
@@ -49,9 +46,6 @@ export const TEST_CLIPS = [
   { id: 'sword-attack', word: 'sword' },
   { id: 'dance', word: 'dance' },
 ] as const;
-
-/** The starter set (§9 J1 step 5): Idle · Walk · Run from the starter pack. */
-export const STARTER_SET: readonly string[] = ['idle', 'walk', 'run'];
 
 export type RigItPhase =
   /** Quick Rig is opening on the subject (the guess runs). */
@@ -70,7 +64,14 @@ export type RigItPhase =
   | 'added'
   /** Something stopped the recipe (the message says what). */
   | 'failed'
-  /** Nothing to rig (no meshes; an asset character). */
+  /**
+   * The subject came with its own rig (a VRM, a generated humanoid with the provider's rig): nothing to guess; *Use
+   * its rig* makes it editable (`char.makeEditable`, M7 G-d's import) and goes straight to the checks.
+   */
+  | 'imported'
+  /** The imported rig is the character's now: the checks follow. */
+  | 'checks'
+  /** Nothing to rig (no meshes). */
   | 'none';
 
 export interface RigItState {
@@ -109,38 +110,9 @@ export function fingersOfPreset(preset: string | null | undefined): AutoRigFinge
   return 'thumb';
 }
 
-// ---------- the flow host, one per app ----------
-
-interface HaloFlow {
-  readonly host: AutoRigFlowHost;
-}
-
-const flows = new WeakMap<EditorApp, HaloFlow>();
-
-/**
- * Halo's Auto-Rig flow host for an app: `run` is the person's run (a surface's run, which says why on a refusal),
- * `quiet` the flow's bookkeeping. The first caller's funnels win; a headless test passes its own (a recording host).
- */
-export function haloFlow(
-  app: EditorApp,
-  funnels: { readonly run?: AutoRigFlowRun; readonly quiet?: AutoRigFlowRun } = {},
-): AutoRigFlowHost {
-  let flow = flows.get(app);
-  if (flow === undefined) {
-    flow = { host: autoRigFlowHost(app, memoryAutoRigFlowStore(), funnels) };
-    flows.set(app, flow);
-  }
-  return flow.host;
-}
-
-/** Forgets an app's flow host (tests). */
-export function dropHaloFlow(app: EditorApp): void {
-  flows.delete(app);
-}
-
 /**
  * The subject the document has now (§16.3, Auto-Rig's *From Studio* rule): the selected scene meshes, else every
- * scene mesh, else the active or only model character; null when there is nothing to rig.
+ * scene mesh, else the active or only character; null when there is nothing to rig.
  */
 export function subjectOfDocument(app: EditorApp): AutoRigSubject | null {
   const state = app.session.getState();
@@ -151,10 +123,20 @@ export function subjectOfDocument(app: EditorApp): AutoRigSubject | null {
   const selected = state.selection.objects.filter((id) => scene.includes(id as MeshId)) as MeshId[];
   if (selected.length > 0) return { character: null, meshes: selected };
   if (scene.length > 0) return { character: null, meshes: scene };
-  const characters = app.store.list('characters').filter((c) => c.deleted === null && c.source.kind === 'model');
+  // a model character (rig it again), or an imported one (its own rig: *Use its rig*)
+  const characters = app.store.list('characters').filter((c) => c.deleted === null);
   const active = state.rig.character ?? state.activeCharacter;
   const character = characters.find((c) => c.id === active) ?? (characters.length === 1 ? characters[0] : undefined);
   return character === undefined ? null : { character: character.id, meshes: [] };
+}
+
+/**
+ * The character of the subject when its rig came with it (an asset character: a VRM, or a generated humanoid with the
+ * provider's rig before `char.makeEditable`), else null.
+ */
+export function importedCharacter(app: EditorApp, host: AutoRigFlowHost): CharacterId | null {
+  const character = resolveAutoRigSubject(app.store, host.state.get().subject).character;
+  return character !== null && character.source.kind !== 'model' ? character.id : null;
 }
 
 /** Whether the flow's subject still stands for something in the document. */
@@ -186,6 +168,8 @@ export interface RigIt {
   cancel(): Promise<void>;
   /** *Test with*: the motion test's clip. */
   testWith(clip: string): void;
+  /** *Use its rig* (an imported or generated rig, `char.makeEditable`), then the checks. */
+  useItsRig(): Promise<void>;
   /** *Starter set: Idle · Walk · Run* (§9 J1 step 5). */
   starterSet(): Promise<void>;
   /** Closes the card (the motion test stops; Quick Rig stays open while the card is at its dots). */
@@ -265,6 +249,12 @@ export function createRigIt(deps: RigItDeps): RigIt {
         }
         await takeHandedSubject(host, subject);
       }
+      // a character that came with its own rig (an asset: a VRM, a provider's rig) is not guessed again
+      const imported = importedCharacter(app, host);
+      if (imported !== null) {
+        set({ phase: 'imported', character: imported });
+        return;
+      }
       const opened = await openMarkers(host);
       if (opened.status === 'none') {
         set({ phase: 'none' });
@@ -306,7 +296,8 @@ export function createRigIt(deps: RigItDeps): RigIt {
         case 'skipped':
           set({ phase: 'dots', stage: null });
           return;
-        default:
+        case 'interrupted':
+        case 'failed':
           set({ phase: 'failed', stage: null, fraction: null, message: outcome.message, plan: outcome.plan });
       }
     },
@@ -356,8 +347,8 @@ export function createRigIt(deps: RigItDeps): RigIt {
       if (character === null || state.adding) return;
       await stopMotion();
       set({ adding: true });
-      for (const clip of STARTER_SET) {
-        const added = await addLibraryClip(host, character, clip);
+      for (const step of starterSteps(character)) {
+        const added = await host.run(step.op, step.args);
         if (added.status !== 'finished') {
           set({
             adding: false,
@@ -368,6 +359,20 @@ export function createRigIt(deps: RigItDeps): RigIt {
         }
       }
       set({ adding: false, phase: 'added' });
+    },
+    async useItsRig() {
+      const character = state.character;
+      if (character === null) return;
+      const record = app.store.get('characters', character);
+      if (record !== undefined && record.source.kind !== 'model') {
+        const made = await host.run('char.makeEditable', { character });
+        if (made.status !== 'finished') {
+          set({ phase: 'failed', message: made.status === 'cancelled' ? made.reason : made.error.message });
+          return;
+        }
+      }
+      host.state.set({ subject: { character, meshes: [] } });
+      set({ phase: 'checks' });
     },
     async close() {
       await stopMotion();
