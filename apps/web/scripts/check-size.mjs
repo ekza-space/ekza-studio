@@ -83,6 +83,8 @@ export const BOUNDARIES = [
   // both markers, and a chunk is labelled by the first boundary whose marker it holds.
   { id: 'mesh-wasm', label: 'mesh-wasm (intake chain, meshoptimizer simplifier)', markers: ['ekza-mesh-wasm'] },
   { id: 'mesh-kernel', label: 'mesh kernel (mesh-core)', markers: ['ekza-mesh-kernel'] },
+  // MODELING-PLAN §7.2 G-d (M7): the Generate panel and flow (and the gen-core client) load when the panel opens.
+  { id: 'generate', label: 'Generate panel and flow (gen-core client)', markers: ['ekza-generate-flow'] },
   { id: 'mesh-view', label: 'mesh view (mesh-view, three-mesh-bvh)', markers: ['ekza-mesh-view'] },
   // M6A-SPEC §5.18 (B9): the drawings of the marking menu and the command palette load when first opened.
   { id: 'marking-menu', label: 'marking menu drawing', markers: ['mm-slot-'] },
