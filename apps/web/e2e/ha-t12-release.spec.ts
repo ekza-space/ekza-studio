@@ -93,6 +93,8 @@ test('ha-t12: the top bar’s live AI line follows the agent and opens Ask (P-T1
   await expect.poll(async () => (await halo(page)).sheet).toBeNull();
   const line = page.getByTestId('halo-ai-activity');
   await expect(line).toHaveText(/AI asks for access/);
+  // a 44 pt target like every other control (§18)
+  expect((await line.boundingBox())?.height ?? 0).toBeGreaterThanOrEqual(44);
   await shot(page, info, 'ai-activity');
   // the line opens Ask, where the pairing card answers it
   await line.click();

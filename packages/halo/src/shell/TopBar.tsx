@@ -89,7 +89,7 @@ export function TopBar({
           {activity === null ? null : (
             <button
               type="button"
-              className="pointer-events-auto absolute top-[calc(100%+6px)] right-0 max-w-[min(360px,calc(100vw-32px))] truncate rounded-full border border-accent/50 bg-touch-surface px-3 py-1 text-left text-touch-label text-fg shadow-touch backdrop-blur-md"
+              className="pointer-events-auto absolute top-[calc(100%+6px)] right-0 inline-flex min-h-(--touch-hit) max-w-[min(360px,calc(100vw-32px))] items-center truncate rounded-full border border-accent/50 bg-touch-surface px-3 text-left text-touch-label text-fg shadow-touch backdrop-blur-md"
               aria-live="polite"
               data-halo-chrome=""
               data-testid="halo-ai-activity"

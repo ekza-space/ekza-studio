@@ -3,7 +3,7 @@
 Work package T12 of [STUDIO-TOUCH-SPEC](../STUDIO-TOUCH-SPEC.md) §21 (v0.2, [ADR 0023](../adr/0023-studio-touch-ui.md)):
 §1.2 (the entry), §17 (the beta note), §20.2 (the files as built), §20.6 (the size record), §22 (the release gate).
 Branch `halo/t12-release` from `dev` `b4bcf546` (T0–T11, M7 G-a…G-e and C1/C2 merged). Decisions:
-[DECISIONS-OPEN §P · T12](../DECISIONS-OPEN.md), rows `ST-INT-1` … `ST-INT-14`. The owner's priorities for the release:
+[DECISIONS-OPEN §P · T12](../DECISIONS-OPEN.md), rows `ST-INT-1` … `ST-INT-15`. The owner's priorities for the release:
 animation, then the turnkey AI pipeline (prompt or photo → model → clean-up → *Rig it* → animate), then the rest;
 frames are the default time unit and the ruler has a tick on every frame (both already true from T7/T10).
 
@@ -64,6 +64,17 @@ saw the panes before the growth and the second the sheet after it. `settledBoxes
 and waits until they hold still for two animation frames (a 5 s cap returns the last pair read together). The
 assertions are unchanged.
 
+## A leaving shell's press hooks (ST-INT-15)
+
+The new AS-ST-10 check (`ha-12`: Pro's keys, a marking menu, every stored `ekza-animator:` key and the panes before
+and after a round trip through every stage of Ekza Studio) failed on the marking menu: after ▤ Simple layout and back,
+Shift+RMB over Pro's viewport opened nothing. The viewport has one slot for a shell's press hook
+(`setPointerMenus`) and one for its navigation override; a same-page switch mounts the next shell first, and the
+leaving shell's disposer then set the slot to null — Halo's removed Pro's menus, Pro's could remove Halo's ring, Halo's
+could remove Auto-Rig's override. `ViewportManager.clearPointerMenus(handler)` and `clearNavigationOverride(o)` (new,
+additive) remove a hook only while it is still installed; Halo's input, Pro's `createShell` and Auto-Rig's
+`navigation/touch/simple.ts` use them. `ha-12` now also checks Halo's right-click ring after Pro.
+
 ## Records
 
 - STUDIO-TOUCH-SPEC as built: §1.2 (the flags), §6.2 (the mesh, faces, edges, swatch and rig-dot rows as T8/T9 curated
@@ -100,7 +111,30 @@ gateway's provider labels where the person picks the service (its terms and data
 
 ## Gate and sizes
 
-GATE_SECTION
+`EKZA_E2E_PORT=3192 pnpm run ci` at the branch head (local Chrome; CI is off for this repository): **E2E_RESULT**.
+Format, lint (oxlint type-aware), typecheck, check:deps (25 packages), check:fixtures, check:licenses (178 production
+packages), unit tests 24 / 24 turbo tasks four at a time (halo 245, editor-core 1,831, editor 678 + 1 skipped, viewport
+354 + 1 skipped, headless-tests 237, curve-editor 226 + 3 skipped, autorig 115, web 117, …), the production build,
+`check:size`, `check:gen-boundary`, and the e2e suite on `chrome`, `chrome-touch` and `webkit-ipad` with axe:
+E2E_COUNTS (the skips are project-gated: Pro and mouse specs on `chrome` only, CDP touch on `chrome-touch` only,
+compatibility-only boots on `webkit-ipad`).
+
+Earlier runs on the branch stopped on what they should: biome format (two files), oxlint (`no-assign-module-variable`
+in a test), `check-deps` (`axe-core` not yet admitted for web), and once in e2e on `ha-t12-release`'s Pro check, whose
+first-run dialog opened a moment after the shell and took the menu click (the test now answers it first). The
+`ar-12` phone test ran 8 × 5 under load (8 workers, load average ≈ 14) on `chrome-touch`: 40 / 40 green.
+
+`check:size` (production build, gzip -9, first visit; SIZE-1: one 5,000,000 B gate per route, the rest a record), `dev`
+`b4bcf546` built and measured the same way in a scratch worktree:
+
+| Route | `dev` `b4bcf546` | T12 | Δ |
+|---|---|---|---|
+| `/editor` | 902,533 B | **902,757 B** | +224 B (the arrival toast, `takeFrom`, the unconditional switch, the press hooks' release) |
+| `/autorig` | 661,174 B | **661,337 B** | +163 B (the host's `takeFrom`; the viewport's `viewState` and `clear*`) |
+| `/app` | 735,842 B | **736,850 B** | +1,008 B (the live AI line, `grammarTop`, the entry writes) — recorded in `size-baseline.json` |
+
+`/editor` and `/autorig` load no Halo module (the `ekza-halo-shell` boundary holds). The budgets bench's new `/app`
+route measurement (with the idle prefetch of Halo's lazy chunks) is report-only.
 
 ## Screenshots
 
