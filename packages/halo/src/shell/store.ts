@@ -71,10 +71,11 @@ export interface TargetState {
 
 /**
  * A noun the Halo shows instead of the selection's (§6.2 "how you get it"): the character from the breadcrumb's root
- * crumb, the manipulator from a long-press on it. Cleared when the selection changes or the Halo closes.
+ * crumb, the manipulator from a long-press on it, a swatch from the Paint tray (T8; the stage packages resolve their
+ * own kinds through `bindNoun`). Cleared when the selection changes or the Halo closes.
  */
 export interface NounFocus {
-  readonly kind: 'character' | 'manipulator';
+  readonly kind: 'character' | 'manipulator' | KindNoun['kind'];
   readonly id: string | null;
 }
 
@@ -96,6 +97,8 @@ export interface HaloUi {
   readonly sheetNoun: KindNoun | null;
   /** The noun the Halo shows instead of the selection's (the breadcrumb's character, a long-pressed manipulator). */
   readonly focus: NounFocus | null;
+  /** The open Halo's ▾ petal whose choices show (T8: Finish ▾ › Shiny, New shape ▾ › Cube; §6.2 ▾ petals). */
+  readonly sub: string | null;
   /** The Next chip the user dismissed (§7.2): hidden until the chip changes. */
   readonly nextDismissed: string | null;
   readonly threadLayer: 0 | 1 | 2;
@@ -147,6 +150,7 @@ export function initialUi(stage: HaloStage = 'make'): HaloUi {
     sheetArgs: null,
     sheetNoun: null,
     focus: null,
+    sub: null,
     nextDismissed: null,
     threadLayer: 0,
     destination: 'exploring',

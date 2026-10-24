@@ -21,9 +21,10 @@ export type Owner = 'T6a' | 'T6b' | 'T7' | 'T8' | 'T9' | 'T10' | 'T11';
  * when it lands, and the `searchOnly` baseline must then go down to its target. T7: the Thread (layers 0 and 1), the
  * Animations row, Animate's tray, the Library sheet and the docked Halos of key dots, bands, the playhead, animations
  * and library cards. T11: Home (Continue, the doors, Bring a model's intake, *Rig a model for me*) and the Share sheet
- * (destinations, the game target, More formats, the footer's project save).
+ * (destinations, the game target, More formats, the footer's project save). T8: Make's and Paint's trays, handles and
+ * clean-up rows, the swatch Halo, the palette and *Create with AI* sheets.
  */
-export const BUILT_OWNERS: ReadonlySet<Owner> = new Set<Owner>(['T6a', 'T6b', 'T7', 'T10', 'T11']);
+export const BUILT_OWNERS: ReadonlySet<Owner> = new Set<Owner>(['T6a', 'T6b', 'T7', 'T8', 'T10', 'T11']);
 
 /** The nouns of §6.2: what a tap selects, each with a Halo (petals) and a ⋯ More list. */
 export const NOUN_KINDS = [
@@ -102,6 +103,8 @@ export const SHEET_OWNER = {
   palette: 'T8',
   /** Make editable's report (§6.7 `makeEditableReport`). */
   makeEditableReport: 'T8',
+  /** *Create with AI* (the owner's AI pipeline; a placeholder until G-d connects generation). */
+  createAi: 'T8',
   checks: 'T9',
   bones: 'T9',
   weights: 'T9',

@@ -823,6 +823,14 @@ export const MODEL_OPERATOR_MANIFEST: ModelOperatorManifest = {
       workspaces: ['model'],
     },
     {
+      id: 'select.imagePlane',
+      label: 'Select Image Plane',
+      category: 'select',
+      scope: 'model',
+      flags: { selection: true },
+      workspaces: ['model'],
+    },
+    {
       id: 'scene.group',
       label: 'Group',
       category: 'scene',
