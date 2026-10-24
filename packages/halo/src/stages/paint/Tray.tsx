@@ -17,8 +17,10 @@ import { TrayChip, touch } from '../make/kit';
 import { activeSwatch, currentPalette, hexOf, paintable, paintMeshes, swatchesOf, traySwatches } from './model';
 
 const w = paintWords.tray;
-/** Swatches in view at rest (the visible-target budget, §4.8). */
-export const TRAY_SWATCHES = 6;
+/** Swatches in view at rest (the visible-target budget, §4.8: the row, then `+n` — the palette sheet, where *New
+ *  swatch* is too — or *New swatch* and the palette chip, then Pick, Fill part and ⋯ keep Paint at rest within 22 with
+ *  the top bar, ↶, the Thumb key, the puck and the Next chip). */
+export const TRAY_SWATCHES = 5;
 /** The row of the Thumb key's Paint Colour meanings (`input/modifierMap.ts`). */
 const PAINT_ROW = 'paintColour';
 
@@ -140,35 +142,40 @@ export function PaintTray({ controller }: StageTrayProps): JSX.Element {
           />
         ))}
         {more > 0 ? <TrayChip testId="halo-swatches-more" label={`+${more}`} onPress={openPalette} /> : null}
-        <TrayChip
-          testId="halo-swatch-add"
-          label={w.addSwatch}
-          icon={<Icon name="clip" />}
-          onPress={() => {
-            touch(ctx);
-            const base = activeSwatch(app)?.srgb ?? ([160, 160, 160] as const);
-            void ctx.run('palette.addSwatch', { palette: palette.id, srgb: [...base] }).then((result) => {
-              const created = (result as { readonly value?: { readonly swatch?: SwatchId } }).value?.swatch;
-              if (result.status !== 'finished' || created === undefined) return;
-              void ctx.run('palette.setActive', { swatch: created });
-              store.set({
-                sheet: 'palette',
-                sheetArgs: { section: 'swatch' },
-                sheetNoun: null,
-                halo: null,
-                focus: null,
+        {more > 0 ? null : (
+          <TrayChip
+            testId="halo-swatch-add"
+            label={w.addSwatch}
+            icon={<Icon name="clip" />}
+            onPress={() => {
+              touch(ctx);
+              const base = activeSwatch(app)?.srgb ?? ([160, 160, 160] as const);
+              void ctx.run('palette.addSwatch', { palette: palette.id, srgb: [...base] }).then((result) => {
+                const created = (result as { readonly value?: { readonly swatch?: SwatchId } }).value?.swatch;
+                if (result.status !== 'finished' || created === undefined) return;
+                void ctx.run('palette.setActive', { swatch: created });
+                store.set({
+                  sheet: 'palette',
+                  sheetArgs: { section: 'swatch' },
+                  sheetNoun: null,
+                  halo: null,
+                  focus: null,
+                });
               });
-            });
-          }}
-        />
+            }}
+          />
+        )}
       </div>
-      <TrayChip
-        testId="halo-paint-palette"
-        label={w.paletteTitle}
-        icon={<Icon name="palette" />}
-        menu
-        onPress={openPalette}
-      />
+      {/* `+n` is the palette's door when swatches are left out; the palette chip otherwise */}
+      {more > 0 ? null : (
+        <TrayChip
+          testId="halo-paint-palette"
+          label={w.paletteTitle}
+          icon={<Icon name="palette" />}
+          menu
+          onPress={openPalette}
+        />
+      )}
       <TrayChip
         testId="halo-paint-pick"
         label={w.pick}

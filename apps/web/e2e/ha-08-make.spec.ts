@@ -2,6 +2,7 @@ import { expect, type Page, test, type TestInfo } from '@playwright/test';
 import { centre, makeSlice, meshIds, onCanvas, paneCentre, paneRect } from './helpers/halo-make';
 import { halo, haloMenu, loadCubeLadInMake, openHalo, PANE, petal } from './helpers/halo';
 import { call, runOk } from './helpers/test-api';
+import { referenceImage } from './helpers/m6a-model-content';
 import { fingerDrag, fingerTap } from './helpers/touch';
 
 // ha-08 Make (STUDIO-TOUCH-SPEC §11, §6.2, §7.1, §4.8; T8 exit test; the owner's clean-up focus of 2026-10-24) on
@@ -11,6 +12,10 @@ import { fingerDrag, fingerTap } from './helpers/touch';
 // until it is in the build; the cap handle drives the extrude session (one step per drag, Smart from the Thumb key);
 // *Create with AI* says plainly that generation is not connected. On `webkit-ipad` (compatibility only): Make boots
 // with its tray and the sheet opens by touch.
+
+/** A 1 × 1 PNG (a reference image's bytes). */
+const PNG_HEX =
+  '89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4890000000d4944415478da63f8ffff3f0005fe02fe0dc7d6e10000000049454e44ae426082';
 
 const touchOnly = (info: TestInfo): void => test.skip(info.project.name !== 'chrome-touch', 'chrome-touch only (CDP)');
 
@@ -133,6 +138,7 @@ test.describe('ha-08: the Make stage', () => {
     await openHalo(page);
     await loadCubeLadInMake(page);
     await tapId(page, 'halo-pick-face');
+    await expect.poll(async () => (await call(page, 'state')).mode).toBe('face');
     await runOk(page, 'view.frame', { what: 'all', paneId: PANE });
     await fingerTap(page, await paneCentre(page));
     await expect.poll(async () => (await halo(page)).noun?.kind).toBe('faces');
@@ -165,6 +171,50 @@ test.describe('ha-08: the Make stage', () => {
     await expect.poll(async () => (await makeSlice(page)).extrude).toBe(false);
     await expect(page.getByTestId('halo-cap-handle')).toHaveCount(0);
     expect(haloMenu).toBeDefined();
+  });
+
+  test('a reference image: a tap in the view that shows it selects it; its Halo hides it; a scene pick lets it go', async ({
+    page,
+  }, testInfo) => {
+    touchOnly(testInfo);
+    test.setTimeout(150_000);
+    await openHalo(page);
+    await loadCubeLadInMake(page);
+    const png = [...referenceImage('reference-front.png')];
+    const { id } = await runOk<{ id: string }>(page, 'imagePlane.import', {
+      camera: 'front',
+      name: 'Front ref',
+      bytes: png,
+    });
+    await runOk(page, 'view.lookThrough', { paneId: PANE, camera: { kind: 'view', preset: 'front' } });
+    await runOk(page, 'view.frame', { what: 'all', paneId: PANE });
+    await page.waitForTimeout(400);
+    const c = await paneCentre(page);
+    let found = false;
+    // the reference is 2 m high with the image's aspect, behind the model: beside the legs it shows
+    const candidates = [90, 120, -90, -120].flatMap((dx) => [-30, 60, 150].map((dy) => ({ x: c.x + dx, y: c.y + dy })));
+    for (const at of candidates) {
+      if (!(await onCanvas(page, at))) continue;
+      await fingerTap(page, at);
+      await page.waitForTimeout(250);
+      if ((await halo(page)).noun?.kind === 'imagePlane') {
+        found = true;
+        break;
+      }
+    }
+    expect(found).toBe(true);
+    expect((await halo(page)).noun).toEqual({ kind: 'imagePlane', id });
+    await expect(petal(page, 'Hide')).toBeVisible();
+    // Hide (one step), then Delete from the Scene sheet's row after a tap selects it there
+    const hide = await petal(page, 'Hide').boundingBox();
+    if (hide === null) throw new Error('no Hide');
+    await fingerTap(page, { x: hide.x + hide.width / 2, y: hide.y + hide.height / 2 });
+    await expect.poll(async () => (await call(page, 'imagePlanes')).find((p) => p.id === id)?.visible).toBe(false);
+    await runOk(page, 'imagePlane.set', { id, patch: { visible: true } });
+    await runOk(page, 'select.imagePlane', { id });
+    await expect.poll(async () => (await halo(page)).noun?.kind).toBe('imagePlane');
+    await runOk(page, 'select.objects', { ids: [], mode: 'replace' });
+    await expect.poll(async () => (await halo(page)).noun).toBeNull();
   });
 
   test('Create with AI says generation is not connected; a photo can be attached', async ({ page }, testInfo) => {

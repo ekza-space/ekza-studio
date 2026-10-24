@@ -9,6 +9,7 @@
 import type { SwatchId } from '@ekza-studio/doc';
 import type { Box } from '@ekza-studio/ui/touch';
 import { bindNoun, type Verb } from '../../halo/verbSource';
+import { addHaloClaim } from '../../input/claims';
 import { paintWords } from '../../i18n/make';
 import type { HaloController } from '../../shell/controller';
 import { PANE } from '../../shell/stage';
@@ -71,6 +72,15 @@ export function installPaint(controller: HaloController): () => void {
         const r = el.getBoundingClientRect();
         return { left: r.left - pane.x, top: r.top - pane.y, right: r.right - pane.x, bottom: r.bottom - pane.y };
       },
+    }),
+  );
+  // *Pick* waits for a tap (the brush would start a stroke after its delay): the press is the tool's, tapped or not
+  disposers.push(
+    addHaloClaim(app, (paneId) => {
+      const ui = store.get();
+      return (
+        paneId === PANE && ui.stage === 'paint' && ui.thumb.latch !== 'off' && ui.thumbPick?.meaning === 'pickColour'
+      );
     }),
   );
   // a spent *Pick* gives the Thumb key its *Fill part* back

@@ -41,13 +41,14 @@ export interface PressFacts {
 
 /** The claim of a buffered press in the Shared routing (§5.1). */
 export function claimOf(app: EditorApp, press: PressFacts): ArbiterClaim {
+  // a stage's own handle or mode first (T8: Paint's Pick waits for a tap even with the brush active)
+  for (const claim of registry.get(app) ?? []) if (claim(press.paneId, press.x, press.y)) return 'tool';
   if (MESH_TOOLS.has(press.tool) && press.overMesh()) return BRUSH_TOOLS.has(press.tool) ? 'brush' : 'tool';
   const hit = press.hit;
   if (hit?.kind === 'manipulator') return 'tool';
   const control = hit?.kind === 'control' ? hit.control : hit?.kind === 'mesh' ? hit.control : null;
   if (control !== null && press.selectedControls.includes(control)) return 'tool';
   if (hit?.kind === 'joint' && press.jointsSelected) return 'tool';
-  for (const claim of registry.get(app) ?? []) if (claim(press.paneId, press.x, press.y)) return 'tool';
   if (press.marquee && hit === null && !press.overMesh()) return 'tool';
   return 'navigate';
 }
