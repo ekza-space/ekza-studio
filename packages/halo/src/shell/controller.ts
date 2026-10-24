@@ -28,6 +28,7 @@ import { prefetchLazyChunks } from './prefetch';
 import { createReadinessSource, type ReadinessSource } from './readiness';
 import { nextChip } from '../path/nextChip';
 import { arrivalStage, HALO_STAGES, PANE, parseStage, STAGE_BASICS, stageOfWorkspace, workspaceOfStage } from './stage';
+import { installStageParts, readHaloSlices } from './stageParts';
 import { createHaloStore, type HaloInput, type HaloStore, initialUi } from './store';
 import { countVisibleTargets } from './targets';
 import { coachMarks } from './coach';
@@ -387,6 +388,9 @@ export function createHaloController(host: HostShell): HaloController {
       // the one readiness list (§7.2), watched while mounted
       disposers.push(readinessSource.start());
 
+      // the stage packages' parts (`./stageParts`): their setup while mounted and their sheets
+      disposers.push(installStageParts(controller));
+
       // §20.5: the parity probe in e2e builds (a lazy chunk with the manifest; it stays when Halo unmounts)
       if (host.params.e2e) {
         void import('../manifest/probe').then(
@@ -529,6 +533,8 @@ export function createHaloController(host: HostShell): HaloController {
                   sheetSection: ui.sheetArgs?.section ?? null,
                 };
               })(),
+              // the stage packages' slices (T8's `t8`, …), registered by their modules
+              ...readHaloSlices(),
             },
           };
         }),

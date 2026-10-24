@@ -19,6 +19,7 @@ import type { HaloController } from './controller';
 import { sizeClassOf, useElementSize } from './hooks';
 import { Sheets } from './Sheets';
 import { FrameNext, FramePath, FrameStatus } from './PathParts';
+import { StageLayer } from './StageLayer';
 import { TopBar } from './TopBar';
 import { Tray } from './Tray';
 import { useHaloStore } from './store';
@@ -93,6 +94,14 @@ export function Frame({ controller }: { readonly controller: HaloController }): 
         />
       ) : (
         <>
+          <StageLayer
+            controller={controller}
+            width={width}
+            height={height}
+            size={size}
+            insetTop={insetTop}
+            insetBottom={insetBottom}
+          />
           <HaloLayer
             controller={controller}
             width={width}
