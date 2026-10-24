@@ -29,10 +29,12 @@ function Row(props: { readonly label: string; readonly help?: string; readonly c
 export default function InputSettings({ store, setInput }: InputSettingsProps): JSX.Element {
   const input = useHaloStore(store, (s) => s.input);
   const t = en.input;
+  // WCAG 2.5.3 Label in Name (axe `label-content-name-mismatch`, found when T12 put axe in the gate): the name holds
+  // the chip's visible word, after the setting it switches
   const toggle = (key: 'reduceGestures' | 'quickPinch', label: string, testId: string): JSX.Element => (
     <ToggleChip
       label={input[key] ? t.on : t.off}
-      aria-label={label}
+      aria-label={`${label}: ${input[key] ? t.on : t.off}`}
       pressed={input[key]}
       onPressedChange={(pressed) => setInput({ [key]: pressed })}
       data-testid={testId}
