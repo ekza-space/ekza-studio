@@ -23,7 +23,7 @@ import { StageLayer } from './StageLayer';
 import { TopBar } from './TopBar';
 import { Tray } from './Tray';
 import { useAnimateDock } from '../stages/animate/AnimateDock';
-import { useRigHidesNext } from '../stages/rig/nextChip';
+import { useRigCardOpen, useRigLift } from '../stages/rig/cardOpen';
 import { useUndoPress } from '../history/undoPress';
 import { useHaloStore } from './store';
 
@@ -61,12 +61,13 @@ export function Frame({ controller }: { readonly controller: HaloController }): 
   const compact = size === 'compact';
   // T7 (P-T6A-4): Animate's tray is the Thread with the Animations row
   const animate = useAnimateDock(controller, size, height);
-  // T9: the Next chip gives way while the Rig-it card, the dots or a skin spot is open (§7.2)
-  const rigHidesNext = useRigHidesNext(store);
+  // T9: the Next chip gives way while the Rig-it card, the dots, a skin spot or the brush is open (§7.2)
+  const rigCard = useRigCardOpen(controller);
+  const rigLift = useRigLift(controller);
   const undoPress = useUndoPress(controller);
   // the chrome's extent, for the floating grammar (pane px)
   const insetTop = size === 'regular' ? 128 : 76;
-  const insetBottom = (compact ? 148 : 84) + animate.lift;
+  const insetBottom = (compact ? 148 : 84) + animate.lift + rigLift;
   // the off-hand column and the puck sit above the tray (and, on Compact, above the docked verb bar, §4.4)
   const cornerBottom = compact ? insetBottom + 52 : insetBottom - 12;
   const offSide = handedness === 'right' ? 'left-(--touch-inset-left)' : 'right-(--touch-inset-right)';
@@ -157,7 +158,7 @@ export function Frame({ controller }: { readonly controller: HaloController }): 
             style={{ ...fade, bottom: 'var(--touch-inset-bottom)' }}
           >
             {/* ST-T7-18: in Animate the Next chip gives way while the Animations row shows two or more chips */}
-            {animate.hideNext || rigHidesNext ? null : <FrameNext controller={controller} />}
+            {animate.hideNext || rigCard ? null : <FrameNext controller={controller} />}
             <div className="flex justify-center">
               {animate.dock ?? <Tray controller={controller} compact={compact} />}
             </div>

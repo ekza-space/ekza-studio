@@ -35,6 +35,8 @@ export interface RigUi {
   readonly menu: string | null;
   /** Strokes painted in the open paint session (✕ asks above three, §5.7). */
   readonly strokes: number;
+  /** The Rig tray's height (px): it wraps on narrow containers, and the cards dock above it. */
+  readonly trayHeight: number;
 }
 
 export const INITIAL_RIG_UI: RigUi = {
@@ -47,6 +49,7 @@ export const INITIAL_RIG_UI: RigUi = {
   show: 'ramp',
   menu: null,
   strokes: 0,
+  trayHeight: 62,
 };
 
 export interface RigUiStore {

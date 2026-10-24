@@ -76,3 +76,51 @@ export async function tapId(page: Page, testId: string, info: TestInfo, log?: To
 export async function dotPoint(page: Page, marker: string, paneId: string): Promise<Point | null> {
   return call(page, 'screenOfMarker', marker, 'R', paneId);
 }
+
+/**
+ * A rigged Cube Lad through the real shell (setup, not a counted journey): Home › Cube Lad (the shared intake) → the
+ * Next chip's Rig-it card → *Rig it* → *Not now*. Returns the character's id.
+ */
+export async function rigCubeLadThroughCard(page: Page, info: TestInfo): Promise<string> {
+  await tapId(page, 'halo-home-sample-more', info);
+  await tapId(page, 'halo-home-sample-cube-lad', info);
+  await expect(page.getByTestId('halo-home')).toHaveCount(0, { timeout: 60_000 });
+  await expect.poll(async () => (await halo(page)).stage, { timeout: 60_000 }).toBe('rig');
+  await tapId(page, 'halo-rig-it', info);
+  await expect.poll(async () => (await rig(page)).card.phase, { timeout: 60_000 }).toBe('dots');
+  await tapId(page, 'halo-rig-go', info);
+  await expect.poll(async () => (await rig(page)).card.phase, { timeout: 180_000 }).toBe('done');
+  await tapId(page, 'halo-rig-not-now', info);
+  await expect.poll(async () => (await rig(page)).card.open).toBe(false);
+  const character = (await call(page, 'characters'))[0]?.id;
+  if (character === undefined) throw new Error('no character');
+  return character;
+}
+
+/** A joint of a character by its VRM human bone. */
+export async function humanJoint(page: Page, character: string, bone: string): Promise<string> {
+  const joint = (await call(page, 'skeleton', character))?.joints.find((j) => j.humanBone === bone);
+  if (joint === undefined) throw new Error(`no ${bone}`);
+  return joint.id;
+}
+
+/** A page point on a bone of the character in a pane (the skin over it): a fraction `t` along joint → child. */
+export async function bonePoint(
+  page: Page,
+  character: string,
+  bone: string,
+  child: string,
+  paneId = 'pane-single',
+  t = 0.5,
+): Promise<Point> {
+  const point = await call(
+    page,
+    'screenOfBone',
+    await humanJoint(page, character, bone),
+    await humanJoint(page, character, child),
+    paneId,
+    t,
+  );
+  if (point === null) throw new Error(`${bone} is not on screen`);
+  return point;
+}

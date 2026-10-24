@@ -16,7 +16,9 @@ import type { HaloController } from '../../shell/controller';
 import { type SizeClass, useDocumentVersion, useSessionValue } from '../../shell/hooks';
 import { useHaloStore } from '../../shell/store';
 import { reasonOf } from './poll';
+import { aboveTray } from './dock';
 import type { RigStage } from './start';
+import { useRigUi } from './ui';
 
 const w = rigWords.card;
 
@@ -73,7 +75,7 @@ export function RigCard({
   const destination = useHaloStore(store, (s) => s.destination);
   const { recipe, state } = useRigIt(rig);
   const [menu, setMenu] = useState(false);
-  const compact = size === 'compact';
+  const trayHeight = useRigUi(rig.ui, (s) => s.trayHeight);
 
   // the card's outcomes the frame follows: the starter set added closes it; *Use its rig* opens the checks
   useEffect(() => {
@@ -356,7 +358,7 @@ export function RigCard({
   return (
     <div
       className="pointer-events-none absolute inset-x-0 flex justify-center px-(--touch-inset-left)"
-      style={{ bottom: `calc(var(--touch-inset-bottom) + ${compact ? 168 : 76}px)` }}
+      style={{ bottom: aboveTray(trayHeight, size) }}
     >
       <Cluster
         // oxlint-disable-next-line jsx-a11y/prefer-tag-over-role -- a card of controls beside the work, not a form

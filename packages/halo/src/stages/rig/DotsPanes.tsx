@@ -13,6 +13,7 @@ import { rigWords } from '../../i18n/rig';
 import type { HaloController } from '../../shell/controller';
 import { type SizeClass, useSessionValue, useViewport } from '../../shell/hooks';
 import { PANE } from '../../shell/stage';
+import { aboveTray } from './dock';
 import { DOTS_PANES, type RigStage } from './start';
 import { useRigUi } from './ui';
 
@@ -91,6 +92,7 @@ export function DotsChrome({
   readonly size: SizeClass;
 }): JSX.Element {
   const { ctx } = controller;
+  const trayHeight = useRigUi(rig.ui, (s) => s.trayHeight);
   const view = useRigUi(rig.ui, (s) => s.dotsView);
   const quick = useSessionValue(ctx.app, (s) => s.rig.quickRig);
   const wide = size === 'wide';
@@ -132,7 +134,7 @@ export function DotsChrome({
       </div>
       <div
         className="pointer-events-none absolute inset-x-0 flex justify-center px-(--touch-inset-left)"
-        style={{ bottom: `calc(var(--touch-inset-bottom) + ${size === 'compact' ? 168 : 76}px)` }}
+        style={{ bottom: aboveTray(trayHeight, size) }}
       >
         <Cluster
           role="toolbar"

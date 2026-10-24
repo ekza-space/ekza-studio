@@ -72,8 +72,8 @@ function defaultClock(): BendClock | null {
 }
 
 /**
- * ▶ *Bend test* (§12.4 step 1): the character's elbows and knees swing through their bend in the test pose, from the
- * pose shown now, until *Pause here* (one test-pose step) or a stop (nothing kept). Null outside Rig & Skin or when
+ * ▶ *Bend test* (§12.4 step 1): the character's elbows and knees swing through their bend in the test pose, from rest,
+ * until *Pause here* (one test-pose step) or a stop (nothing kept). Null outside Rig & Skin or when
  * the character has no forearm or shin controls.
  */
 export function startBendTest(
@@ -84,10 +84,8 @@ export function startBendTest(
   if (app.session.getState().workspace !== 'rig') return null;
   const targets = bendTargets(app, character);
   if (targets.length === 0) return null;
-  const start = new Map<string, number>();
-  for (const target of targets) {
-    start.set(`${target.control}:${target.channel}`, app.evaluation.channelValues(target.control)[target.channel]);
-  }
+  // from the rest of each bending channel (an FK control's channels are 0 at rest), so *Play again* swings the same way
+  const start = new Map<string, number>(targets.map((target) => [`${target.control}:${target.channel}`, 0]));
   const gesture: ChannelEditGesture = beginChannelEditGesture(app, 'Test Pose', { key: 'none' });
   const clock = opts.clock === undefined ? defaultClock() : opts.clock;
   const t0 = clock?.now() ?? 0;

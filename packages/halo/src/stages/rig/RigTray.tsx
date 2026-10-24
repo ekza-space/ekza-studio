@@ -9,7 +9,7 @@ import type { BrushSettings } from '@ekza-studio/editor-core';
 import { PANEL, quickRigOf, VIEWPORT_TOOL } from '@ekza-studio/editor-core';
 import { Cluster, Segmented, ToggleChip, TouchButton, ValueChip } from '@ekza-studio/ui/touch';
 import { setStrokePressure, strokePressure, subscribeStrokePressure } from '@ekza-studio/viewport';
-import { type JSX, useEffect, useSyncExternalStore } from 'react';
+import { type JSX, useEffect, useState, useSyncExternalStore } from 'react';
 import { Icon } from '../../halo/icons';
 import { rigWords } from '../../i18n/rig';
 import type { BendTest } from '../../recipes/fixBend';
@@ -48,6 +48,20 @@ const OPS: readonly { readonly value: BrushSettings['op']; readonly label: strin
 ];
 
 const SHOWS: readonly WeightShow[] = ['ramp', 'greyscale', 'influences', 'off'];
+
+/** Measures the tray (it wraps on narrow containers): the cards dock above it. */
+function useTrayHeight(rig: RigStage): (el: HTMLDivElement | null) => void {
+  const [element, setElement] = useState<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (element === null) return undefined;
+    rig.ui.set({ trayHeight: element.offsetHeight });
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(() => rig.ui.set({ trayHeight: element.offsetHeight }));
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [element, rig]);
+  return setElement;
+}
 
 /** The bend test of the stage (one at a time, kept across renders). */
 const bends = new WeakMap<RigStage, BendTest>();
@@ -182,10 +196,11 @@ function BrushBar({
     () => strokePressure(app),
     () => strokePressure(app),
   );
+  const measure = useTrayHeight(rig);
   const set = (patch: Partial<BrushSettings>): void => void ctx.run('skin.paint.set', { patch });
   const floodReason = reasonOf(app, 'skin.weights.flood', {});
   return (
-    <div className="flex w-full max-w-[1100px] flex-col items-stretch gap-2" data-testid="halo-rig-brush">
+    <div ref={measure} className="flex w-full max-w-[1100px] flex-col items-stretch gap-2" data-testid="halo-rig-brush">
       {menu === 'show' ? (
         <Menu
           testId="halo-rig-show-menu"
@@ -318,6 +333,7 @@ export default function RigTray({
   useSessionValue(app, (s) => s.rig.quickRig);
   const menu = useRigUi(rig.ui, (s) => s.menu);
   const r = useReadiness(controller.readiness);
+  const measure = useTrayHeight(rig);
   const compact = size === 'compact';
   const state = rigTrayState(app);
   const painting = mode === 'skin' && tool === VIEWPORT_TOOL.paintSkinWeights;
@@ -354,7 +370,7 @@ export default function RigTray({
   );
   const nothing = state.meshes === 0 && state.character === null && state.asset === null;
   return (
-    <div className="flex w-full max-w-[1100px] flex-col items-stretch gap-2" data-testid="halo-rig-tray">
+    <div ref={measure} className="flex w-full max-w-[1100px] flex-col items-stretch gap-2" data-testid="halo-rig-tray">
       {menu === 'skeleton' ? (
         <Menu
           testId="halo-rig-skeleton-menu"

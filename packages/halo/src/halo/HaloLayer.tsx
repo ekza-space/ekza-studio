@@ -16,6 +16,7 @@ import { BREADCRUMB_ROW, breadcrumbTop, selectionBox } from './geometry';
 import { Icon } from './icons';
 import { TargetLine } from './TargetMode';
 import { FACE_OPS } from './run';
+import { useRigCardOpen } from '../stages/rig/cardOpen';
 import { ChoiceRow } from './ChoiceRow';
 import { nounBinding, opOf, type Verb } from './verbSource';
 
@@ -57,6 +58,8 @@ export function HaloLayer({
   const loupe = useHaloStore(store, (s) => s.loupe);
   const form = useHaloStore(store, (s) => s.form);
   const confirm = useHaloStore(store, (s) => s.confirm);
+  // T9: a Rig card speaks for the run it made (the Echo chips of its inner Bind Skin give way)
+  const rigCard = useRigCardOpen(controller);
   const handedness = useHaloStore(store, (s) => s.input.handedness);
   const targeting = useHaloStore(store, (s) => s.target !== null);
   const focus = useHaloStore(store, (s) => s.focus);
@@ -197,7 +200,7 @@ export function HaloLayer({
           insetBottom={insetBottom}
         />
       )}
-      {noun !== null && form === null && halo?.mode !== 'ring' ? (
+      {noun !== null && form === null && halo?.mode !== 'ring' && !rigCard ? (
         <EchoChips controller={controller} box={box} width={width} height={height} insetBottom={insetBottom} />
       ) : null}
       {form === null ? null : (

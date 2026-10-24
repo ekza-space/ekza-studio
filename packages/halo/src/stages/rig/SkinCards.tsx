@@ -16,6 +16,7 @@ import { type SizeClass, useDocumentVersion, useSessionValue } from '../../shell
 import type { Noun } from '../../verbs/nouns';
 import { activeBone, boneLabel, bonesAt } from './model';
 import type { RigStage } from './start';
+import { aboveTray } from './dock';
 import { type SkinSpot, useRigUi } from './ui';
 
 const w = rigWords;
@@ -59,6 +60,7 @@ export function OwnsCard({
   const left = right ? spot.at.x + 24 : Math.max(16, spot.at.x - 24 - width);
   const top = Math.min(Math.max(96, spot.at.y - 60), frame.h - 300);
   const compact = size === 'compact';
+  const trayHeight = useRigUi(rig.ui, (s) => s.trayHeight);
   const pickBone = (joint: string): void => {
     rig.touch();
     rig.ui.set({ spot: null, follows: spot });
@@ -74,9 +76,7 @@ export function OwnsCard({
       data-mesh={spot.mesh}
       data-point={spot.point}
       className="pointer-events-auto absolute flex flex-col gap-2 p-3"
-      style={
-        compact ? { left: 16, right: 16, bottom: 'calc(var(--touch-inset-bottom) + 168px)' } : { left, top, width }
-      }
+      style={compact ? { left: 16, right: 16, bottom: aboveTray(trayHeight, size) } : { left, top, width }}
     >
       <div className="flex items-center gap-2">
         <span className="font-semibold">{w.owns.title}</span>
@@ -156,6 +156,7 @@ export function FollowsCard({
   useDocumentVersion(app);
   useSessionValue(app, (s) => s.rig.activeInfluence);
   const follows = useRigUi(rig.ui, (s) => s.follows);
+  const trayHeight = useRigUi(rig.ui, (s) => s.trayHeight);
   const active = activeBone(app);
   const compact = size === 'compact';
   const others =
@@ -174,7 +175,7 @@ export function FollowsCard({
       className={`pointer-events-auto absolute flex gap-2 p-3 ${compact ? 'flex-row flex-wrap items-center' : 'flex-col'}`}
       style={
         compact
-          ? { left: 16, right: 16, bottom: 'calc(var(--touch-inset-bottom) + 168px)' }
+          ? { left: 16, right: 16, bottom: aboveTray(trayHeight, size) }
           : { right: 'var(--touch-inset-right)', top: size === 'regular' ? 196 : 140, width: 280 }
       }
     >
