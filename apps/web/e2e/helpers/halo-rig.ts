@@ -8,6 +8,8 @@ import type { Point } from './touch';
 
 export interface RigSlice {
   readonly mode: string;
+  readonly subject: { readonly character: string | null; readonly meshes: readonly string[] };
+  readonly startPose: string | null;
   readonly poseView: string;
   readonly card: {
     readonly open: boolean;

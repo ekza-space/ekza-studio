@@ -4,6 +4,7 @@
 // the skin spot of *Who owns this?* and its bones, the bend test, the Rig mode and pose view.
 import { quickRigOf, VIEWPORT_TOOL } from '@ekza-studio/editor-core';
 import { strokePressure } from '@ekza-studio/viewport';
+import { haloFlowStore } from '../../intake/flowHost';
 import type { HaloController } from '../../shell/controller';
 import { bonesAt } from './model';
 import { rigStage } from './start';
@@ -16,8 +17,12 @@ export function rigSlice(controller: HaloController): Record<string, unknown> {
   const recipe = rig.loaded?.get() ?? null;
   const quick = quickRigOf(app);
   const brush = s.rig.paint.brush;
+  const subject = haloFlowStore(app).get().subject;
   return {
     mode: s.rig.mode,
+    // the flow's subject (Home's intake, Create with AI's *Rig it*, the card's own pick)
+    subject: { character: subject.character, meshes: [...subject.meshes] },
+    startPose: haloFlowStore(app).get().startPose?.kind ?? null,
     poseView: s.rig.poseView,
     card: {
       open: ui.card,
