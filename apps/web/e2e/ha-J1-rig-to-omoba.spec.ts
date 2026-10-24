@@ -70,7 +70,7 @@ test('ha-J1: bring a model, rig it, take it to OMOBA in ≤ 11 touches', async (
   const character = (await call(page, 'characters'))[0];
   expect(character?.source).toBe('model');
   const skeleton = await call(page, 'skeleton', character?.id ?? '');
-  expect(skeleton.preset).toBe('standard33');
+  expect(skeleton?.preset).toBe('standard33');
 
   // 6. Share ⤴ (1): OMOBA is the destination the card set; preparing starts at once
   await tapId(page, 'halo-share', info, log);
