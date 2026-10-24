@@ -57,6 +57,8 @@ export const BRUSH_TOOLS: ReadonlySet<string> = new Set([VIEWPORT_TOOL.paintSkin
 export const MESH_TOOLS: ReadonlySet<string> = new Set([...BRUSH_TOOLS, VIEWPORT_TOOL.quickRigMarker]);
 
 type Viewport = Pick<ViewportManager, 'setNavigationOverride' | 'paneState' | 'pickCandidates' | 'isOverMesh'> &
+  // T12 (AS-ST-10): a leaving shell removes only its own override (a double without it falls back to null)
+  Partial<Pick<ViewportManager, 'clearNavigationOverride'>> &
   // a viewport without stages (a test double) gets no two-finger navigation; `paneAt` is no longer read
   Partial<Pick<ViewportManager, 'setPointerArbiter' | 'paneAt'>>;
 
@@ -104,6 +106,7 @@ export function installSimpleNavigation(app: EditorApp, vm: Viewport): Disposer 
     installed = false;
     offTouch?.();
     offTouch = null;
-    vm.setNavigationOverride(null);
+    if (vm.clearNavigationOverride !== undefined) vm.clearNavigationOverride(override);
+    else vm.setNavigationOverride(null);
   };
 }

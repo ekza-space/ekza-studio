@@ -60,6 +60,10 @@ test('ha-t12: Studio Pro is titled “Ekza Studio Pro” and always offers ▤ S
   await expect(page).toHaveTitle('Ekza Studio Pro');
   await expect(page.getByTestId('menubar').getByLabel('Ekza Studio Pro')).toBeVisible();
   await expect(page.getByTestId('status-halo')).toHaveText('▤ Simple layout');
+  // Pro keeps its own first-run dialog on a fresh profile (it opens a moment after the shell): answer it first
+  await expect(page.getByTestId('firstrun-dialog')).toBeVisible({ timeout: 30_000 });
+  await page.getByTestId('firstrun-done').click();
+  await expect(page.getByTestId('firstrun-dialog')).toHaveCount(0);
   for (const menu of ['help', 'file'] as const) {
     await page.getByTestId(`menu-${menu}`).click();
     await expect(page.getByTestId(`menu-item-shell.${menu}.halo`)).toHaveText('Switch to the Simple Layout');

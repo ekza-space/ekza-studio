@@ -50,3 +50,27 @@ describe('ViewportManager.viewState / setViewState (J10, P-T11-3)', () => {
     expect(rig.vm.setViewState(id, { ...kept, zoom: 0 })).toBe(false);
   });
 });
+
+describe('a leaving shell releases only its own press hooks (STUDIO-TOUCH-SPEC §16.1, AS-ST-10; T12)', () => {
+  it('clearPointerMenus and clearNavigationOverride leave the next shell’s hooks in place', async () => {
+    rig = await createRig();
+    rig.layout('single');
+    const pro = () => true;
+    const halo = () => false;
+    rig.vm.setPointerMenus(pro);
+    // the next shell installs its own before the leaving one's disposer runs
+    rig.vm.setPointerMenus(halo);
+    rig.vm.clearPointerMenus(pro);
+    expect((rig.vm as unknown as { pointerMenus: unknown }).pointerMenus).toBe(halo);
+    rig.vm.clearPointerMenus(halo);
+    expect((rig.vm as unknown as { pointerMenus: unknown }).pointerMenus).toBeNull();
+    const a = { gesture: () => null };
+    const b = { gesture: () => null };
+    rig.vm.setNavigationOverride(a);
+    rig.vm.setNavigationOverride(b);
+    rig.vm.clearNavigationOverride(a);
+    expect((rig.vm as unknown as { navOverride: unknown }).navOverride).toBe(b);
+    rig.vm.clearNavigationOverride(b);
+    expect((rig.vm as unknown as { navOverride: unknown }).navOverride).toBeNull();
+  });
+});

@@ -86,7 +86,10 @@ Every scenario green but the device run: AS-ST-2, 4–10 and 15–20 green; AS-S
 (WebKit as an iPad, CDP touch and Pencil, axe) with their device halves in the checklist; AS-ST-11 and AS-ST-21 open
 (the owner's iPad). AS-ST-19 got its own test here: `packages/halo/test/t12-chips-readout.test.ts` poses every TRS
 channel of every control of Polybot and Seed-san with both signs through `channel.setValues` and compares the Numbers
-fields and the Echo chips' values with Pro's `channelText`. Details: [evidence/halo](../evidence/halo/README.md).
+fields and the Echo chips' values with Pro's `channelText`. AS-ST-10 got its browser check here too: `ha-12` ›
+*AS-ST-10* compares the meaning of Pro's keys, the Shift+RMB marking menu's definition, every stored `ekza-animator:`
+key of the page's namespace and the panes before and after Ekza Studio ran every stage and changed its own input
+settings. Details: [evidence/halo](../evidence/halo/README.md).
 
 ## Trademarks (ST-INT-9)
 

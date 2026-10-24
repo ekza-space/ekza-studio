@@ -629,9 +629,21 @@ export class ViewportManager {
   setPointerMenus(handler: PanePointerMenus | null): void {
     this.pointerMenus = handler;
   }
+  /**
+   * STUDIO-TOUCH-SPEC §16.1, AS-ST-10 (T12): removes `handler` only while it is still the installed one. A same-page
+   * switch mounts the next shell before the leaving one's disposer runs, so a plain `setPointerMenus(null)` there
+   * removed the arriving shell's menus (Studio Pro's marking menus after a round trip through Ekza Studio).
+   */
+  clearPointerMenus(handler: PanePointerMenus): void {
+    if (this.pointerMenus === handler) this.pointerMenus = null;
+  }
   /** AUTORIG-SPEC §8.1 (D3): installs (or with null removes) a shell's navigation override. */
   setNavigationOverride(o: NavigationOverride | null): void {
     this.navOverride = o;
+  }
+  /** Removes `o` only while it is still the installed override (a leaving shell's disposer; T12, as above). */
+  clearNavigationOverride(o: NavigationOverride): void {
+    if (this.navOverride === o) this.navOverride = null;
   }
 
   /**

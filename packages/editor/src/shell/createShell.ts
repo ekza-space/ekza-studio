@@ -81,7 +81,10 @@ export function createShell(opts: CreateShellOptions): Shell {
     markingMenus.handlePress(press);
   /** Hooks the presses of a viewport (null unhooks); test fakes without the hook are left alone. */
   const hookMenus = (vm: ShellUiState['viewport'], handler: typeof pointerMenus | null): void => {
-    if (typeof vm?.setPointerMenus === 'function') vm.setPointerMenus(handler);
+    // T12 (AS-ST-10): unhook only this shell's own menus — on a same-page switch the next shell (Ekza Studio's ring)
+    // is installed before this one's disposer runs
+    if (handler === null && typeof vm?.clearPointerMenus === 'function') vm.clearPointerMenus(pointerMenus);
+    else if (typeof vm?.setPointerMenus === 'function') vm.setPointerMenus(handler);
   };
   hookMenus(ui.getState().viewport, pointerMenus);
   disposers.push(
