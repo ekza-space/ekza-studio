@@ -43,6 +43,7 @@ export interface StageModule {
 export const STAGE_MODULES: Readonly<Partial<Record<HaloStage, () => Promise<StageModule>>>> = {
   make: () => import('../stages/make'),
   paint: () => import('../stages/paint'),
+  rig: () => import('../stages/rig'),
 };
 
 /** The stage packages' sheets (`registerHaloSheet` ids), each its own lazy chunk. */

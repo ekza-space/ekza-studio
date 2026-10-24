@@ -100,7 +100,7 @@ export const VERB_TABLE: Readonly<Record<NounKind, readonly PetalDef[]>> = {
         choice('All fingers (52 bones)', 'skel.template.create', { preset: 'full52' }),
       ],
     },
-    { id: 'checks', plain: 'Checks', go: { sheet: 'health' }, stages: ['rig'], icon: 'stethoscope' },
+    { id: 'checks', plain: 'Checks', go: { sheet: 'checks' }, stages: ['rig'], icon: 'stethoscope' },
     { id: 'allJoints', plain: 'All joints', op: 'select.joints', args: { all: true }, stages: ['rig'], icon: 'bone' },
     { id: 'bind', plain: 'Bind skin', op: 'skin.bind', stages: ['rig'], icon: 'link' },
     { id: 'newAnimation', plain: '+ New animation', op: 'clip.new', stages: ['animate'], icon: 'plus' },
@@ -143,7 +143,7 @@ export const VERB_TABLE: Readonly<Record<NounKind, readonly PetalDef[]>> = {
     { id: 'reduce', plain: 'Reduce', op: 'mesh.reduce', stages: ['make'], icon: 'minimize' },
     { id: 'rigIt', plain: 'Rig it', go: { stage: 'rig' }, stages: ['make'], icon: 'bone' },
     { id: 'makeCharacter', plain: 'Make a character', op: 'char.fromModel', stages: ['rig'], icon: 'person-standing' },
-    { id: 'checks', plain: 'Checks', go: { sheet: 'health' }, stages: ['rig'], icon: 'stethoscope' },
+    { id: 'checks', plain: 'Checks', go: { sheet: 'checks' }, stages: ['rig'], icon: 'stethoscope' },
   ],
   faces: [
     { id: 'pull', plain: 'Pull', op: 'mesh.extrude', icon: 'arrow-up-from-square' },
@@ -221,7 +221,7 @@ export const VERB_TABLE: Readonly<Record<NounKind, readonly PetalDef[]>> = {
       stages: ['animate'],
       icon: 'diamond',
     },
-    { id: 'checks', plain: 'Checks', go: { sheet: 'health' }, stages: ['rig'], icon: 'stethoscope' },
+    { id: 'checks', plain: 'Checks', go: { sheet: 'checks' }, stages: ['rig'], icon: 'stethoscope' },
     { id: 'bind', plain: 'Bind skin', op: 'skin.bind', stages: ['rig'], icon: 'link' },
     { id: 'makeCharacter', plain: 'Make a character', op: 'char.fromModel', stages: ['rig'], icon: 'person-standing' },
     { id: 'about', plain: 'About this character', go: { sheet: 'about' }, stages: ['rig'], icon: 'id-card' },
@@ -398,7 +398,8 @@ export const VERB_TABLE: Readonly<Record<NounKind, readonly PetalDef[]>> = {
   rigDot: [
     { id: 'reGuess', plain: 'Re-guess', op: 'skel.quickRig.guess', icon: 'wand' },
     { id: 'mirror', plain: 'Mirror to other side', op: 'skel.quickRig.setMarker', icon: 'flip-horizontal' },
-    { id: 'remove', plain: 'Remove', op: 'skel.quickRig.clear', icon: 'trash' },
+    // `skel.quickRig.clear` removes every dot; taps in the front view place them again in list order
+    { id: 'remove', plain: 'Clear dots', op: 'skel.quickRig.clear', icon: 'trash' },
   ],
 };
 

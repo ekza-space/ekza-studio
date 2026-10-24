@@ -3,7 +3,7 @@
 // ParamDefs of an operator that cannot be adjusted after the run) opens its chips first, filled with the defaults,
 // with ✓ to run. Anything else runs at once; an adjustable run then shows its Echo chips (`edit.adjustLast`), and after
 // a face operation a reduced Halo stays beside them so the next face verb is one tap away. A ring closes into the arc.
-import type { HaloStage, OperatorId } from '@ekza-studio/editor-core';
+import type { EditorApp, HaloStage, OperatorId } from '@ekza-studio/editor-core';
 import type * as Forms from '@ekza-studio/editor-core/forms';
 import type { ShellContext } from '../shell/context';
 import type { Verb } from './verbSource';
@@ -36,6 +36,24 @@ export function loadForms(): Promise<FormsModule> {
   return forms;
 }
 
+/**
+ * A stage's own action for a verb id (T9 seam: a petal that goes to Rig, `stage:rig`, opens the Rig-it card on what is
+ * selected); it runs in place of the verb's stage switch, sheet or operator. The disposer removes it.
+ */
+const verbActions = new WeakMap<EditorApp, Map<string, () => void>>();
+
+export function registerVerbAction(app: EditorApp, id: string, action: () => void): () => void {
+  let actions = verbActions.get(app);
+  if (actions === undefined) {
+    actions = new Map();
+    verbActions.set(app, actions);
+  }
+  actions.set(id, action);
+  return () => {
+    if (verbActions.get(app)?.get(id) === action) verbActions.get(app)?.delete(id);
+  };
+}
+
 export function createVerbRunner(
   ctx: ShellContext,
   deps: RunnerDeps,
@@ -53,6 +71,12 @@ export function createVerbRunner(
       return;
     }
     if (store.get().sub !== null) store.set({ sub: null });
+    const own = verbActions.get(app)?.get(verb.id);
+    if (own !== undefined) {
+      store.set({ halo: null, focus: null });
+      own();
+      return;
+    }
     if ('stage' in verb.run) {
       void deps.enterStage(verb.run.stage);
       return;

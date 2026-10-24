@@ -4,6 +4,7 @@
 // it reads the app, never writes it.
 import type { ComponentMode, EditorApp, HaloStage } from '@ekza-studio/editor-core';
 import type { NounKind } from '../manifest/types';
+import { RIG_DOT_LABELS } from '../stages/rig/dotLabels';
 
 export interface Noun {
   readonly kind: NounKind;
@@ -79,6 +80,18 @@ export function resolveNoun(app: EditorApp, stage: HaloStage): Noun {
   const session = app.session.getState();
   const selection = session.selection;
   const controls = selection.controls;
+  // T9 (§6.2 *Rig dot*): while Quick Rig is open in Rig, a selected dot is the noun (its Halo: Re-guess, Mirror …)
+  const quick = session.rig.quickRig;
+  if (stage === 'rig' && quick !== null && quick.selected !== null) {
+    return {
+      kind: 'rigDot',
+      id: quick.selected,
+      ids: [quick.selected],
+      label: RIG_DOT_LABELS[quick.selected] ?? quick.selected,
+      count: 1,
+      character: null,
+    };
+  }
   if (stage === 'animate' && controls.length > 0) {
     const noun = controlNoun(app, controls);
     if (noun !== null) return noun;

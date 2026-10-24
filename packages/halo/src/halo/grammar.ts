@@ -72,6 +72,30 @@ export interface Grammar {
   start(): () => void;
 }
 
+/**
+ * A stage's own reading of a canvas gesture (T9 seam, P-T6A-4): `tap` hears every tap first (the Rig stage drops the
+ * selected rig dot on a tap beside the dots); `longPress` may take a long-press (a skin spot in Rig: *Who owns
+ * this?*), which then opens no ring and replays no click. The disposer removes the hooks.
+ */
+export interface StageGestureHooks {
+  readonly tap?: (tap: ArbiterTap) => void;
+  readonly longPress?: (tap: ArbiterTap) => boolean;
+}
+
+const stageHooks = new WeakMap<EditorApp, Set<StageGestureHooks>>();
+
+export function addStageGestureHooks(app: EditorApp, hooks: StageGestureHooks): () => void {
+  let set = stageHooks.get(app);
+  if (set === undefined) {
+    set = new Set();
+    stageHooks.set(app, set);
+  }
+  set.add(hooks);
+  return () => {
+    stageHooks.get(app)?.delete(hooks);
+  };
+}
+
 /** The selection as one comparable list of ids (any kind). */
 function selectionKey(app: EditorApp): string {
   const s = app.session.getState();
@@ -235,6 +259,7 @@ export function createGrammar(deps: GrammarDeps): Grammar {
     tap(tap) {
       store.set((s) => ({ touches: s.touches + 1, loupe: null, form: null }));
       if (store.get().confirm !== null) store.set({ confirm: null });
+      for (const hooks of stageHooks.get(app) ?? []) hooks.tap?.(tap);
       const at = { x: tap.x, y: tap.y };
       // §5.4 Loupe: colliding candidates open named chips above the finger; the tap selects nothing yet.
       const collide = loupeCandidates(tap.x, tap.y);
@@ -260,6 +285,7 @@ export function createGrammar(deps: GrammarDeps): Grammar {
     },
     longPress(tap) {
       store.set((s) => ({ touches: s.touches + 1, loupe: null }));
+      for (const hooks of stageHooks.get(app) ?? []) if (hooks.longPress?.(tap) === true) return undefined;
       const at = { x: tap.x, y: tap.y };
       const control = controlOf(tap.hit);
       const selected = app.session.getState().selection;

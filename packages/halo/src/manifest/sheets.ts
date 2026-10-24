@@ -56,9 +56,10 @@ export const SHEET_SECTIONS: Readonly<Record<SheetId, readonly string[] | null>>
   palette: null,
   makeEditableReport: null,
   createAi: null,
-  checks: null,
-  bones: null,
-  weights: null,
+  // T9 (§12.1, §12.4): Checks before rigging and the rig's rows; the bone list; the weight fixes, brush, Set weight…
+  checks: ['before', 'rig', 'fixBend'],
+  bones: ['list'],
+  weights: ['fix', 'brush', 'setWeight'],
   // T10 (§6.2, §14): the History ribbon's steps and AI groups; the Ask sheet's request, connection, grants, the AI's
   // activity and its revert-all
   history: ['steps', 'groups'],

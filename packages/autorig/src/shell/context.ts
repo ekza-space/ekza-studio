@@ -15,6 +15,11 @@ export interface ShellUi {
   readonly fromStudio: AutoRigSubject | null;
   /** A requested step waiting for its document (a reload, `?step=`, a handoff record): taken once reachable. */
   readonly pendingStep: AutoRigStep | null;
+  /**
+   * STUDIO-TOUCH-SPEC §16.3 (Halo T9): this arrival came from Ekza Studio's Simple layout (`from=halo`): the header
+   * offers *Back to Studio ▸* beside *Open in Studio ▸* (which still goes to the Pro layout).
+   */
+  readonly fromHalo: boolean;
 }
 
 /** The footer a step shows (§5.1: Back, one status line, one primary button). */

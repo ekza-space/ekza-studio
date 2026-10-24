@@ -322,9 +322,25 @@ function pollOp(app: EditorApp, op: OperatorId, args: unknown): PollResult {
   }
 }
 
+/**
+ * Petals whose arguments come from the session when the Halo opens (T9 seam: a rig dot's *Mirror to other side* names
+ * that dot and its mirrored point), keyed `<noun>.<petal id>`; null leaves the table's own arguments.
+ */
+const PETAL_ARGS = new Map<string, (app: EditorApp) => unknown>();
+
+export function registerPetalArgs(key: string, args: (app: EditorApp) => unknown): () => void {
+  PETAL_ARGS.set(key, args);
+  return () => {
+    if (PETAL_ARGS.get(key) === args) PETAL_ARGS.delete(key);
+  };
+}
+
 /** The petals of a noun in a stage: T6b's table with its in-place variants applied (slots never move, §6.1). */
 export function petalVerbs(app: EditorApp, kind: NounKind, stage: HaloStage): Verb[] {
-  const petals = petalsFor(kind, stage);
+  const petals = petalsFor(kind, stage).map((petal) => {
+    const args = PETAL_ARGS.get(`${kind}.${petal.id}`)?.(app);
+    return args === undefined || args === null ? petal : { ...petal, args };
+  });
   const verbs = petals.map((petal) => verbOf(petal));
   for (const variant of PETAL_VARIANTS[kind] ?? []) {
     const index = petals.findIndex((p) => p.id === variant.replaces);

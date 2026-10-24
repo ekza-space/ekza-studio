@@ -235,6 +235,66 @@ export function stampAt(
   return { points: Uint32Array.from(points), strength: Float32Array.from(strength) };
 }
 
+/** A point of a stroke's path on screen (pane CSS px) with the pen's pressure there (null: no pressure read). */
+export interface StrokePoint {
+  readonly x: number;
+  readonly y: number;
+  readonly pressure: number | null;
+}
+
+/**
+ * Where the next stamps of a stroke go (STUDIO-TOUCH-SPEC §12.4, AS-ST-12; Halo T9): every `spacing` CSS px ALONG the
+ * path from `from` (the path's last point) through `samples` (a move's coalesced samples, oldest first, the event's
+ * own point last), interpolating the position and the pressure linearly, so a fast stroke at Safari's ~60 Hz leaves
+ * no gap however far apart its events are. `carry` is the travel since the last stamp (0 ≤ carry < spacing); the
+ * result's `carry` is the travel after the last placed point, for the next move. Zero-length segments are skipped; a
+ * spacing that is not positive places a point at every sample. Pure: the tool hits the surface at each point.
+ */
+export function strokeSteps(
+  from: StrokePoint,
+  samples: readonly StrokePoint[],
+  spacing: number,
+  carry: number,
+): { readonly points: StrokePoint[]; readonly carry: number } {
+  const points: StrokePoint[] = [];
+  let travel = carry > 0 ? carry : 0;
+  let prev = from;
+  for (const next of samples) {
+    const length = Math.hypot(next.x - prev.x, next.y - prev.y);
+    if (!(length > 0)) {
+      prev = { x: prev.x, y: prev.y, pressure: next.pressure ?? prev.pressure };
+      continue;
+    }
+    if (!(spacing > 0)) {
+      points.push(next);
+      travel = 0;
+      prev = next;
+      continue;
+    }
+    // the distance along this segment of the next stamp, then one stamp per spacing
+    let at = Math.max(0, spacing - travel);
+    while (at <= length) {
+      const t = at / length;
+      points.push({
+        x: prev.x + (next.x - prev.x) * t,
+        y: prev.y + (next.y - prev.y) * t,
+        pressure: lerpPressure(prev.pressure, next.pressure, t),
+      });
+      at += spacing;
+    }
+    // the travel after the last stamp placed on this segment (or the carry grown by the whole segment)
+    travel = length - (at - spacing);
+    prev = next;
+  }
+  return { points, carry: travel };
+}
+
+function lerpPressure(a: number | null, b: number | null, t: number): number | null {
+  if (a === null) return b;
+  if (b === null) return a;
+  return a + (b - a) * t;
+}
+
 /** The point of a hit triangle nearest the hit (Sample, Pick Influence). */
 export function nearestCorner(hit: SurfaceHit, world?: Float64Array): number {
   const w = world ?? worldPositions(hit.surface);

@@ -3,10 +3,11 @@
 // the controller's stage switch, tapping the selected stage's ⚠n opens Health at that stage; the status corner above
 // the View puck; the one Next chip above the tray, hidden while a Halo, a card, a form or a sheet is open. All three
 // read the frame's one readiness list.
+import type { EditorApp } from '@ekza-studio/editor-core';
 import type { JSX } from 'react';
 import { Path } from '../path/Path';
 import { NextChipView, StatusCorner } from '../path/StatusCorner';
-import { nextChip } from '../path/nextChip';
+import { type NextChip, nextChip } from '../path/nextChip';
 import type { HaloController } from './controller';
 import { useReadiness } from './readiness';
 import { useHaloStore } from './store';
@@ -49,6 +50,24 @@ export function FrameStatus({ controller }: { readonly controller: HaloControlle
   );
 }
 
+/**
+ * What a Next chip does beyond its stage and sheet (T9 seam, §9 J1: *Rig it for me ▸* opens the Rig-it card in the
+ * same touch), registered by the stage that owns it; the disposer removes it.
+ */
+const nextActions = new WeakMap<EditorApp, Map<string, () => void>>();
+
+export function registerNextAction(app: EditorApp, id: NextChip['id'], run: () => void): () => void {
+  let actions = nextActions.get(app);
+  if (actions === undefined) {
+    actions = new Map();
+    nextActions.set(app, actions);
+  }
+  actions.set(id, run);
+  return () => {
+    if (nextActions.get(app)?.get(id) === run) nextActions.get(app)?.delete(id);
+  };
+}
+
 export function FrameNext({ controller }: { readonly controller: HaloController }): JSX.Element | null {
   const { store, app } = controller.ctx;
   const r = useReadiness(controller.readiness);
@@ -73,6 +92,11 @@ export function FrameNext({ controller }: { readonly controller: HaloController 
         <NextChipView
           chip={chip}
           onChip={(next) => {
+            const action = nextActions.get(app)?.get(next.id);
+            if (action !== undefined) {
+              action();
+              return;
+            }
             void (async () => {
               if (next.stage !== undefined) await controller.enterStage(next.stage);
               if (next.sheet !== undefined) {

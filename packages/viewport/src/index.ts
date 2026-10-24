@@ -131,6 +131,8 @@ export { mmbHandleFor, withModelTransform } from './tools/transformTool';
 // M6b (C6): Skin mode's runtime of a viewport (the skinned and weight display, the Paint Skin Weights tool), loaded on
 // the first Rig & Skin entry.
 export { type RigSkinRuntime, rigSkinOf } from './tools/rig/paint';
+// STUDIO-TOUCH-SPEC §12.4 (Halo T9): the Pencil pressure toggle of the weight brush (the brush tray's *Pressure* chip).
+export { setStrokePressure, strokePressure, subscribeStrokePressure } from './tools/rig/paint/pressure';
 // M-AI (MCP-SPEC §5.15.3; B3): one offscreen view_capture tile through the agent host (imported by the lazy agent module)
 export {
   type AgentTileCamera,
