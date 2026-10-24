@@ -237,6 +237,8 @@ const M6A_OPERATORS: Readonly<Record<string, boolean>> = {
   'imagePlane.import': true,
   'imagePlane.set': true,
   'imagePlane.delete': true,
+  // T8 (STUDIO-TOUCH-SPEC §6.2): a reference plane is a selectable noun; a selection change, never an undo step.
+  'select.imagePlane': false,
   'scene.group': true,
   'scene.parent': true,
   'scene.unparent': true,
