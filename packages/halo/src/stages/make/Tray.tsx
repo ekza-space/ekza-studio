@@ -18,12 +18,12 @@ import { startCall, type StartChoice } from '../../home/model';
 import { EMPTY_NOUN } from '../../verbs/nouns';
 import { VERB_TABLE } from '../../verbs/table';
 import {
-  CHARACTER_BUDGET,
   GA_OPS,
   intakeArgs,
   isLive,
   NORMALIZE_ARGS,
   PALETTE_BAKE_ARGS,
+  PROP_BUDGET,
   REDUCE_BUDGETS,
   reduceArgs,
   TEXTURE_ARGS,
@@ -161,18 +161,22 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
     item('last', w.lastTool, 'tool.last'),
   ];
   // a budget row's arguments are the same for the readiness poll and the run (`./cleanup`, G-a's contract)
-  const budgetRow = (menuId: 'intake' | 'reduce', op: string, label: string): MenuItem => ({
-    id: menuId,
-    label,
-    reason: poll(op, menuId === 'intake' ? intakeArgs(CHARACTER_BUDGET) : reduceArgs(CHARACTER_BUDGET)),
+  const reduceRow: MenuItem = {
+    id: 'reduce',
+    label: w.reduce,
+    // the smallest budget asks the least: greyed only when no budget can run ("Already under the budget")
+    reason: poll(GA_OPS.reduce, reduceArgs(PROP_BUDGET)),
     run: () => {
       touch(ctx);
-      ms.set({ menu: menuId });
+      ms.set({ menu: 'reduce' });
     },
-  });
+  };
   const cleanItems: MenuItem[] = [
-    budgetRow('intake', GA_OPS.intake, w.intake),
-    budgetRow('reduce', GA_OPS.reduce, w.reduce),
+    // the intake preset leads, one row per budget: Clean up ▾ › Character is the whole clean-up in two touches
+    ...REDUCE_BUDGETS.map((budget) =>
+      item(`intake-${budget.id}`, w.intakeFor(makeWords.ai[budget.id]), GA_OPS.intake, intakeArgs(budget)),
+    ),
+    reduceRow,
     item('normalize', w.normalize, GA_OPS.normalize, NORMALIZE_ARGS),
     item('paletteBake', w.paletteBake, GA_OPS.paletteBake, PALETTE_BAKE_ARGS),
     item('textures', w.textures, GA_OPS.textureDownsize, TEXTURE_ARGS),
@@ -183,7 +187,6 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
   const budgetItems = (op: string, args: (b: (typeof REDUCE_BUDGETS)[number]) => unknown): MenuItem[] =>
     REDUCE_BUDGETS.map((budget) => item(budget.id, makeWords.ai[budget.id], op, args(budget)));
   const reduceItems = budgetItems(GA_OPS.reduce, reduceArgs);
-  const intakeItems = budgetItems(GA_OPS.intake, intakeArgs);
   const shapeItems: MenuItem[] = [
     // the primitives in the verb table's words (empty space's *New shape ▾*, §6.2)
     ...(VERB_TABLE.empty.find((p) => p.id === 'newShape')?.menu ?? []).map((c) => item(c.op, c.plain, c.op, c.args)),
@@ -199,7 +202,6 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
     cut: { label: w.cutTitle, items: cutItems },
     cleanUp: { label: w.cleanUpTitle, items: cleanItems },
     reduce: { label: w.reduce, items: reduceItems },
-    intake: { label: w.intake, items: intakeItems },
     newShape: { label: w.newShape, items: shapeItems },
   };
   const open = menu === null ? null : menus[menu];
@@ -264,7 +266,7 @@ export function MakeTray({ controller, compact }: StageTrayProps): JSX.Element {
           testId="halo-make-cleanup"
           label={w.cleanUp}
           menu
-          open={menu === 'cleanUp' || menu === 'reduce' || menu === 'intake'}
+          open={menu === 'cleanUp' || menu === 'reduce'}
           onPress={() => toggleMenu('cleanUp')}
         />
         {compact ? null : (

@@ -4,8 +4,9 @@
 // colours = 16, meshes?}` (normalize → reduce → quadrangulate → palette bake, one undo step), `mesh.reduce {preset,
 // triangles = null, meshes?}` (null: the preset's 500 / 3,000 / 10,000), `mesh.normalize {height = null, meshes?}`,
 // `mesh.paletteBake {colours = 16, meshes?}` and `mesh.textureDownsize {size = 1024, meshes?}`; without `meshes` they
-// act on the selected mesh objects — beside the existing `mesh.cleanup`, `mesh.mergeByDistance` and `mesh.separate`. Halo never stubs them: until G-a registers them they show greyed with the reason (*Not in this build
-// yet*); once they are live their own polls apply (ST-T8-12).
+// act on the selected mesh objects — beside the existing `mesh.cleanup`, `mesh.mergeByDistance` and `mesh.separate`.
+// Halo never stubs them: their own polls answer ("Select a mesh", "Already under the budget …"); a build without them
+// greys the rows with *Not in this build yet* (ST-T8-12). G-a landed on `dev` `2bde8c24`.
 import type { EditorApp } from '@ekza-studio/editor-core';
 
 /** G-a's operator ids (MODELING-PLAN §7.2), not in `OperatorMap` until G-a lands. */
@@ -28,6 +29,8 @@ export const REDUCE_BUDGETS: readonly { readonly id: BudgetPreset; readonly tria
 
 /** The default budget (a character, §7.2 G-d). */
 export const CHARACTER_BUDGET = { id: 'character', triangles: 3000 } as const;
+/** The smallest budget (a prop). */
+export const PROP_BUDGET = { id: 'prop', triangles: 500 } as const;
 
 /** `mesh.reduce`'s arguments for a budget (`triangles` left to the preset). */
 export const reduceArgs = (budget: { readonly id: BudgetPreset }) => ({ preset: budget.id }) as const;

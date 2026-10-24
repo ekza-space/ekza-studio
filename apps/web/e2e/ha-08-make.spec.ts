@@ -1,5 +1,6 @@
 import { expect, type Page, test, type TestInfo } from '@playwright/test';
-import { centre, makeSlice, meshIds, onCanvas, paneCentre, paneRect } from './helpers/halo-make';
+import { makeAiLikeGlb } from '@ekza-studio/io/testing';
+import { centre, makeSlice, meshIds, onCanvas, paneCentre, paneRect, runWithBytes, touches } from './helpers/halo-make';
 import { halo, haloMenu, loadCubeLadInMake, openHalo, PANE, petal } from './helpers/halo';
 import { call, runOk } from './helpers/test-api';
 import { referenceImage } from './helpers/m6a-model-content';
@@ -8,10 +9,11 @@ import { fingerDrag, fingerTap } from './helpers/touch';
 // ha-08 Make (STUDIO-TOUCH-SPEC §11, §6.2, §7.1, §4.8; T8 exit test; the owner's clean-up focus of 2026-10-24) on
 // `chrome-touch`: an imported model is cleaned up by touch — the tray (selection level, Drag ▾, Cut ▾, Clean up ▾,
 // New shape ▾, Create with AI), a part's Halo (Edit shape · Move · Separate · Delete · Reduce ▾ · Rig it), Select area
-// (a marquee by finger), the Move ring dragged by finger, Multi-cut's session; G-a's Reduce greyed with its reason
-// until it is in the build; the cap handle drives the extrude session (one step per drag, Smart from the Thumb key);
-// *Create with AI* says plainly that generation is not connected. On `webkit-ipad` (compatibility only): Make boots
-// with its tray and the sheet opens by touch.
+// (a marquee by finger), the Move ring dragged by finger, Multi-cut's session; G-a's Reduce answering with its own
+// poll; *Clean up ▾ › Clean up for a game* taking a heavy AI-like model to the character budget and flat colours in
+// one step; the cap handle drives the extrude session (one step per drag, Smart from the Thumb key); *Create with AI*
+// shows only where a generation gateway is enabled. On `webkit-ipad` (compatibility only): Make boots with its tray
+// and the sheet opens by touch.
 
 const touchOnly = (info: TestInfo): void => test.skip(info.project.name !== 'chrome-touch', 'chrome-touch only (CDP)');
 
@@ -30,10 +32,11 @@ test.describe('ha-08: the Make stage', () => {
     await runOk(page, 'select.objects', { ids: [], mode: 'replace' });
     await expect.poll(async () => (await halo(page)).visibleTargets).toBeLessThanOrEqual(22);
 
-    // Clean up ▾: G-a's Reduce greyed with its reason until it is in the build; Tidy runs `mesh.cleanup`
+    // Clean up ▾: the intake leads (one row per budget); with nothing selected G-a's rows say why
     await tapId(page, 'halo-make-cleanup');
     const menu = page.getByTestId('halo-make-menu-cleanUp');
     await expect(menu).toBeVisible();
+    await expect(page.getByTestId('halo-make-menu-cleanUp-intake-character')).toHaveAttribute('aria-disabled', 'true');
     await expect(page.getByTestId('halo-make-menu-cleanUp-reduce')).toHaveAttribute('aria-disabled', 'true');
     await expect(page.getByTestId('halo-make-menu-cleanUp-separate')).toBeVisible();
     await tapId(page, 'halo-make-cleanup');
@@ -53,13 +56,14 @@ test.describe('ha-08: the Make stage', () => {
       ]),
     );
     expect((await halo(page)).visibleTargets).toBeLessThanOrEqual(36);
-    // Reduce ▾ (G-a's `mesh.reduce`): greyed while every budget is, and a tap says why (§6.3)
+    // Reduce ▾ (G-a's `mesh.reduce`): a Cube Lad part is already under every budget, so the petal is greyed and a
+    // tap says why in G-a's words (§6.3)
     const reduce = petal(page, 'Reduce');
     await expect(reduce).toHaveAttribute('aria-disabled', 'true');
     const reduceBox = await reduce.boundingBox();
     if (reduceBox === null) throw new Error('no Reduce');
     await fingerTap(page, { x: reduceBox.x + reduceBox.width / 2, y: reduceBox.y + reduceBox.height / 2 });
-    await expect(page.getByTestId('halo-toasts')).toContainText('Not in this build yet');
+    await expect(page.getByTestId('halo-toasts')).toContainText('Already under the budget');
 
     // Move: the ring comes, and a finger on its arrow moves the part (one step)
     const move = await petal(page, 'Move').boundingBox();
@@ -94,6 +98,59 @@ test.describe('ha-08: the Make stage', () => {
     await runOk(page, 'edit.undo');
     await expect.poll(async () => (await meshIds(page)).length).toBe(before);
     expect(meshes.length).toBeGreaterThan(0);
+  });
+
+  test('Clean up ▾ › Clean up for a game takes a heavy model to the character budget and flat colours in one step', async ({
+    page,
+  }, testInfo) => {
+    touchOnly(testInfo);
+    test.setTimeout(240_000);
+    await openHalo(page, '&stage=make');
+    await expect(page.getByTestId('halo-tray')).toHaveAttribute('data-empty', '');
+    // an AI-like model (procedural, `@ekza-studio/io/testing`): 96,824 triangles, a textured atlas
+    const imported = await runWithBytes(page, 'mesh.importStatic', { name: 'generated.glb' }, makeAiLikeGlb());
+    expect(imported.status).toBe('finished');
+    const [mesh] = (imported as { value: { meshes: string[] } }).value.meshes;
+    if (mesh === undefined) throw new Error('no mesh');
+    const tris = async (): Promise<number | undefined> =>
+      (await call(page, 'meshes')).find((row) => row.id === mesh)?.counts?.tris;
+    await expect.poll(tris, { timeout: 60_000 }).toBe(96_824);
+    // the part is selected by a finger tap (its Halo opens; the tray's rows run on the selection)
+    await runOk(page, 'view.frame', { what: 'all', paneId: PANE });
+    await fingerTap(page, await paneCentre(page));
+    await expect.poll(async () => (await halo(page)).noun?.kind).toBe('mesh');
+    const steps = (await call(page, 'history')).undo.length;
+    const touched = await touches(page);
+
+    // Clean up ▾ › Clean up for a game: Character ≤ 3k — two touches, one step
+    await tapId(page, 'halo-make-cleanup');
+    await expect(page.getByTestId('halo-make-menu-cleanUp-intake-character')).not.toHaveAttribute(
+      'aria-disabled',
+      'true',
+    );
+    await tapId(page, 'halo-make-menu-cleanUp-intake-character');
+    await expect.poll(async () => (await call(page, 'history')).undo.length, { timeout: 120_000 }).toBe(steps + 1);
+    expect((await call(page, 'history')).undo.at(-1)).toBe('Intake');
+    expect((await touches(page)) - touched).toBe(2);
+    expect((await call(page, 'lastOp'))?.id).toBe('mesh.intake');
+    // the character budget and at most 16 flat colours (a new palette, one swatch per face)
+    const after = (await tris()) ?? 0;
+    expect(after).toBeLessThanOrEqual(3000);
+    expect(after).toBeGreaterThan(500);
+    const row = (await call(page, 'meshes')).find((r) => r.id === mesh);
+    expect(row?.palette).not.toBeNull();
+    const colours = (await call(page, 'palettes')).find((p) => p.id === row?.palette)?.swatches.length ?? 0;
+    expect(colours).toBeGreaterThan(1);
+    expect(colours).toBeLessThanOrEqual(16);
+    testInfo.annotations.push({
+      type: 'intake',
+      description: `96,824 → ${String(after)} triangles, ${String(colours)} colours`,
+    });
+
+    // one undo step: Undo brings the imported model back whole
+    await runOk(page, 'edit.undo');
+    await expect.poll(tris).toBe(96_824);
+    expect((await call(page, 'history')).undo.length).toBe(steps);
   });
 
   test('Select area draws a marquee by finger; Cut ▾ opens Multi-cut’s session', async ({ page }, testInfo) => {

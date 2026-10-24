@@ -87,3 +87,24 @@ export async function fingerPath(page: Page, path: readonly Point[]): Promise<vo
   await touchEvent(s, 'touchEnd', []);
   await s.detach();
 }
+
+/** Runs an operator whose args carry bytes (sent base64-encoded, rebuilt as a Uint8Array in the page; m7-01's way). */
+export async function runWithBytes(
+  page: Page,
+  op: string,
+  args: Record<string, unknown>,
+  bytes: Uint8Array,
+): Promise<{ readonly status: string; readonly value?: unknown }> {
+  const base64 = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength).toString('base64');
+  return page.evaluate(
+    async ([id, rest, data]) => {
+      const binary = atob(data);
+      const array = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i);
+      const api = window.__EKZA_STUDIO_TEST__;
+      if (api === undefined) throw new Error('no test API');
+      return api.run(id, { ...rest, bytes: array });
+    },
+    [op, args, base64] as const,
+  );
+}

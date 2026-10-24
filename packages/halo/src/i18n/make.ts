@@ -28,6 +28,8 @@ export const makeWords = {
     cleanUp: 'Clean up',
     cleanUpTitle: 'Clean up the model',
     intake: 'Clean up for a game',
+    /** One intake row per budget (Clean up ▾). */
+    intakeFor: (budget: string): string => `Clean up for a game: ${budget}`,
     reduce: 'Reduce to a budget',
     normalize: 'Stand up and size',
     paletteBake: 'Colours to swatches',

@@ -20,7 +20,7 @@ import { DEFERRED_DIALOGS, DIALOG_SURFACES } from '../../src/manifest/dialogs';
 import { DISCLOSURE } from '../../src/manifest/disclosure';
 import { PARAM_SURFACES } from '../../src/manifest/paramSurfaces';
 import { PLUMBING_ALLOWLIST } from '../../src/manifest/plumbing';
-import { entriesOf, isSurfaceEntry, NOUN_KINDS, PENDING_OPERATORS, STAGES } from '../../src/manifest/types';
+import { entriesOf, isSurfaceEntry, NOUN_KINDS, STAGES } from '../../src/manifest/types';
 import { MAX_PETALS, petalsFor, VERB_TABLE } from '../../src/verbs/table';
 
 // Headless apps with every chunk load slowly on a busy machine.
@@ -185,8 +185,7 @@ describe('verb table (§6.1, §6.2)', () => {
     for (const noun of NOUN_KINDS) {
       for (const stage of STAGES) expect(petalsFor(noun, stage).length).toBeLessThanOrEqual(MAX_PETALS);
       for (const petal of VERB_TABLE[noun]) {
-        // T8: a petal may name an operator of a package not in the build yet (its entry lands with it)
-        if (petal.op === undefined || PENDING_OPERATORS.has(petal.op)) continue;
+        if (petal.op === undefined) continue;
         const entries = entriesOf(DISCLOSURE[petal.op] ?? []);
         const shown = entries.some(
           (entry) => isSurfaceEntry(entry) && entry.surfaces.some((s) => 'petal' in s && s.petal === noun),

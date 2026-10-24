@@ -6,7 +6,6 @@ import { type EditorApp, extrudeManipulatorFrame, loadExtrudeEngine } from '@ekz
 import { describe, expect, it } from 'vitest';
 import { makeWords, paintWords } from '../src/i18n/make';
 import { aiShown, checkAi, setGenerationGateway } from '../src/stages/make/ai/availability';
-import { PENDING_OPERATORS } from '../src/manifest/types';
 import {
   CHARACTER_BUDGET,
   GA_OPS,
@@ -107,7 +106,7 @@ describe('Make: the cap handle (ST-T8-1)', { timeout: 60_000 }, () => {
 describe('Make: clean-up calls G-a’s operators by id with their contract (M7-GA-CONTRACT-1…6, ST-T8-12)', {
   timeout: 60_000,
 }, () => {
-  it('the ids, and the arguments of each row', () => {
+  it('the ids, and the arguments of each row', async () => {
     expect(GA_OPS).toEqual({
       intake: 'mesh.intake',
       reduce: 'mesh.reduce',
@@ -125,7 +124,14 @@ describe('Make: clean-up calls G-a’s operators by id with their contract (M7-G
     expect(NORMALIZE_ARGS).toEqual({ height: null });
     expect(PALETTE_BAKE_ARGS).toEqual({ colours: 16 });
     expect(TEXTURE_ARGS).toEqual({ size: 1024 });
-    for (const op of Object.values(GA_OPS)) expect(PENDING_OPERATORS.has(op)).toBe(true);
+    // G-a landed: every row names a registered operator whose parameters are the contract's
+    const app = await everyOperator();
+    const params = (op: string): string[] => (app.operators.get(op)?.params ?? []).map((p) => p.name);
+    expect(params(GA_OPS.intake)).toEqual(expect.arrayContaining(['preset', 'height', 'colours']));
+    expect(params(GA_OPS.reduce)).toEqual(expect.arrayContaining(['preset', 'triangles']));
+    expect(params(GA_OPS.normalize)).toContain('height');
+    expect(params(GA_OPS.paletteBake)).toContain('colours');
+    expect(params(GA_OPS.textureDownsize)).toContain('size');
   });
 
   it('a part’s Halo cleans up: Move, Separate, Delete, Reduce, Rig it', () => {
