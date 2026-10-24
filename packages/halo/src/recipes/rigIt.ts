@@ -16,7 +16,11 @@
 // (`autorig.inspect`).
 import type { CharacterId, MeshId } from '@ekza-studio/doc';
 import {
+  AUTORIG_TARGET_HEIGHT,
   type AutoRigFingers,
+  type AutoRigFix,
+  applyFix,
+  nextFix,
   type AutoRigFlowHost,
   type AutoRigRigPlan,
   type AutoRigRigStage,
@@ -141,6 +145,22 @@ export function importedCharacter(app: EditorApp, host: AutoRigFlowHost): Charac
 
 const sameSubject = (a: AutoRigSubject, b: AutoRigSubject): boolean =>
   a.character === b.character && a.meshes.length === b.meshes.length && a.meshes.every((id) => b.meshes.includes(id));
+
+/**
+ * Checks › *Fix them in order* (§12.1): Auto-Rig ①'s first fixes in its order (stand up → size → freeze → centre →
+ * face), each `applyFix` (one `autorig.fix` step, then the report again), as the wizard runs them; a fix that leaves its
+ * check failing stops the loop. Returns the fixes run.
+ */
+export async function fixInOrder(host: AutoRigFlowHost, height?: number): Promise<readonly AutoRigFix[]> {
+  const done: AutoRigFix[] = [];
+  for (let next = nextFix(host); next !== null; next = nextFix(host)) {
+    if (done.includes(next) || done.length >= 5) break;
+    done.push(next);
+    const outcome = await applyFix(host, next, next === 'scale' ? (height ?? AUTORIG_TARGET_HEIGHT) : undefined);
+    if (outcome.status !== 'finished') break;
+  }
+  return done;
+}
 
 /** Whether the flow's subject still stands for something in the document. */
 function subjectLive(host: AutoRigFlowHost): boolean {

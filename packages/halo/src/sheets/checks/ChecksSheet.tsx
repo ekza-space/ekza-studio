@@ -11,7 +11,6 @@ import {
   type AutoRigFix,
   applyFix,
   liveSubjectMeshes,
-  nextFix,
   reinspectSubject,
   takeHandedSubject,
 } from '@ekza-studio/editor-core';
@@ -20,7 +19,7 @@ import { type JSX, useState } from 'react';
 import { haloFlowHost } from '../../intake/flowHost';
 import { rigWords } from '../../i18n/rig';
 import type { HaloSheetProps } from '../../manifest/sheets';
-import { subjectOfDocument } from '../../recipes/rigIt';
+import { fixInOrder, subjectOfDocument } from '../../recipes/rigIt';
 import type { RigStage } from '../../stages/rig/start';
 import { healthModel, modelCheckRows, type ModelCheckRun } from '../health/model';
 import { HaloSheet, useAppVersion } from '../more/kit';
@@ -55,15 +54,7 @@ export default function ChecksSheet({ ctx, rig }: HaloSheetProps & { readonly ri
       } else await reinspectSubject(host);
     });
   const fix = (fixId: AutoRigFix): void => work(() => applyFix(host, fixId));
-  const fixAll = (): void =>
-    work(async () => {
-      const done = new Set<AutoRigFix>();
-      for (let next = nextFix(host); next !== null && !done.has(next) && done.size < 5; next = nextFix(host)) {
-        done.add(next);
-        const outcome = await applyFix(host, next);
-        if (outcome.status !== 'finished') return;
-      }
-    });
+  const fixAll = (): void => work(() => fixInOrder(host));
 
   return (
     <HaloSheet ctx={ctx} id="checks" title={w.title} description={`${w.profile} ${model.destination.name}`}>
