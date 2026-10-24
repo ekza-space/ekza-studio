@@ -83,7 +83,7 @@ export function createWizard(host: HostShell): Wizard {
   const { app } = host;
   const storage = host.params.storageBlocked ? null : sessionStorageOf();
   const session: AutoRigSessionStore = createAutoRigSessionStore(defaultAutoRigSession(), storage);
-  const ui = smallStore<ShellUi>({ fromStudio: null, pendingStep: null });
+  const ui = smallStore<ShellUi>({ fromStudio: null, pendingStep: null, fromHalo: false });
   const footer = smallStore<FooterState>({});
   let arrived = false;
   let sample: AutoRigSampleId | null = null;
@@ -101,7 +101,7 @@ export function createWizard(host: HostShell): Wizard {
     const fromParam = typeof window === 'undefined' ? null : new URLSearchParams(window.location.search).get('from');
     const fromStudio =
       handed ?? (fromParam === 'studio' && mirror === null && !documentEmpty(app) ? subjectFromDocument(app) : null);
-    ui.set({ fromStudio, pendingStep: query.step ?? mirror?.step ?? null });
+    ui.set({ fromStudio, pendingStep: query.step ?? mirror?.step ?? null, fromHalo: fromParam === 'halo' });
   };
 
   // ---- progress (derived; cached by an input counter the subscriptions bump) ----
