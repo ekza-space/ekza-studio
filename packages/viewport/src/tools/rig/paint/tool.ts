@@ -12,6 +12,12 @@
 //   a test pose of the joint's control (never a key, never the document; C7's test-pose gesture) while the tool stays
 //   the brush; LMB elsewhere keeps painting; `E` again or `Esc` hides it.
 // - `Alt+C` toggles the weight display (off ↔ greyscale) of every pane.
+// - Touch and Pencil (STUDIO-TOUCH-SPEC §12.4, AS-ST-12, AS-ST-16; Halo T9, ST-T9): on the arbiter's path (events that
+//   carry `coalesced`) the stamps are placed every 0.25 r ALONG the path through every coalesced sample, interpolated
+//   (`strokeSteps`), so a fast stroke at ~60 Hz leaves no gap; a pen's pressure (only `pointerType === 'pen'`, while the
+//   app's `strokePressure` toggle is on) scales each stamp's strength at stamp time, folded into `StrokeStamp.strength`
+//   — the arguments of `skin.weights.paint`, replay and MCP determinism are unchanged. The mouse (Studio Pro, no
+//   arbiter) and fingers' strengths keep today's behaviour bit for bit.
 // Posed painting: the hit and the stamps use the CPU-skinned points of the shown pose; weights are bind-pose data.
 import type { ControlId, MeshId } from '@ekza-studio/doc';
 import {
@@ -38,7 +44,16 @@ import {
 } from '@ekza-studio/editor-core';
 import type { SkinWeights, StrokeSession, StrokeStamp } from '@ekza-studio/mesh-core';
 import type { ViewportToolHost } from '../../host';
-import { metresPerPx, nearestCorner, ROTATE_RING_PX, type SurfaceHit, stampAt } from './pick';
+import {
+  metresPerPx,
+  nearestCorner,
+  ROTATE_RING_PX,
+  type StrokePoint,
+  type SurfaceHit,
+  stampAt,
+  strokeSteps,
+} from './pick';
+import { pressureFactor, strokeReadsPressure } from './pressure';
 import type { RigSkinRuntime } from './runtime';
 
 /** Keys the tool receives first (§5.17): the brush holds, `Esc` for the test-rotate ring, `Alt+C`. */
@@ -59,8 +74,14 @@ interface Stroke {
   readonly value: number;
   readonly mirror: boolean;
   readonly changed: Set<number>;
+  /** A pen's pressure scales the stamps (decided at the press, §12.4). */
+  readonly pressure: boolean;
+  /** Stamps along the path through the coalesced samples (the arbiter's path); else at the events (today's). */
+  readonly interpolate: boolean;
   lastX: number;
   lastY: number;
+  /** The pressure at the path's last point (null: not read). */
+  lastPressure: number | null;
   travel: number;
 }
 
@@ -187,6 +208,10 @@ export class PaintSkinTool implements ToolInstance {
     }
     const stroke = this.stroke;
     if (stroke === null || e.paneId !== stroke.paneId) return false;
+    if (stroke.interpolate) {
+      this.moveAlong(stroke, e);
+      return true;
+    }
     stroke.travel += Math.hypot(e.x - stroke.lastX, e.y - stroke.lastY);
     stroke.lastX = e.x;
     stroke.lastY = e.y;
@@ -278,6 +303,7 @@ export class PaintSkinTool implements ToolInstance {
       value: brush.value,
       mirror: brush.mirror,
     });
+    const pressure = strokeReadsPressure(this.app, e);
     const stroke: Stroke = {
       paneId: e.paneId,
       mesh,
@@ -290,20 +316,55 @@ export class PaintSkinTool implements ToolInstance {
       value: brush.value,
       mirror: brush.mirror,
       changed: new Set(),
+      pressure,
+      interpolate: e.coalesced !== undefined,
       lastX: e.x,
       lastY: e.y,
+      lastPressure: pressure ? (e.pressure as number) : null,
       travel: 0,
     };
     this.stroke = stroke;
     this.runtime.stroking = true;
-    this.addStamp(stroke, hit);
+    this.addStamp(stroke, hit, stroke.lastPressure);
   }
 
-  private addStamp(stroke: Stroke, hit: SurfaceHit): void {
+  /**
+   * A move on the arbiter's path (§12.4): the ring at the event, then a stamp every 0.25 r along the path through the
+   * move's coalesced samples (their own pressure), each hit on the surface; the travel left over carries to the next
+   * move. Stamps off the stroke's mesh (the path left it, or another mesh is in front) are skipped, as before.
+   */
+  private moveAlong(stroke: Stroke, e: ToolPointerEvent): void {
+    const ringHit = this.runtime.showRing(stroke.paneId, e.x, e.y, e.alt);
+    const own = (x: number, y: number, pressure: number): StrokePoint => ({
+      x,
+      y,
+      pressure: stroke.pressure && Number.isFinite(pressure) ? pressure : null,
+    });
+    const samples: StrokePoint[] = (e.coalesced ?? []).map((c) => own(c.x, c.y, c.pressure));
+    const last = samples.at(-1);
+    if (last === undefined || last.x !== e.x || last.y !== e.y) samples.push(own(e.x, e.y, e.pressure ?? Number.NaN));
+    const spacing = 0.25 * this.app.session.getState().rig.paint.brush.radiusPx;
+    const from: StrokePoint = { x: stroke.lastX, y: stroke.lastY, pressure: stroke.lastPressure };
+    const steps = strokeSteps(from, samples, spacing, stroke.travel);
+    const end = samples.at(-1) as StrokePoint;
+    stroke.lastX = end.x;
+    stroke.lastY = end.y;
+    stroke.lastPressure = end.pressure ?? stroke.lastPressure;
+    stroke.travel = steps.carry;
+    for (const point of steps.points) {
+      const hit = point.x === e.x && point.y === e.y ? ringHit : this.runtime.hitAt(stroke.paneId, point.x, point.y);
+      if (hit !== null && hit.surface.mesh === stroke.mesh) this.addStamp(stroke, hit, point.pressure);
+    }
+  }
+
+  /** One stamp at a hit; `pressure` (a pen's, 0…1) scales its strengths at stamp time, null leaves them as they are. */
+  private addStamp(stroke: Stroke, hit: SurfaceHit, pressure: number | null = null): void {
     const rect = this.runtime.vm.paneRect(stroke.paneId);
     if (rect === null) return;
     const camera = this.runtime.vm.camera(stroke.paneId);
-    const brush = this.app.session.getState().rig.paint.brush;
+    const current = this.app.session.getState().rig.paint.brush;
+    // §12.4: pressure folds into the strength (opacity × pressure × falloff); without it the brush is used as it is
+    const brush = pressure === null ? current : { ...current, opacity: current.opacity * pressureFactor(pressure) };
     const radius = brush.radiusPx * metresPerPx(camera, rect.h, hit.point);
     const stamp = stampAt(hit, radius, brush, camera, this.runtime.worldOf(hit.surface));
     if (stamp.points.length === 0) return;
