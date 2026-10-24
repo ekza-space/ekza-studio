@@ -5,7 +5,7 @@
 // starter set. A character that came with its own rig gets *Use its rig*, then the checks. The card renders the
 // recipe's state (`recipes/rigIt.ts`); every action is the recipe's, so the operator log is Auto-Rig's.
 import type { AutoRigFingers } from '@ekza-studio/editor-core';
-import { quickRigOf } from '@ekza-studio/editor-core';
+import { PANEL, quickRigOf, VIEWPORT_TOOL } from '@ekza-studio/editor-core';
 import { Cluster, Segmented, TouchButton } from '@ekza-studio/ui/touch';
 import { type JSX, useEffect, useState, useSyncExternalStore } from 'react';
 import { Icon } from '../../halo/icons';
@@ -77,12 +77,16 @@ export function RigCard({
 
   // the card's outcomes the frame follows: the starter set added closes it; *Use its rig* opens the checks
   useEffect(() => {
+    // the bind leaves Skin with the brush armed (M6B-AF-1): the card's next steps are no paint session (§12.2 step 6)
+    if (state.phase === 'done' && app.session.getState().tools.viewport === VIEWPORT_TOOL.paintSkinWeights) {
+      void ctx.run('view.tool', { panel: PANEL.viewport, tool: VIEWPORT_TOOL.select });
+    }
     if (state.phase === 'added') rig.ui.set({ card: false });
     if (state.phase === 'checks') {
       rig.ui.set({ card: false });
       store.set({ sheet: 'checks', sheetArgs: null, sheetNoun: null, halo: null });
     }
-  }, [state.phase, rig, store]);
+  }, [state.phase, rig, store, app, ctx]);
 
   const act = (fn: (r: RigIt) => unknown): (() => void) => {
     return () => {
