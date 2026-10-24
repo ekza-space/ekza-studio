@@ -279,7 +279,13 @@ describe('show and hide (§15 row 1.10)', () => {
 
   it('shows and hides a reference image and locks it with imagePlane.set', async () => {
     const plane = row(sceneModel(s.app), `plane:${s.plane}`);
-    expect(plane).toMatchObject({ kind: 'plane', name: 'Front ref', select: null, hidden: false });
+    // T8: a reference's row selects it (`select.imagePlane`)
+    expect(plane).toMatchObject({
+      kind: 'plane',
+      name: 'Front ref',
+      select: { calls: [{ op: 'select.imagePlane', args: { id: s.plane } }] },
+      hidden: false,
+    });
     expect(plane.detail).toBe('Front view · 50 %');
     expect(plane.eye?.calls).toEqual([{ op: 'imagePlane.set', args: { id: s.plane, patch: { visible: false } } }]);
     expect(plane.menu.map((a) => a.id)).toEqual(['hide', 'lock', 'delete']);

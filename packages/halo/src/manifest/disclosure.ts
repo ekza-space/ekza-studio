@@ -488,6 +488,8 @@ export const DISCLOSURE: Readonly<Record<string, ManifestEntry>> = {
   'imagePlane.set': on(1, [P('imagePlane'), S('numbers', 'imagePlane'), S('scene', 'references')], MAKE),
   'imagePlane.delete': on(1, [P('imagePlane'), S('scene', 'references')], MAKE),
   'imagePlane.replace': on(2, [M('imagePlane', 'Image'), S('scene', 'references')], MAKE),
+  // T8: a tap on a reference in the view that shows it (Make's tap hook) or its Scene row
+  'select.imagePlane': on(0, [C('canvas'), S('scene', 'references')], { ...MAKE, plain: 'Select a reference' }),
 
   // ===== Paint (§13.1, §15.4) =====
   'mesh.paint': on(1, [P('faces'), T('paint')], { stages: ['make', 'paint'], ...HANDS, plain: 'Colour' }),

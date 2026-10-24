@@ -5,10 +5,11 @@
 //   build, `./cleanup`);
 // - *Mirror edits* on for a new character body or guides (§11 "on by default for templates"): U state, never a step;
 // - the test API's `make` slice.
-import { VIEWPORT_TOOL } from '@ekza-studio/editor-core';
+import type { ImagePlaneId } from '@ekza-studio/doc';
+import { type EditorApp, VIEWPORT_TOOL } from '@ekza-studio/editor-core';
 import type { Box } from '@ekza-studio/ui/touch';
 import { makeWords } from '../../i18n/make';
-import { addHaloClaim } from '../../input/claims';
+import { addHaloClaim, addHaloTapHook } from '../../input/claims';
 import type { HaloController } from '../../shell/controller';
 import { PANE } from '../../shell/stage';
 import { registerHaloSlice } from '../../shell/stageParts';
@@ -52,6 +53,29 @@ function reduceVerb(verb: Verb): Verb {
       }),
     ),
   };
+}
+
+/** An image plane's petals on that plane (§6.2): Opacity and Size in Numbers, Lock, Hide and Delete run on it. */
+function planeVerb(app: EditorApp, id: string | null, petal: string, verb: Verb): Verb {
+  const plane = id === null ? undefined : app.store.get('imagePlanes', id as ImagePlaneId);
+  if (plane === undefined || id === null) return verb;
+  switch (petal) {
+    case 'opacity':
+    case 'size':
+      return { ...verb, run: { sheet: 'numbers' } };
+    case 'lock':
+      return {
+        ...verb,
+        ...(plane.locked ? { label: makeWords.plane.unlock, changed: true } : {}),
+        run: { op: 'imagePlane.set', args: { id, patch: { locked: !plane.locked } } },
+      };
+    case 'hide':
+      return { ...verb, run: { op: 'imagePlane.set', args: { id, patch: { visible: false } } } };
+    case 'delete':
+      return { ...verb, run: { op: 'imagePlane.delete', args: { id } } };
+    default:
+      return verb;
+  }
 }
 
 export function installMake(controller: HaloController): () => void {
@@ -108,6 +132,27 @@ export function installMake(controller: HaloController): () => void {
   for (const kind of ['faces', 'edges', 'vertices'] as const)
     disposers.push(bindNoun(kind, { box: () => handlesBox() }));
   disposers.push(mirrorTemplates(controller));
+  // §6.2 "Image plane": a tap on a reference the view shows selects it (the tools never pick planes); a tap
+  // elsewhere lets the plane go and the tool have the tap
+  disposers.push(
+    addHaloTapHook(app, (tap) => {
+      if (store.get().stage !== 'make' || tap.paneId !== PANE) return 'pass';
+      const vm = controller.ctx.vm();
+      if (vm === null) return 'pass';
+      const plane = tap.hit === null && !vm.isOverMesh(PANE, tap.x, tap.y) ? vm.imagePlaneAt(PANE, tap.x, tap.y) : null;
+      if (plane !== null) {
+        void controller.ctx.run('select.imagePlane', { id: plane });
+        return 'consumed';
+      }
+      if ((app.session.getState().model.imagePlane ?? null) !== null) {
+        void controller.ctx.run('select.imagePlane', { id: null });
+      }
+      return 'pass';
+    }),
+  );
+  disposers.push(
+    bindNoun('imagePlane', { verb: (bound, noun, petal, verb) => planeVerb(bound, noun.id, petal.id, verb) }),
+  );
   // leaving Make closes its menu; Select area ends with the stage
   disposers.push(
     store.subscribe((next, previous) => {

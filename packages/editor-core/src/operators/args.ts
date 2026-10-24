@@ -382,6 +382,8 @@ export interface OperatorMap {
   'imagePlane.set': { args: { readonly id: ImagePlaneId; readonly patch: Partial<Pick<ImagePlaneRecord, 'name' | 'camera'
     | 'offset' | 'size' | 'opacity' | 'depth' | 'locked' | 'visible'>> }; result: void };
   'imagePlane.delete': { args: { readonly id: ImagePlaneId }; result: void };
+  // STUDIO-TOUCH-SPEC §6.2 (Halo T8): the selected reference image plane (U state; null clears)
+  'select.imagePlane': { args: { readonly id: ImagePlaneId | null }; result: void };
   'scene.group': { args: { readonly ids?: readonly SceneObjectId[] } | void; result: { readonly group: GroupId } };
   'scene.parent': { args: { readonly ids?: readonly SceneObjectId[]; readonly parent?: SceneObjectId } | void; result: void };
   'scene.unparent': { args: { readonly ids?: readonly SceneObjectId[] } | void; result: void };

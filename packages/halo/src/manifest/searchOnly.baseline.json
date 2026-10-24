@@ -1,22 +1,21 @@
 {
   "note": "STUDIO-TOUCH-SPEC §20.5 test 5: the searchOnly ratchet. Regenerate with EKZA_HALO_PARITY_WRITE=1 (ha-parity).",
-  "total": 58,
+  "total": 42,
   "explicit": 4,
-  "pending": 54,
+  "pending": 38,
   "byStage": {
-    "make": 1,
-    "paint": 12,
+    "make": 0,
+    "paint": 0,
     "rig": 18,
     "animate": 14,
-    "all": 13
+    "all": 10
   },
   "targets": {
-    "T8": 42,
-    "T9": 37,
-    "T10": 41
+    "T9": 21,
+    "T10": 25
   },
-  "live": 352,
-  "reachable": 289,
+  "live": 353,
+  "reachable": 302,
   "items": [
     "agent.show",
     "autorig.cancel",
@@ -35,17 +34,6 @@
     "graph.view.setMode",
     "key.delete",
     "key.write",
-    "mesh.paint.remap",
-    "palette.addSwatch",
-    "palette.assign",
-    "palette.assignMaterial",
-    "palette.duplicate",
-    "palette.ensureDefault",
-    "palette.removeSwatch",
-    "palette.rename",
-    "palette.replaceSwatch",
-    "palette.setActive",
-    "palette.setSwatch",
     "rig.pose.view",
     "select.curveKeys",
     "skel.quickRig.clear",
@@ -63,18 +51,13 @@
     "skin.paint.mode",
     "skin.testRotate.toggle",
     "skin.weights.flood",
-    "tool.last",
     "ui.commandPalette",
-    "ui.open {\"dialog\":[\"makeEditableReport\"]}",
     "view.tool {\"panel\":\"graph\"}",
-    "view.tool {\"panel\":\"viewport\",\"tool\":\"paint\"}",
     "view.tool {\"panel\":\"viewport\",\"tool\":[\"jointTool\",\"insertJoint\",\"quickRigMarker\",\"socket\",\"shapeCv\",\"*\"]}",
     "workspace.showPanel {\"panel\":\"agent\"}",
     "workspace.showPanel {\"panel\":\"graph\"}",
     "workspace.showPanel {\"panel\":\"paintWeights\"}",
-    "workspace.showPanel {\"panel\":\"palette\"}",
     "workspace.showPanel {\"panel\":\"quickRig\"}",
-    "workspace.showPanel {\"panel\":\"rigToolkit\"}",
-    "workspace.showPanel {\"panel\":\"toolkit\"}"
+    "workspace.showPanel {\"panel\":\"rigToolkit\"}"
   ]
 }

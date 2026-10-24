@@ -711,9 +711,12 @@ const selectObjects = defineOperator({
     };
     const ids = args.all === 'meshes' ? visibleMeshes(app) : (args.ids ?? []).filter(live);
     selectionGesture(app, 'objects', {}, () => {
-      const selection = app.session.getState().selection;
+      const state = app.session.getState();
+      const selection = state.selection;
       const objects = combine(selection.objects, ids, args.mode);
-      app.session.setState({ selection: { ...selection, objects } });
+      // a scene-object pick replaces a reference image plane's selection (Halo T8, `select.imagePlane`)
+      const plane = (state.model.imagePlane ?? null) === null ? {} : { model: { ...state.model, imagePlane: null } };
+      app.session.setState({ selection: { ...selection, objects }, ...plane });
     });
   },
 });

@@ -82,6 +82,9 @@ export const makeWords = {
     create: 'Create',
     close: 'Close',
   },
+  plane: {
+    unlock: 'Unlock',
+  },
   report: {
     title: 'Made editable',
     nothing: 'Nothing to report yet: make an imported mesh editable first.',

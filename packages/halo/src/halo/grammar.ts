@@ -9,6 +9,7 @@ import type { EditorApp, HaloStage } from '@ekza-studio/editor-core';
 import { type CompassSlot, type Point, ringSlots, slotToward } from '@ekza-studio/ui/touch';
 import type { ArbiterFollow, ArbiterTap, PickResult } from '@ekza-studio/viewport';
 import { en } from '../i18n/en';
+import { tapHooked } from '../input/claims';
 import type { ShellContext } from '../shell/context';
 import { PANE } from '../shell/stage';
 import { EMPTY_NOUN, type Noun as KindNoun } from '../verbs/nouns';
@@ -80,6 +81,8 @@ function selectionKey(app: EditorApp): string {
     s.selection.objects.join(','),
     s.selection.joints.join(','),
     `${s.model.componentMode}:${c.version}:${c.selected.vertex}/${c.selected.edge}/${c.selected.face}`,
+    // a reference image plane (T8: `select.imagePlane`)
+    s.model.imagePlane ?? '',
   ].join('|');
 }
 
@@ -245,6 +248,8 @@ export function createGrammar(deps: GrammarDeps): Grammar {
       pending = { at, before: selectionKey(app), controls: s.selection.controls };
       if (settle !== null) clearTimeout(settle);
       settle = setTimeout(resolveTap, SETTLE_MS);
+      // a stage package may take the tap first (T8: a reference image plane, which the tools never pick)
+      if (tapHooked(app, tap)) return 'consumed';
       // after the replayed click (the tool read the meaning's modifiers): a `once` latch is used up
       if (store.get().thumb.latch !== 'off') void Promise.resolve().then(deps.consumeThumb);
       return 'select';

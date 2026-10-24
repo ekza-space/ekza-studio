@@ -111,6 +111,23 @@ export function resolveNoun(app: EditorApp, stage: HaloStage): Noun {
     }
   }
   const objects = selection.objects;
+  // a reference image plane the canvas or the Scene sheet selected (T8: `select.imagePlane`, `model.imagePlane`)
+  const plane = session.model.imagePlane ?? null;
+  if (objects.length === 0 && plane !== null) {
+    const record = app.store.get('imagePlanes' as never, plane as never) as
+      | { readonly name?: string; readonly deleted?: unknown }
+      | undefined;
+    if (record !== undefined && (record.deleted ?? null) === null) {
+      return {
+        kind: 'imagePlane',
+        id: plane,
+        ids: [plane],
+        label: record.name ?? 'Reference',
+        count: 1,
+        character: null,
+      };
+    }
+  }
   if (objects.length > 0) {
     const first = objects.at(-1) as string;
     if (app.store.get('imagePlanes' as never, first as never) !== undefined) {
