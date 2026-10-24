@@ -7,6 +7,7 @@ import { createIndexedDbAutosaveStore, newSlotId } from './autosave';
 import { createBrowserBlobStore } from './blobs';
 import { createBrowserClipboard } from './clipboard';
 import { createDownloadService, type DownloadRecord } from './files';
+import { createLazyGenerationClient, type GenerationClientOptions } from './generation';
 import { createBrowserModelLoader } from './models';
 import { createToastNotifier, type ToastNotifier } from './notify';
 import { createBlockedStorage, createLocalStorage, createMemoryStorage, namespacePrefix } from './storage';
@@ -38,6 +39,8 @@ export interface ShellServicesOptions extends BrowserServicesOptions {
   /** 'local': localStorage (default); 'memory': a fresh in-memory namespace (e2e runs); null: no storage. */
   readonly storage?: 'local' | 'memory' | null;
   readonly onDownload?: (record: DownloadRecord) => void;
+  /** M7 G-d (ADR 0017 §2): the generation gateway's base ('' or absent = none: the feature is hidden). */
+  readonly generation?: GenerationClientOptions;
 }
 
 /** The services plus the typed toast queue the shell renders. */
@@ -81,6 +84,7 @@ export function createShellServices(opts: ShellServicesOptions): ShellServices {
     autosave: autosaveStore(opts, storageKind),
     blobs: opts.blobs === undefined ? createBrowserBlobStore() : opts.blobs,
     ...(opts.kernelDebug === undefined ? {} : { kernelDebug: opts.kernelDebug }),
+    generation: opts.generation === undefined ? null : createLazyGenerationClient(opts.generation),
   };
   return { services, toasts };
 }

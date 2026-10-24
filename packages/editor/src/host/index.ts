@@ -30,6 +30,8 @@ export {
 } from '../services/fileTypes';
 export { sharePreferred } from '../services/files';
 export { requestPersistentStorage } from '../services/autosave';
+// M7 G-d (ADR 0017 §2): the gateway token of the host's generation client (Halo's *Create with AI* asks for it too).
+export { setGenerationToken } from '../services/generation';
 export { hostNavigation };
 
 /** Opens a host dialog (`ui.open`): the dialogs every route has (Export, Open, Import, Preferences, Recovery, …). */
