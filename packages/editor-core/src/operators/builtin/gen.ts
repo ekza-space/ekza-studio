@@ -70,7 +70,8 @@ function pollCancel(app: EditorApp, args: unknown): PollResult {
   if (gateway !== true) return gateway;
   const entry = jobOf(app, args);
   if ('ok' in entry) return entry;
-  if (isTerminalState(entry.job.state)) return fail(GEN_REASONS.finished);
+  // A job seen as canceled is fine: the runner polls again after `prepare`, when the stream may already have said so.
+  if (isTerminalState(entry.job.state) && entry.job.state !== 'canceled') return fail(GEN_REASONS.finished);
   if (entry.job.state === 'fetching') return fail(GEN_REASONS.fetching);
   return OK;
 }

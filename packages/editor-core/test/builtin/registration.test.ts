@@ -170,6 +170,14 @@ const M7_OPERATORS: Readonly<Record<string, boolean>> = {
   'mesh.intake': true,
 };
 
+/** M7 G-d (MODELING-PLAN §7.2; DECISIONS M7-GD-*): the generation operators; only the import writes the document. */
+const GEN_OPERATORS: Readonly<Record<string, boolean>> = {
+  'gen.submit': false,
+  'gen.cancel': false,
+  'gen.retry': false,
+  'gen.import': true,
+};
+
 const M6A_OPERATORS: Readonly<Record<string, boolean>> = {
   ...Object.fromEntries(
     [...Object.keys(MESH_OP_DESCRIPTORS), ...Object.keys(MESH_SET_OP_DESCRIPTORS)].map((id) => [id, true]),
@@ -309,6 +317,7 @@ describe('built-in operators', () => {
         ...Object.keys(M2A_OPERATORS),
         ...Object.keys(M6A_OPERATORS),
         ...Object.keys(M7_OPERATORS),
+        ...Object.keys(GEN_OPERATORS),
         ...Object.keys(MAI_OPERATORS),
       ].sort(),
     );
@@ -317,6 +326,7 @@ describe('built-in operators', () => {
       ...M2A_OPERATORS,
       ...M6A_OPERATORS,
       ...M7_OPERATORS,
+      ...GEN_OPERATORS,
       ...MAI_OPERATORS,
     })) {
       expect([id, app.operators.get(id)?.flags?.undo === true]).toEqual([id, undo]);
