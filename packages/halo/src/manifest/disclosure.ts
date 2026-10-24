@@ -383,7 +383,7 @@ export const DISCLOSURE: Readonly<Record<string, ManifestEntry>> = {
     on(1, [T('rig')], { when: { panel: 'rigToolkit' }, plain: 'Rig tools' }),
     on(1, [T('paint'), S('palette')], { when: { panel: 'palette' }, plain: 'Colours' }),
     on(1, [S('ask')], { when: { panel: 'agent' }, plain: 'Ask' }),
-    on(1, [T('make')], { when: { panel: 'generate' }, plain: 'Create with AI' }),
+    on(1, [S('createAi')], { when: { panel: 'generate' }, plain: 'Create with AI' }),
     on(1, [S('share', 'destination')], { when: { panel: 'target' }, plain: 'Game target' }),
     on(1, [C('rigCard')], { when: { panel: 'quickRig' }, plain: 'Rig it for me' }),
     on(0, [C('canvas')], { when: { panel: 'viewport' }, plain: 'Canvas' }),
@@ -604,11 +604,11 @@ export const DISCLOSURE: Readonly<Record<string, ManifestEntry>> = {
   // ===== the AI agent (§14, §15.13) =====
   'agent.show': on(1, [P('historyStep')], { plain: 'Show' }),
 
-  // ===== M7 G-d: AI generation (MODELING-PLAN §7.2) — *Create with AI*, a sheet from Make's tray (T8) =====
-  'gen.submit': on(1, [T('make')], { ...MAKE, plain: 'Create with AI' }),
-  'gen.cancel': on(1, [T('make')], { ...MAKE, plain: 'Stop creating' }),
-  'gen.retry': on(1, [T('make')], { ...MAKE, plain: 'Try creating again' }),
-  'gen.import': on(1, [T('make')], { ...MAKE, plain: 'Bring in the created model' }),
+  // ===== M7 G-d: AI generation (MODELING-PLAN §7.2) — the *Create with AI* sheet (Make's tray, the empty stage, Home) =====
+  'gen.submit': on(2, [S('createAi')], { ...MAKE, plain: 'Create with AI' }),
+  'gen.cancel': on(2, [S('createAi')], { ...MAKE, plain: 'Stop creating' }),
+  'gen.retry': on(2, [S('createAi')], { ...MAKE, plain: 'Try creating again' }),
+  'gen.import': on(2, [S('createAi')], { ...MAKE, plain: 'Bring in the created model' }),
 };
 
 /** Operator ids the manifest knows, typed (for the More sheet and search). */

@@ -477,7 +477,6 @@ export function createGenFlow(host: GenFlowHost, initial: GenFlowState = default
     if (post.result !== null && post.status === 'done') {
       if (app.history.peekUndo()?.label === IMPORT_LABEL) await quiet('edit.undo');
     }
-    if (app.session.getState().workspace !== 'model') await quiet('workspace.set', { workspace: 'model' });
     const result = await host.run('gen.import', {
       job: post.job,
       preset: post.preset,

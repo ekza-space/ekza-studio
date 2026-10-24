@@ -1,15 +1,16 @@
 // *Create with AI*'s binding to the Generate flow (MODELING-PLAN §7.2 G-d; STUDIO-TOUCH-SPEC §3 P12; DECISIONS
-// M7-GD-*): the small module the Make stage's sheet (T8, `stages/make/ai/CreateWithAiSheet.tsx`) imports to make its
-// placeholder real. It binds editor-core's UI-free flow (`createGenFlow`: the same model and the same operators as
-// Studio Pro's Generate panel) to a Halo sheet context — the sheet's `run` (failures become toasts), quiet bookkeeping
-// runs, the host's in-memory gateway token — and adds what Halo does next: a finished model is brought in and cleaned
-// up in Make (one undo step), a humanoid goes on to Rig (*Rig it for me*), a provider-rigged character to Animate.
-// Lazy: only the sheet's chunk imports it (`halo/src/generate` is never on `/app`'s first visit).
+// M7-GD-*): the small module the Make stage's sheet (`stages/make/ai/CreateWithAiSheet.tsx`) imports. It binds
+// editor-core's UI-free flow (`createGenFlow`: the same model and the same operators as Studio Pro's Generate panel) to
+// a Halo sheet context — the sheet's `run` (failures become toasts), quiet bookkeeping runs, the host's in-memory
+// gateway token — and adds what Halo does next: a finished model is brought in and cleaned up in Make (one undo step);
+// *Rig it* hands the cleaned meshes to Auto-Rig's flow (the subject the Rig-it card rigs, `intake/flowHost`) and
+// switches to Rig; a provider-rigged character goes to Animate. Lazy: only the sheet's chunk imports it.
 import {
+  type EditorApp,
   GEN_PRESET_IDS,
   GEN_PRESET_LABELS,
   GEN_TEXT,
-  type EditorApp,
+  type GenAvailability,
   type GenFlow,
   type GenFlowHost,
   type GenFlowState,
@@ -18,9 +19,11 @@ import {
   type GenPresetId,
   genFlowOf,
   type OperatorResult,
+  takeHandedSubject,
 } from '@ekza-studio/editor-core';
 import { setGenerationToken } from '@ekza-studio/editor/host';
 import { useEffect, useReducer } from 'react';
+import { haloFlowHost } from '../intake/flowHost';
 
 /** What the binding needs of a Halo sheet context (`HaloSheetContext` satisfies it). */
 export interface CreateWithAiContext {
@@ -29,12 +32,16 @@ export interface CreateWithAiContext {
   setStage(stage: 'make' | 'paint' | 'rig' | 'animate'): void;
 }
 
+/** The latest sheet context per app: the cached flow runs through the sheet that is open now. */
+const latest = new WeakMap<EditorApp, CreateWithAiContext>();
+
 /** The flow host of a Halo sheet: the sheet's funnel, quiet runs through the app, the host's token slot. */
 export function haloGenHost(ctx: CreateWithAiContext): GenFlowHost {
   const { app } = ctx.host;
+  latest.set(app, ctx);
   return {
     app,
-    run: (op, args) => ctx.run(op, args),
+    run: (op, args) => (latest.get(app) ?? ctx).run(op, args),
     quiet: (op, args) => app.runUntyped(op, args),
     setToken: (token) => {
       setGenerationToken(app.services.generation, token);
@@ -47,47 +54,78 @@ export function haloGenFlow(ctx: CreateWithAiContext): GenFlow {
   return genFlowOf(haloGenHost(ctx), 'halo');
 }
 
-/** The size choices of the sheet (T8's budget segment uses the same ids). */
+/** The size choices of the sheet (the clean-up budgets of Make use the same ids). */
 export const CREATE_WITH_AI_PRESETS: readonly {
   readonly id: GenPresetId;
   readonly label: string;
   readonly detail: string;
 }[] = GEN_PRESET_IDS.map((id) => ({ id, ...GEN_PRESET_LABELS[id] }));
 
-export interface CreateWithAi {
-  readonly flow: GenFlow;
-  readonly state: GenFlowState;
-  readonly view: GenFlowView;
-  /** *Create* is on (null) or why not, in plain words. */
-  readonly blocked: string | null;
-  /** The sheet's *Create*: `gen.submit` with the inputs (spends money after the quote line was shown). */
-  create(): Promise<string | null>;
-  /**
-   * *Bring it in*: `gen.import` with the preset's clean-up, in Make (one undo step); then Halo goes on — a humanoid to
-   * Rig, a provider-rigged character to Animate, a prop stays in Make.
-   */
-  bringIn(job: string): Promise<GenImportResult | null>;
+/** The sheet's status words for the flow's availability (T8's `data-state` names, ST-T8-18). */
+export type CreateWithAiStatus = 'checking' | 'hidden' | 'offline' | 'token' | 'ready';
+
+export function statusOf(availability: GenAvailability): CreateWithAiStatus {
+  switch (availability.status) {
+    case 'ready':
+      return 'ready';
+    case 'needs-token':
+      return 'token';
+    case 'unavailable':
+    case 'off':
+      return 'hidden';
+    case 'unknown':
+    case 'checking':
+      return 'checking';
+    case 'error':
+      return 'offline';
+  }
 }
 
-/** Brings a finished job in and moves Halo to the stage that comes next (see `CreateWithAi.bringIn`). */
-export async function bringInAndContinue(
-  ctx: CreateWithAiContext,
-  flow: GenFlow,
-  job: string,
-): Promise<GenImportResult | null> {
-  flow.openPost(job);
+/**
+ * *Bring it in*: `gen.import` with the job's preset (the clean-up, one undo step); the result stays on the sheet (its
+ * budgets, the badge, what comes next). A provider-rigged character goes to Animate; a model stays in Make.
+ */
+export async function bringIn(ctx: CreateWithAiContext, flow: GenFlow, job: string): Promise<GenImportResult | null> {
+  if (flow.getState().post?.job !== job) flow.openPost(job);
   const result = await flow.runPost();
-  flow.closePost();
   if (result === null) return null;
-  if (result.character !== null) ctx.setStage('animate');
-  else if (result.rig === 'auto-rig') ctx.setStage('rig');
-  else ctx.setStage('make');
+  ctx.setStage(result.character !== null ? 'animate' : 'make');
   return result;
 }
 
 /**
+ * *Rig it*: the cleaned meshes become Auto-Rig's subject (the hand-over Studio Pro's Auto-Rig switch makes; the
+ * Rig-it card rigs it) and Halo goes to Rig. False when there is nothing to rig.
+ */
+export async function rigIt(ctx: CreateWithAiContext, result: GenImportResult): Promise<boolean> {
+  const { app } = ctx.host;
+  const meshes = result.meshes.filter((mesh) => app.store.get('meshes', mesh) !== undefined);
+  if (meshes.length === 0) return false;
+  await app.runUntyped('select.objects', { ids: meshes, mode: 'replace' });
+  await takeHandedSubject(haloFlowHost({ app, run: (op, args) => ctx.run(op, args) }), {
+    character: null,
+    meshes,
+  });
+  ctx.setStage('rig');
+  return true;
+}
+
+export interface CreateWithAi {
+  readonly flow: GenFlow;
+  readonly state: GenFlowState;
+  readonly view: GenFlowView;
+  readonly status: CreateWithAiStatus;
+  /** *Create* is on (null) or why not, in plain words. */
+  readonly blocked: string | null;
+  /** The sheet's *Create*: `gen.submit` with the inputs (spends money after the price line was shown). */
+  create(): Promise<string | null>;
+  bringIn(job: string): Promise<GenImportResult | null>;
+  rigIt(result: GenImportResult): Promise<boolean>;
+}
+
+/**
  * The binding as a React hook for the sheet: the flow, its state and view (re-rendered on every change), the
- * availability check on open, *Create* and *Bring it in*.
+ * availability check on open, *Create*, *Bring it in* and *Rig it*.
  */
 export function useCreateWithAi(ctx: CreateWithAiContext): CreateWithAi {
   const flow = haloGenFlow(ctx);
@@ -102,9 +140,11 @@ export function useCreateWithAi(ctx: CreateWithAiContext): CreateWithAi {
     flow,
     state: flow.getState(),
     view,
+    status: statusOf(view.availability),
     blocked: view.blocked,
     create: () => flow.submit(),
-    bringIn: (job) => bringInAndContinue(ctx, flow, job),
+    bringIn: (job) => bringIn(ctx, flow, job),
+    rigIt: (result) => rigIt(ctx, result),
   };
 }
 

@@ -264,7 +264,8 @@ export async function prepareImport(ctx: OperatorContext, args: GenImportArgs): 
   app.session.setState({ busy: { label: busy, progress: null } });
   try {
     const bytes = await jobBytes(app, entry, artifact);
-    const name = artifact.fileName !== '' ? artifact.fileName : `${job.provider}-${job.id}.glb`;
+    // The file is named after the tray's title, which also names an untitled project ("A wooden chair").
+    const name = `${fileBase(entry.title) || `${job.provider}-model`}.glb`;
     const preset: GenPresetId = isGenPreset(args.preset) ? args.preset : entry.preset;
     let inner: Composed;
     if (artifact.role === 'rigged') {
@@ -299,6 +300,16 @@ export async function prepareImport(ctx: OperatorContext, args: GenImportArgs): 
   } finally {
     if (app.session.getState().busy?.label === busy) app.session.setState({ busy: null });
   }
+}
+
+/** A file name's base from a title: letters, digits, spaces and dashes, at most 48 characters. */
+function fileBase(title: string): string {
+  return title
+    .replace(/[^\p{L}\p{N} _-]+/gu, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 48)
+    .trim();
 }
 
 const isRecordValue = (value: unknown): value is Readonly<Record<string, unknown>> =>

@@ -5,6 +5,7 @@ import { halo, haloMenu, loadCubeLadInMake, openHalo, PANE, petal } from './help
 import { call, runOk } from './helpers/test-api';
 import { referenceImage } from './helpers/m6a-model-content';
 import { fingerDrag, fingerTap } from './helpers/touch';
+import { GEN_TOKEN, routeGateway } from './helpers/gen';
 
 // ha-08 Make (STUDIO-TOUCH-SPEC §11, §6.2, §7.1, §4.8; T8 exit test; the owner's clean-up focus of 2026-10-24) on
 // `chrome-touch`: an imported model is cleaned up by touch — the tray (selection level, Drag ▾, Cut ▾, Clean up ▾,
@@ -308,27 +309,26 @@ test.describe('ha-08: the Make stage', () => {
     await expect(page.getByTestId('halo-ai-budget-hero')).toBeVisible();
   });
 
-  test('a gateway that answers: the sheet names its providers; Create waits for the Generate flow', async ({
+  test('a gateway that answers (after its token): the sheet names its providers; Create waits for the plan', async ({
     page,
   }, testInfo) => {
     test.skip(testInfo.project.name !== 'chrome-touch', 'chrome-touch only (CDP)');
-    await page.route('**/api/gen/v1/providers', (route) =>
-      route.fulfill({
-        json: {
-          protocol: 'ekza-gen/v1',
-          providers: [
-            { id: 'tripo', label: 'Tripo' },
-            { id: 'meshy', label: 'Meshy' },
-          ],
-          caps: { dailyUsd: 5, monthlyUsd: 20, remainingDailyUsd: 5, remainingMonthlyUsd: 20 },
-        },
-      }),
-    );
-    await openHalo(page, '&stage=make');
-    await expect.poll(async () => (await makeSlice(page)).ai).toBe('ready');
-    await fingerTap(page, await centre(page, 'halo-make-ai'));
-    await expect(page.getByTestId('halo-ai-status')).toHaveAttribute('data-state', 'ready');
-    await expect(page.getByTestId('halo-ai-status')).toContainText('Tripo, Meshy');
-    await expect(page.getByTestId('halo-ai-create')).toBeDisabled();
+    // G-d: the real gateway against the mock providers (helpers/gen.ts); it asks for its token first
+    const gateway = await routeGateway(page);
+    try {
+      await openHalo(page, '&stage=make');
+      await expect.poll(async () => (await makeSlice(page)).ai).toBe('token');
+      await fingerTap(page, await centre(page, 'halo-make-ai'));
+      await expect(page.getByTestId('halo-ai-status')).toHaveAttribute('data-state', 'token');
+      await page.getByTestId('halo-ai-token').fill(GEN_TOKEN);
+      await fingerTap(page, await centre(page, 'halo-ai-connect'));
+      await expect(page.getByTestId('halo-ai-status')).toHaveAttribute('data-state', 'ready');
+      await expect(page.getByTestId('halo-ai-status')).toContainText('Tripo, Meshy');
+      await page.getByTestId('halo-ai-prompt').fill('A low-poly sword');
+      await expect(page.getByTestId('halo-ai-create')).toBeDisabled();
+      await expect(page.getByTestId('halo-ai-blocked')).toContainText('Say which plan you have with');
+    } finally {
+      await gateway.close();
+    }
   });
 });
