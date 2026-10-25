@@ -310,8 +310,13 @@ function petalsOf(
         if (clip !== null && app.store.query.layersOfClip(clip.id).length > 1) {
           out.push({ id: petal.id, label: layerWords.layers, icon: 'layers', action: { local: () => undefined } });
         } else if (clip !== null) {
+          // the docked Halo closes: the person poses next, keying into Fixes
           out.push(
-            one([{ op: 'clip.adjustOnLayer', args: { clip: clip.id } }], { label: layerWords.adjust, icon: 'layers' }),
+            one(
+              [{ op: 'clip.adjustOnLayer', args: { clip: clip.id } }],
+              { label: layerWords.adjust, icon: 'layers' },
+              true,
+            ),
           );
         }
         break;

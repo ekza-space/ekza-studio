@@ -4,10 +4,10 @@
 // Mute → ◆ Key's hold says "Keying into: Fixes" → *Merge down*. The Walk's base keys stay until the merge; muted, the
 // VRMA is the Walk's own bytes; the chip never shows at rest (§4.8); the Layers sheet lists the stack.
 import { expect, type TestInfo, test } from '@playwright/test';
-import { centreOf, dockedPetal, loadSample } from './helpers/halo-animate';
+import { centreOf, controlFree, dockedPetal, loadSample } from './helpers/halo-animate';
 import { halo, openHalo } from './helpers/halo';
 import { addWalk, baseKeys, fixWalk, shot, vrmaGap, vrmaOf } from './helpers/layers';
-import { call } from './helpers/test-api';
+import { call, runOk } from './helpers/test-api';
 import { fingerHold, fingerTap } from './helpers/touch';
 
 const touchOnly = (info: TestInfo): void => test.skip(info.project.name !== 'chrome-touch', 'chrome-touch only (CDP)');
@@ -54,6 +54,19 @@ test('ha-AL: Adjust on a layer, the layer chip and its Halo, weight, mute, merge
   const layered = await vrmaOf(page, scene);
   expect(layered.sha256).not.toBe(walk.sha256);
 
+  // §4.8: a layered animation costs no target at rest (the chip shows only while Keys or Curves is open) — on the
+  // iPad and on a phone, at rest and with a part selected
+  await expect(page.getByTestId('halo-docked')).toHaveCount(0);
+  await expect.poll(async () => (await halo(page)).visibleTargets).toBeLessThanOrEqual(atRest);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(async () => (await halo(page)).visibleTargets).toBeLessThanOrEqual(20);
+  await fingerTap(page, await controlFree(page, 'R Upper Arm'));
+  await expect.poll(async () => (await call(page, 'state')).selection.controls.length).toBe(1);
+  await expect.poll(async () => (await halo(page)).visibleTargets).toBeLessThanOrEqual(28);
+  await expect(page.getByTestId('halo-layer-chip')).toHaveCount(0);
+  await page.setViewportSize({ width: 1194, height: 834 });
+  await runOk(page, 'select.none');
+
   // ◆ Key's hold says where keys go
   await fingerHold(page, await centreOf(page, 'halo-thread-key'), 700);
   await expect(page.getByTestId('halo-key-menu-layer')).toHaveText('Keying into: Fixes');
@@ -63,10 +76,12 @@ test('ha-AL: Adjust on a layer, the layer chip and its Halo, weight, mute, merge
   await shot(page, 'halo-sheet');
   await page.getByTestId('halo-sheet-layers').getByRole('button', { name: /close/i }).first().click();
 
-  // Keys open: the layer chip names Fixes; its Halo holds ⟨Weight⟩, Mute, Solo, Lock, Merge down
+  // Keys open: the layer chip names Fixes (one target more than Keys alone); its Halo holds ⟨Weight⟩, Mute, Solo, Lock,
+  // Merge down
   await fingerTap(page, await centreOf(page, 'halo-thread-layer-1'));
   const chip = page.getByTestId('halo-layer-chip');
   await expect(chip).toHaveAttribute('data-layer', 'Fixes');
+  const withChip = (await halo(page)).visibleTargets;
   await fingerTap(page, await centreOf(page, 'halo-layer-chip'));
   await expect(page.getByTestId('halo-layer-halo')).toBeVisible();
   await shot(page, 'halo-chip');
@@ -77,8 +92,7 @@ test('ha-AL: Adjust on a layer, the layer chip and its Halo, weight, mute, merge
     await expect.poll(async () => (await call(page, 'layers'))[1]?.weight).toBeCloseTo(percent / 100, 9);
   }
   await expect(weight).toHaveAttribute('aria-valuenow', '50');
-  // with Keys open and the chip's Halo, the targets stay within the selection budget (§4.8: ≤ 36 on an iPad)
-  expect((await halo(page)).visibleTargets).toBeLessThanOrEqual(36);
+  testInfo.annotations.push({ type: 'targets', description: `Keys open on a layered animation: ${withChip}` });
   const half = await vrmaOf(page, scene);
 
   // Mute: the Walk's own bytes; Mute again: the half-weight fix

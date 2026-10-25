@@ -182,7 +182,7 @@ Acceptance criteria are the minimum test; MVP items are also covered by the user
 | FR-CLIP-03 | Switch the active clip (Clips panel, timeline selector). | MVP | M1 | Keys per clip isolated. |
 | FR-CLIP-04 | Clip settings: fps (keep seconds / keep frames), range, scene start, loop, root motion (hips / in-place), Ekza slot, contact frame, tags. | MVP | M1 | Exported metadata matches. |
 | FR-CLIP-05 | Clip → layers → curves data model with one base layer evaluated. | MVP | M1 | Every clip has exactly one base layer. |
-| FR-CLIP-06 | Animation layers UI and evaluation (additive/override, weight, mute/solo, merge). | V2 | M5 | R01 NL-02. |
+| FR-CLIP-06 | Animation layers UI and evaluation (additive/override, weight, mute/solo, merge). | V2 | M5 | R01 NL-02. Built 2026-10-25 (ANIM-LAYERS, ADR 0026): static weight; keyable weight later. |
 | FR-CLIP-07 | Non-linear clip sequencing (time editor). | V2 | M5 | Clip instances on tracks. |
 | FR-CLIP-08 | Multi-character clips (one clip animates two characters). | V2 | M5 | Interaction shots export per character. |
 | FR-CLIP-09 | Clip provenance: `derivedFrom` (title, author, licence, source hash) and `redistributable`, filled on import (VRM meta, auto-rigging-service names, unknown sources) and editable. | MVP | M1 | Seed-san/UAL/VRMA imports record the expected provenance; exported `ekza_animation_v1` carries it per clip. |

@@ -199,7 +199,7 @@ function Row({
             onClick={onActivate}
           >
             <span className="truncate font-medium">{row.name}</span>
-            <span className="text-[12px] text-fg-3">{row.base ? w.base : w.modes[row.mode]}</span>
+            {row.base ? null : <span className="text-[12px] text-fg-3">{w.modes[row.mode]}</span>}
             {row.active ? <span className="text-[12px] text-accent">◆ {w.active}</span> : null}
           </button>
         )}

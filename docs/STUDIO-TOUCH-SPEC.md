@@ -1403,6 +1403,13 @@ ST-T10-1 … ST-T10-8).
 - **Two mirrors, two names**: *Swap sides* is Auto-Rig's left/right swap. *Mirror cycle* is Pro's Mirror Animation with
   its half-cycle offset (`pose.mirrorAnimation`, a pre-run form). Each shows its Pro name in More.
 - **Loop it**: `clip.makeLoop`, through a public wrapper; it is AI-only today (§20.3 item 7).
+- **Layers** (ANIM-LAYERS, [ADR 0026](adr/0026-animation-layers.md); built after GA): *Adjust on a layer* is the sixth
+  petal of an animation's Halo — fixes go on an additive *Fixes* layer above it and the animation stays; once the
+  animation has layers the petal opens the **Layers sheet** (the stack, ⟨Weight⟩, Mute · Solo · Lock, ⋯ Rename ·
+  Duplicate · Up · Down · Merge down · Delete; *Merge ▾* down or all, at the keys or on every frame). ◆ Key's hold
+  says *Keying into: Fixes*. A **layer chip** (*◧ Fixes ▾*) joins the Thread's row only while Keys or Curves is open
+  (they show its keys), so the at-rest budgets of §4.8 hold; its Halo carries ⟨Weight⟩, Mute, Solo, Lock, Merge down,
+  Delete and *All layers ›*.
 
 ### 10.7 Later (designed in, not in GA)
 

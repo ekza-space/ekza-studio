@@ -1,4 +1,5 @@
 import type { ChannelId, ControlId } from '@ekza-studio/doc';
+import { registerBuiltinOperators } from '@ekza-studio/editor-core';
 import { createFakeEditorApp, withLimbIkRecords } from '@ekza-studio/editor-core/testing';
 import { describe, expect, it } from 'vitest';
 import { buildChannelTree, CHANNEL_COLORS, channelColor, channelLabel, channelNodes } from '../src';
@@ -126,5 +127,23 @@ describe('buildChannelTree', () => {
     expect(channelColor('ty')).toBe(CHANNEL_COLORS.y);
     expect(channelColor('sz')).toBe(CHANNEL_COLORS.z);
     expect(channelColor('@x')).toBe(CHANNEL_COLORS.other);
+  });
+
+  it('ANIM-LAYERS: lists the curves of the active layer (the Graph Editor and Dope Sheet show what keys go into)', async () => {
+    const app = await waveApp();
+    const rzCurve = () =>
+      channelNodes(buildChannelTree(app, { clip: WAVE.clip, controls: [WAVE.control] })).find(
+        (node) => node.channel === 'rz',
+      )?.curve;
+    expect(rzCurve()).toBe(WAVE.curve);
+    registerBuiltinOperators(app);
+    const result = await app.runUntyped('clip.adjustOnLayer', { clip: WAVE.clip });
+    expect(result.status).toBe('finished');
+    // the fix layer has no curve for the forearm yet; the Walk's curve is the base's, not shown while Fixes is active
+    expect(rzCurve()).toBeUndefined();
+    const base = app.store.query.baseLayer(WAVE.clip);
+    await app.runUntyped('layer.setActive', { layer: base?.id });
+    expect(rzCurve()).toBe(WAVE.curve);
+    app.dispose();
   });
 });

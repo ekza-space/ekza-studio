@@ -45,7 +45,7 @@ descriptively.
 | **Gimbal lock / Gimbal mode** | Loss of a rotational degree of freedom when the middle Euler axis reaches ±90°. Gimbal mode draws the real Euler axes for the rotate order; dragging one ring changes exactly one channel. |
 | **Infinity (pre/post)** | How a curve continues before its first and after its last key: constant, linear, cycle, cycle with offset, oscillate. |
 | **Key** | One keyframe record: time (frames), value, tangent types and handles. One record per key. |
-| **Layer** | Animation layer of a clip. The MVP has exactly one base layer; additive/override layers come in V2. |
+| **Layer** | Animation layer of a clip (ADR 0026): the base (lowest) plus additive or override layers above it, each with a weight, mute, solo, lock and an optional body-part mask; what plays is their composite. Keys go into the **active layer** (session state per clip); on an additive layer a key stores the delta that makes the pose match. |
 | **Locked shot camera** | A shot camera whose `locked` flag prevents navigation from every pane; the left pane of the split layout. |
 | **M1-stretch** | MVP items built only if time remains (plateau tangents, mesh-click picking, Space-hold radial, …); their tests are `test.fixme` until done. |
 | **Merge unit** | The unit of last-writer-wins merge and of compare-before-restore undo: whole record for keys and assets, top-level field for every other table. |
