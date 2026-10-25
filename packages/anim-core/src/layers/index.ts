@@ -1,0 +1,16 @@
+export {
+  additiveIdentity,
+  blendLayerScalar,
+  blendLayerSlot,
+  blendLayerTrs,
+  blendOverrideRotation,
+  clampWeight,
+  composeLayerScalar,
+  composeLayerTrs,
+  LAYER_TRS_SLOTS,
+  type LayerBlendMode,
+  type LayerStackEntry,
+  type ScalarLayerEntry,
+  solveLayerScalar,
+  solveLayerTrs,
+} from './blend';

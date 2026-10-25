@@ -302,6 +302,11 @@ export interface LayerRecord {
   readonly owner: UserId | null;               // P3 per-user layers ("four hands"); null in the MVP
   readonly order: string;                      // base layer = lowest
   readonly deleted: Tombstone;
+  // ANIM-LAYERS (ADR 0026), additive and optional: absent on every record written before; no schema change.
+  /** No edit may change the layer's curves or keys. */
+  readonly locked?: boolean;
+  /** The controls a non-base layer affects (a body-part choice in the UI); absent or null = every control. */
+  readonly mask?: readonly ControlId[] | null;
 }
 
 export interface CurveRecord {
