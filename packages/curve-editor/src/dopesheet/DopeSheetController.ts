@@ -911,6 +911,7 @@ export class DopeSheetController {
     if (
       state.activeCharacter !== previous.activeCharacter ||
       state.activeClip !== previous.activeClip ||
+      state.activeLayer !== previous.activeLayer ||
       state.hiddenControls !== previous.hiddenControls ||
       state.showSecondary !== previous.showSecondary ||
       (state.selection.controls !== previous.selection.controls && this.showMode === 'selected')

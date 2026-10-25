@@ -20,7 +20,7 @@ import type {
 } from '@ekza-studio/doc';
 import { planTween } from '../edit/tween';
 import type { ChannelRef, CharacterRuntime, KeyPartSelection, OperatorContext, PollResult, Selection } from '../types';
-import { baseCurves, type SelectedKey } from '../workflows/targets';
+import { baseCurves, editLayerIdOf, type SelectedKey } from '../workflows/targets';
 import { AGENT_SPAN_LIMIT } from './builtin/agentBase';
 import { fail, OK } from './builtin/define';
 import { pollEditable } from './builtin/polls';
@@ -146,13 +146,16 @@ export function targetCurves(ctx: OperatorContext, view: ReadView): readonly Cur
   }
   const clip = clipRecord(ctx, view);
   if (clip === undefined) return [];
+  const layer = editLayerIdOf(ctx.app, view, clip);
   const scoped = selection(ctx);
   if (scoped.channels.length > 0) {
     const wanted = new Set(scoped.channels.map((ref) => `${ref.control}\u0000${ref.channel}`));
-    return baseCurves(view, clip).filter((curve) => wanted.has(`${curve.control}\u0000${curve.channel}`));
+    return baseCurves(view, clip, undefined, layer).filter((curve) =>
+      wanted.has(`${curve.control}\u0000${curve.channel}`),
+    );
   }
   const selected = selectedControls(ctx, view);
-  return selected.length > 0 ? baseCurves(view, clip, new Set(selected.map((control) => control.id))) : [];
+  return selected.length > 0 ? baseCurves(view, clip, new Set(selected.map((control) => control.id)), layer) : [];
 }
 
 /** `key.tween` without `frames`: the scope's selected keys (an agent never tweens at the user's playhead). */

@@ -361,6 +361,8 @@ export const VERB_TABLE: Readonly<Record<NounKind, readonly PetalDef[]>> = {
     { id: 'rename', plain: 'Rename', op: 'clip.rename', icon: 'pencil' },
     { id: 'duplicate', plain: 'Duplicate', op: 'clip.duplicate', icon: 'copy' },
     { id: 'settings', plain: 'Settings', op: 'clip.setSettings', icon: 'sliders-horizontal' },
+    // ANIM-LAYERS: fix the animation on a layer above it (on a layered animation the petal opens its Layers sheet)
+    { id: 'adjust', plain: 'Adjust on a layer', op: 'clip.adjustOnLayer', icon: 'layers' },
   ],
   libraryCard: [
     { id: 'preview', plain: 'Preview', op: 'library.preview', icon: 'play' },

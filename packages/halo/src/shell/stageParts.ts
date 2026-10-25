@@ -51,6 +51,8 @@ export const STAGE_SHEETS: Readonly<Record<string, () => Promise<SheetModule>>> 
   palette: () => import('../sheets/palette'),
   makeEditableReport: () => import('../stages/make/report'),
   createAi: () => import('../stages/make/ai'),
+  // ANIM-LAYERS (ADR 0026): the Layers sheet of the active animation
+  layers: () => import('../layers/LayersSheet'),
 };
 
 const Nothing = (): null => null;

@@ -2,7 +2,7 @@
 // or of all its controls when nothing is selected, on the base layer of the active clip.
 import type { Frame } from '@ekza-studio/anim-core';
 import type { ControlId, CurveRecord, KeyId, KeyRecord } from '@ekza-studio/doc';
-import type { EditorApp, KeyPartSelection, SelectMode } from '@ekza-studio/editor-core';
+import { type EditorApp, editLayerOf, type KeyPartSelection, type SelectMode } from '@ekza-studio/editor-core';
 import { bandContains, type FrameRange, makeBand } from './band';
 import { activeTimelineContext, type TimelineContext } from './context';
 
@@ -19,9 +19,9 @@ export function timelineTargets(app: EditorApp, ctx: TimelineContext): ReadonlyS
   return selected.length > 0 ? new Set(selected) : own;
 }
 
-/** Base-layer curves of the active clip that animate one of `targets`. */
+/** The active layer's curves of the active clip that animate one of `targets` (ANIM-LAYERS: the base by default). */
 export function targetCurves(app: EditorApp, ctx: TimelineContext, targets: ReadonlySet<ControlId>): CurveRecord[] {
-  const base = app.store.query.baseLayer(ctx.clip.id);
+  const base = editLayerOf(app, app.store, ctx.clip.id);
   if (base === undefined) return [];
   return app.store.query
     .curvesOfClip(ctx.clip.id)

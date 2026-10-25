@@ -2,6 +2,7 @@
 // rig, switch a limb between IK and FK with the key policies, match one side to the other at the current frame or
 // over a range, and edit a leg's foot-roll pivots. Each undoable operator is one transaction and one history step.
 import { EkzaError, eulerFilterCurves, type Frame } from '@ekza-studio/anim-core';
+import { activeClipRecord } from '../../workflows/targets';
 import type { ChannelId, ChannelValues, CharacterId, ClipId, ControlId, CurveId, SolverId, Tx } from '@ekza-studio/doc';
 import {
   type FootRollParams,
@@ -395,6 +396,12 @@ const matchRange = defineOperator<'rig.ikFk.matchRange', AgentImpl | undefined>(
           return "step must be 'keys' or 'frames'";
         }
         if (options['clip'] !== undefined && typeof options['clip'] !== 'string') return 'clip must be a clip id';
+        // ANIM-LAYERS (AL-12): the range bake writes matched poses as keys; on a layered clip they would need a solve
+        // per frame through the layers.
+        const clipId = (options['clip'] as ClipId | undefined) ?? activeClipRecord(app)?.id;
+        if (clipId !== undefined && app.store.query.layersOfClip(clipId).length > 1) {
+          return 'Match Range works on animations with one layer for now — merge the layers first';
+        }
         // MCP-SPEC §4.10: an agent run names its clip and range and never reads the session.
         return actor ? actorScope().matchRangeProblem(options['clip'], range) : null;
       },

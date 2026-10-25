@@ -5,6 +5,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { animateWords } from '../src/i18n/animate';
+import { layerWords } from '../src/i18n/layers';
 import { CHANNEL_LABELS } from '../src/i18n/channels';
 import { en } from '../src/i18n/en';
 import { makeWords, paintWords } from '../src/i18n/make';
@@ -171,6 +172,8 @@ function vocabulary(): { readonly path: string; readonly text: string }[] {
   const all = [
     ...strings(en),
     ...under('animate', animateWords),
+    // ANIM-LAYERS: the layer chip, its Halo, the Layers sheet
+    ...under('layers', layerWords),
     ...under('make', makeWords),
     ...under('paint', paintWords),
     ...under('rig', rigWords),

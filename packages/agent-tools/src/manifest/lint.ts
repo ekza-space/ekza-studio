@@ -33,6 +33,8 @@ export const TOOL_NOUNS = [
   // MCP-SPEC §0.4.4 (B4): the character setup tools
   'model',
   'library',
+  // ANIM-LAYERS (ADR 0026): layer_add, layer_set, layer_merge
+  'layer',
 ] as const;
 /** Unit suffixes of §5.2 (field names end with one of them, or are the unit word itself). */
 export const UNIT_SUFFIX = /(Deg|M|Cm|Mm|Factor|Percent|Frame|Frames|Seconds|Mps|DegPerFrame|Px)$/;

@@ -8,6 +8,7 @@ import { curvesEulerFilter, curvesSetInterpolation, curvesSimplify, curvesSummar
 import { projectExport, projectImport, projectOpen, projectSave } from './files/defs';
 import { historyCheckpoint, historyRevert } from './history/defs';
 import { keysAdjust, keysDelete, keysRead, keysRetime, keysSet, keysTween } from './keys/defs';
+import { layerAdd, layerMerge, layerSet } from './layers/defs';
 import { operatorDescribe, operatorRun, operatorsList } from './operators/defs';
 import { poseAim, poseIkTarget, posePlantFeet, poseRead, poseReset, poseSet, poseTransfer } from './pose/defs';
 import { recipeApply } from './recipes/defs';
@@ -67,6 +68,9 @@ const CATALOGUE: readonly AgentToolDef[] = Object.freeze([
   rigCreate, // B4
   libraryList, // B4
   libraryUse, // B4
+  layerAdd, // ANIM-LAYERS (ADR 0026)
+  layerSet, // ANIM-LAYERS
+  layerMerge, // ANIM-LAYERS
 ]);
 
 /** Number of core tools (§1.1) and stretch tools (§1.2). */
@@ -74,6 +78,8 @@ export const CORE_TOOL_COUNT = 39;
 export const STRETCH_TOOL_COUNT = 4;
 /** The character setup tools of MCP-SPEC §0.4.4 (B4; core tools of the MVP, listed after the stretch tools). */
 export const SETUP_TOOL_COUNT = 5;
+/** The animation layer tools (ANIM-LAYERS-SPEC §4), listed after the setup tools. */
+export const LAYER_TOOL_COUNT = 3;
 
 /** Every definition incl. not-ready ones (manifest generator, lint), in catalogue order. */
 export function allTools(): readonly AgentToolDef[] {

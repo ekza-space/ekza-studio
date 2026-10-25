@@ -806,7 +806,11 @@ export class GraphEditorController {
       this.invalidateOverlay();
     }
     if (state.curveBuffers !== previous.curveBuffers) this.invalidateBase();
-    if (state.activeCharacter !== previous.activeCharacter || state.activeClip !== previous.activeClip) {
+    if (
+      state.activeCharacter !== previous.activeCharacter ||
+      state.activeClip !== previous.activeClip ||
+      state.activeLayer !== previous.activeLayer
+    ) {
       this.dropCurveSet();
       this.invalidateBase();
       return;

@@ -442,7 +442,22 @@ export const OPERATOR_POLICY: Readonly<Record<string, OperatorAgentPolicy>> = nu
   'gen.retry': { policy: 'confirm', access: 'edit', reason: DENIED_SPEND },
   'gen.cancel': { policy: 'confirm', access: 'view', reason: 'stops an AI generation the person started' },
   'gen.import': { policy: 'confirm', access: 'edit', reason: 'adds a generated model to the scene and selects it' },
+  // ANIM-LAYERS (ADR 0026): layers of a clip. An agent run never changes the layer the user keys into (the operators
+  // write the session only with the View grant); merging every layer asks the person.
+  'layer.add': ALLOWED_EDIT,
+  'clip.adjustOnLayer': ALLOWED_EDIT,
+  'layer.set': ALLOWED_EDIT,
+  'layer.reorder': ALLOWED_EDIT,
+  'layer.duplicate': ALLOWED_EDIT,
+  'layer.setActive': ALLOWED_VIEW,
+  'layer.remove': { ...CONFIRM_EDIT, reason: 'deleting a layer loses its keys (undo restores them)' },
+  'layer.merge': { policy: 'allowed', access: 'edit', confirmWhen: layerMergeConfirm },
 });
+
+/** `layer.merge {scope: 'all'}` bakes every layer into the base: the person confirms it. */
+function layerMergeConfirm(_app: EditorApp, args: unknown): string | null {
+  return isRecord(args) && args['scope'] === 'all' ? 'AI wants to merge every animation layer into the base' : null;
+}
 
 function nullPrototype<T>(entries: Readonly<Record<string, T>>): Readonly<Record<string, T>> {
   return Object.freeze(Object.assign(Object.create(null) as Record<string, T>, entries));

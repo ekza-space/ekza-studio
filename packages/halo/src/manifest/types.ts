@@ -13,7 +13,8 @@ export type Stage = HaloStage;
 export const STAGES: readonly Stage[] = ['make', 'paint', 'rig', 'animate'];
 
 /** The work packages that own surfaces (§21). */
-export type Owner = 'T6a' | 'T6b' | 'T7' | 'T8' | 'T9' | 'T10' | 'T11';
+/** `AL`: animation layers (ANIM-LAYERS-SPEC §5) — the layer chip, its Halo and the Layers sheet. */
+export type Owner = 'T6a' | 'T6b' | 'T7' | 'T8' | 'T9' | 'T10' | 'T11' | 'AL';
 
 /**
  * The owners whose surfaces exist on this branch. T6a (the frame, the Halo, chips, the session bar, the palette) and
@@ -26,7 +27,7 @@ export type Owner = 'T6a' | 'T6b' | 'T7' | 'T8' | 'T9' | 'T10' | 'T11';
  * pose segment and the bend test), the Rig-it card, the *Adjust dots* session with its dots' Halo, the brush tray and
  * the skin spot's *Who owns this?*, and the Checks, Bones and Weights sheets.
  */
-export const BUILT_OWNERS: ReadonlySet<Owner> = new Set<Owner>(['T6a', 'T6b', 'T7', 'T8', 'T9', 'T10', 'T11']);
+export const BUILT_OWNERS: ReadonlySet<Owner> = new Set<Owner>(['T6a', 'T6b', 'T7', 'T8', 'T9', 'T10', 'T11', 'AL']);
 
 /** The nouns of §6.2: what a tap selects, each with a Halo (petals) and a ⋯ More list. */
 export const NOUN_KINDS = [
@@ -113,6 +114,8 @@ export const SHEET_OWNER = {
   history: 'T10',
   ask: 'T10',
   share: 'T11',
+  /** ANIM-LAYERS: the active animation's layers. */
+  layers: 'AL',
 } as const satisfies Record<string, Owner>;
 export type SheetId = keyof typeof SHEET_OWNER;
 
@@ -151,6 +154,8 @@ export const CHROME_OWNER = {
   threadKeys: 'T7',
   threadCurves: 'T10',
   historyRibbon: 'T10',
+  /** ANIM-LAYERS: the Thread's layer chip and its Halo (while Keys or Curves is open on a layered animation). */
+  layerChip: 'AL',
 } as const satisfies Record<string, Owner>;
 export type ChromePart = keyof typeof CHROME_OWNER;
 

@@ -24,6 +24,7 @@ import type { ChannelEdit, ChannelEditGesture, ChannelEditResult, EditorApp, Key
 import { isKeyable, isLocked, newKeyTangents } from './channelMeta';
 import { currentClipFrame, ensureBaseLayer } from './context';
 import { ensureCurve, writeKeyAt } from './keys';
+import { channelKeyedAtOrBelow, editLayerOf, solveLayerValues } from './layers';
 
 type Outcome = 'key' | 'static' | 'override';
 
@@ -51,7 +52,7 @@ export function applyChannelEdits(
   const state = app.session.getState();
   let keyed = 0;
   let statics = 0;
-  const skipped: { control: ControlId; channel: ChannelId; reason: 'locked' | 'non-keyable' }[] = [];
+  const skipped: ChannelEditResult['skipped'][number][] = [];
   const overrideValues = new Map<ControlId, Partial<Record<ChannelId, number>>>();
   const cleared = new Map<ControlId, Set<ChannelId>>();
   const clear = (control: ControlId, channel: ChannelId): void => {
@@ -85,36 +86,41 @@ export function applyChannelEdits(
       throw new EkzaError('unsupported', `${control.name}: the character has no active clip to edit`);
     }
     const frame = currentClipFrame(app, tx, clip);
-    const layer = ensureBaseLayer(app, tx, clip.id);
+    // ANIM-LAYERS (§3): edits go to the clip's active layer, as the value that makes the composite show `edit.value`.
+    const layer = editLayerOf(app, tx, clip.id) ?? ensureBaseLayer(app, tx, clip.id);
+    const layered = tx.query.layersOfClip(clip.id).length > 1;
     const curve = tx.query.curveFor(clip.id, layer.id, control.id, edit.channel);
-    const hasKeys = curve !== undefined && tx.query.keysOfCurve(curve.id).length > 0;
-    switch (outcomeFor(hasKeys, opts.key, prefs.autoKey, prefs.autoKeyMode)) {
-      case 'key': {
-        const curveId = curve?.id ?? ensureCurve(app, tx, clip.id, control.id, edit.channel);
-        writeKeyAt(app, tx, curveId, frame, edit.value, newKeyTangents(control, edit.channel, prefs.defaultTangents));
+    const hasKeys =
+      (curve !== undefined && tx.query.keysOfCurve(curve.id).length > 0) ||
+      (layered && channelKeyedAtOrBelow(tx, clip.id, layer, control, edit.channel));
+    const outcome = outcomeFor(hasKeys, opts.key, prefs.autoKey, prefs.autoKeyMode);
+    if (outcome === 'override') {
+      let values = overrideValues.get(control.id);
+      if (values === undefined) {
+        values = {};
+        overrideValues.set(control.id, values);
+      }
+      values[edit.channel] = edit.value;
+      cleared.get(control.id)?.delete(edit.channel);
+      continue;
+    }
+    const solved = solveLayerValues(app, tx, clip.id, layer, control, new Map([[edit.channel, edit.value]]), frame);
+    if (!solved.ok) {
+      skipped.push({ control: control.id, channel: edit.channel, reason: 'layer', message: solved.reason });
+      continue;
+    }
+    for (const [channel, value] of solved.values) {
+      if (channel !== edit.channel && (!isKeyable(control, channel) || isLocked(control, channel))) continue;
+      const existing = channel === edit.channel ? curve : tx.query.curveFor(clip.id, layer.id, control.id, channel);
+      const curveId = existing?.id ?? ensureCurve(app, tx, clip.id, control.id, channel, layer.id);
+      if (outcome === 'key') {
+        writeKeyAt(app, tx, curveId, frame, value, newKeyTangents(control, channel, prefs.defaultTangents));
         keyed++;
-        clear(control.id, edit.channel);
-        break;
-      }
-      case 'static': {
-        const curveId = curve?.id ?? ensureCurve(app, tx, clip.id, control.id, edit.channel);
-        if (tx.get('curves', curveId)?.staticValue !== edit.value) {
-          tx.patch('curves', curveId, { staticValue: edit.value });
-        }
+      } else {
+        if (tx.get('curves', curveId)?.staticValue !== value) tx.patch('curves', curveId, { staticValue: value });
         statics++;
-        clear(control.id, edit.channel);
-        break;
       }
-      case 'override': {
-        let values = overrideValues.get(control.id);
-        if (values === undefined) {
-          values = {};
-          overrideValues.set(control.id, values);
-        }
-        values[edit.channel] = edit.value;
-        cleared.get(control.id)?.delete(edit.channel);
-        break;
-      }
+      clear(control.id, channel);
     }
   }
 
@@ -178,6 +184,8 @@ export function beginChannelEditGesture(
   const selectionBefore = selectionSnapshot(start.selection, start.model);
   const where = activeLocation(app);
   const skipped = new Set<string>();
+  /** ANIM-LAYERS: why the active layer took no key (shown instead of the locked-channels line). */
+  let layerProblem: string | null = null;
   const gestures = internalsOf(app).gestures;
   const taskKey = `channelEditGesture:${nextChannelGesture++}`;
   let active = true;
@@ -241,7 +249,8 @@ export function beginChannelEditGesture(
         if (capture !== null && scope !== null) outcome = capture.end(scope);
       }
       recordGestureStep(app, label, startOverrides, where, outcome);
-      if (skipped.size > 0) {
+      if (layerProblem !== null) app.services.notify.toast({ kind: 'warning', text: layerProblem });
+      else if (skipped.size > 0) {
         app.services.notify.toast({
           kind: 'warning',
           text: `${skipped.size} locked or non-keyable channel(s) were not changed`,
@@ -267,7 +276,10 @@ export function beginChannelEditGesture(
     app.session.setState({ overrides: startOverrides });
     preview.update((tx) => {
       const result = applyChannelEdits(app, tx, edits, opts);
-      for (const s of result.skipped) skipped.add(`${s.control}\u0000${s.channel}\u0000${s.reason}`);
+      for (const s of result.skipped) {
+        if (s.reason === 'layer') layerProblem = s.message ?? 'The active layer cannot take this key';
+        else skipped.add(`${s.control}\u0000${s.channel}\u0000${s.reason}`);
+      }
     });
   }
   gestures.add(gesture);

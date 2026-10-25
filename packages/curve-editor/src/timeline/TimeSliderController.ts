@@ -634,6 +634,7 @@ export class TimeSliderController {
     if (
       state.activeCharacter !== previous.activeCharacter ||
       state.activeClip !== previous.activeClip ||
+      state.activeLayer !== previous.activeLayer ||
       time.playbackRange !== before.playbackRange
     ) {
       this.view = null;

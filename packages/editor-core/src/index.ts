@@ -37,6 +37,19 @@ export { createPresenceRegistry, PRESENCE_MAX_CONTROLS } from './presence/regist
 export { EDITOR_VERSION, isSampleId, SAMPLES, type SampleDef } from './workflows/samples';
 export { channelDefaultOf, channelUnit } from './edit/channelMeta';
 export { applyChannelEdits, beginChannelEditGesture } from './edit/channels';
+// ANIM-LAYERS (ADR 0026): the active layer, the layer keys go to, locks and keying refusals
+export {
+  activeLayerIdOf,
+  channelKeyedAtOrBelow,
+  compositeValueIn,
+  editLayerOf,
+  isBaseLayer,
+  isCurveLocked,
+  layerKeyProblem,
+  layersOf,
+  solveLayerValues,
+} from './edit/layers';
+export { playingLayers } from '@ekza-studio/rig';
 export { beginKeyEditGesture } from './edit/gesture';
 export {
   copyKeys,

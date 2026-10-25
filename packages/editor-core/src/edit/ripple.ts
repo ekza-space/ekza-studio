@@ -4,8 +4,9 @@
 // (its "Show" setting). Panels that show their own set register a provider for their panel kind, so operators run
 // from the keymap (the arrow-key nudge, paste insert) ripple over what that panel shows.
 import type { Disposer, Frame } from '@ekza-studio/anim-core';
-import type { ClipId, ControlId, CurveId, KeyId, ReadView } from '@ekza-studio/doc';
+import type { ClipId, ControlId, CurveId, KeyId, LayerId, ReadView } from '@ekza-studio/doc';
 import type { EditorApp, PanelKind } from '../types';
+import { editLayerOf } from './layers';
 
 /** The ripple of one edit (§5.11): the scope curves and the region before the edit. */
 export interface RippleScope {
@@ -72,14 +73,22 @@ export function rippleControls(
   return defaultRippleControls(app, view, clip);
 }
 
-/** Base-layer curves of `clip` that animate one of `controls`. */
-export function rippleCurves(view: ReadView, clip: ClipId, controls: readonly ControlId[]): CurveId[] {
-  const base = view.query.baseLayer(clip);
-  if (base === undefined) return [];
+/**
+ * Curves of `clip` that animate one of `controls`, on one layer (the base unless `layer` is given) or, with `'all'`,
+ * on every layer (time edits keep the layers in step, ANIM-LAYERS).
+ */
+export function rippleCurves(
+  view: ReadView,
+  clip: ClipId,
+  controls: readonly ControlId[],
+  layer?: LayerId | 'all',
+): CurveId[] {
+  const target = layer ?? view.query.baseLayer(clip)?.id;
+  if (target === undefined) return [];
   const wanted = new Set(controls);
   return view.query
     .curvesOfClip(clip)
-    .filter((curve) => curve.layer === base.id && wanted.has(curve.control))
+    .filter((curve) => (target === 'all' || curve.layer === target) && wanted.has(curve.control))
     .map((curve) => curve.id);
 }
 
@@ -105,6 +114,6 @@ export function rippleScopeOf(
 ): RippleScope {
   const clip = clipOfKeys(view, keys);
   if (clip === null) return { curves: [] };
-  const curves = rippleCurves(view, clip, rippleControls(app, view, clip, panel));
+  const curves = rippleCurves(view, clip, rippleControls(app, view, clip, panel), editLayerOf(app, view, clip)?.id);
   return region === undefined || region === null ? { curves } : { curves, region };
 }

@@ -5,10 +5,11 @@
 // under it. Every action is an operator run through the shell's `ctx.run` (a pre-run form where the operator has one
 // and the verb needs its numbers: *Delete time…*).
 import type { ClipRecord } from '@ekza-studio/doc';
-import { type EditorApp, PANEL } from '@ekza-studio/editor-core';
+import { type EditorApp, editLayerOf, PANEL } from '@ekza-studio/editor-core';
 import { Cluster, TouchButton, TouchIconButton, VerbBar, type VerbItem } from '@ekza-studio/ui/touch';
 import { type JSX, useState } from 'react';
 import { animateWords } from '../../i18n/animate';
+import { layerWords } from '../../i18n/layers';
 import type { NounKind } from '../../manifest/types';
 import type { HaloController } from '../../shell/controller';
 import { useDocumentVersion, useSessionValue } from '../../shell/hooks';
@@ -98,7 +99,8 @@ function keysAtFrame(app: EditorApp, frame: number): { key: string }[] {
   const thread = threadContext(app);
   if (thread === null) return [];
   const controls = new Set(controlsOf(app, thread.character).map((control) => control.id));
-  const base = app.store.query.baseLayer(thread.clip.id);
+  // ANIM-LAYERS: the keys the Thread's dots show (the layer keys go into)
+  const base = editLayerOf(app, app.store, thread.clip.id);
   const out: { key: string }[] = [];
   for (const curve of app.store.query.curvesOfClip(thread.clip.id)) {
     if (curve.layer !== base?.id || !controls.has(curve.control)) continue;
@@ -303,6 +305,21 @@ function petalsOf(
       case 'clip:settings':
         out.push({ id: petal.id, label: w.clip.settings, icon, action: { local: () => undefined } });
         break;
+      case 'clip:adjust':
+        // ANIM-LAYERS: one tap makes a "Fixes" layer above the animation; once it has layers the petal opens them
+        if (clip !== null && app.store.query.layersOfClip(clip.id).length > 1) {
+          out.push({ id: petal.id, label: layerWords.layers, icon: 'layers', action: { local: () => undefined } });
+        } else if (clip !== null) {
+          // the docked Halo closes: the person poses next, keying into Fixes
+          out.push(
+            one(
+              [{ op: 'clip.adjustOnLayer', args: { clip: clip.id } }],
+              { label: layerWords.adjust, icon: 'layers' },
+              true,
+            ),
+          );
+        }
+        break;
       default:
         break;
     }
@@ -431,6 +448,11 @@ export function DockedHalo({
     count();
     ui.set({ menu: null });
     if ('local' in action) {
+      if (docked.kind === 'clip' && id === 'adjust') {
+        // ANIM-LAYERS: the animation's Layers sheet
+        store.set({ sheet: 'layers', sheetArgs: null, sheetNoun: null, halo: null, focus: null });
+        return;
+      }
       if (docked.kind === 'clip' && id === 'settings') {
         // the clip settings in the animation's own Halo (§10.6): fps, range, loop, travel, contact, tags
         ui.set({ settings: ui.get().settings === docked.clip ? null : docked.clip });

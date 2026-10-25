@@ -51,7 +51,7 @@ and [TODO](../TODO.md).
 | [Ekza ecosystem](#10-ekza-ecosystem) | Space/OMOBA-ready exports (Tier 0), Ekza metadata and slots, OMOBA runtime lints; game targets from a game's contract and the OMOBA hero package; Hub publish planned | `v0.1.0`, `v0.4.0`, `v0.7.0`; publish planned (M4a) |
 | [AI control via MCP](#11-ai-control-via-mcp-m-ai) | `ekza-studio-mcp` server: an AI agent edits, rigs, animates and exports through undoable `AI: …` steps | `v0.6.0` |
 | [Platform and limits](#12-platform-and-limits) | Chrome/Edge, local-only and telemetry-free, performance budgets, bundle gates, MIT | `v0.1.0`+ |
-| [Not yet](#15-known-limitations-and-not-yet) | FBX/BVH/OBJ, UV editor, constraints, layers, collaboration, AI generation, … | Planned |
+| [Not yet](#15-known-limitations-and-not-yet) | FBX/BVH/OBJ, UV editor, constraints, collaboration, AI generation, … | Planned |
 
 ---
 
@@ -306,6 +306,7 @@ Specs: [MVP-SPEC](MVP-SPEC.md), [M2A-SPEC](M2A-SPEC.md), [ADR 0003](adr/0003-tim
 |---|---|---|---|
 | Clips per character | New, duplicate, rename, delete, set active; Ekza slot, contact frame, tags, provenance, fps | Clips panel; Clip menu; Clip Settings | `v0.1.0` |
 | Clip Library | 14 CC0 starter clips (Idle, Walk, Run, Jog, Sword attack, Punch, Cast, Hit, Death, Dance, Pistol shoot, Jump start/loop/land) with preview and Use Clip | Clip Library panel | `v0.4.0` |
+| Animation layers | Fix a finished clip on layers above it: additive (posing keys the difference) or override, weight, mute, solo, lock, merge down / all (at the keys or every frame), duplicate, reorder; *Adjust on a Layer* adds a *Fixes* layer in one click; keys, the Dope Sheet and the Graph Editor follow the active layer; exports carry what plays | Layers panel (Windows › Layers); Clip menu | **Next release** |
 | Embedded clip import | A model's clips import at their own frame rate with optional key reduction | Import… | `v0.1.0` |
 
 ## 7. Shading
@@ -467,6 +468,7 @@ byte-equal to Pro's and Auto-Rig's). English only at GA.
 | Curves | Pro's Graph Editor by touch and Pencil: *Ease ▾*, *Fewer keys*, *Fix flips*, *Cycle ▾*, ⟨Time⟩ ⟨Value⟩ ⟨In⟩ ⟨Out⟩ chips, ⇆ Before, per-axis pinch | Thread › Curves | `v0.7.0` |
 | Reach posing | Drag a hand or a foot and the limb follows; one drag is one undo step, keyed at the playhead with Rec on | canvas, Animate | `v0.7.0` |
 | Library | The CC0 clip library: preview on the character, Speed, Trim, Swap sides, *Add starter set* | Animate › Library | `v0.7.0` |
+| Layers | *Adjust on a layer* on an animation's Halo: fixes go on a *Fixes* layer above it, the animation stays; ◆ Key's hold says which layer keys go into; with Keys or Curves open a layer chip with ⟨Weight⟩, Mute, Solo, Lock, Merge down; the Layers sheet lists them all | animation chip's Halo; Thread (Keys, Curves) | **Next release** |
 | History | ↶'s long-press: the steps, *Undo to here*, *Compare* (hold), *Revert this*; an AI run is one group with *Undo all* | ↶ long-press; project menu › History | `v0.7.0` |
 | Ask AI | The MCP agent from a computer (Chrome or Edge): pairing with plain grants, its confirm prompts, a live activity line under the search pill, *Undo all*, *Restore the project as it was before the AI*; on an iPad an honest card and the recipes | search › Ask AI | `v0.7.0` |
 
@@ -511,7 +513,7 @@ From the README's "said plainly" lists, [TODO](../TODO.md) (Parked, After the tu
 |---|---|---|
 | Import | FBX and BVH (incl. common auto-rigger skeletons) with humanoid retarget; multi-file `.gltf`; OBJ | M2b |
 | Animation | Onion skin, motion trails, camera bookmarks, audio, constraints, History panel | M2c |
-| Animation | Space switching, "pole follows foot", stretch IK, animation layers, quaternion curves, pose library, clip sequencing | M5 |
+| Animation | Space switching, "pole follows foot", stretch IK, keyable layer weights and quaternion layer accumulation, quaternion curves, pose library, clip sequencing | M5 |
 | Animation stretch | IK/FK ghost, un-keyed Dope Sheet rows, mesh pick of IK controls, key hold / stepped preview, auto-Simplify after Match Range | M2a-stretch (fixme) |
 | Export | VRMA expressions and lookAt; BVH/FBX export; in-app glTF-Validator in the dialog | M2c / M5 |
 | Modeling | Subdivision preview, booleans, sculpting, UV editor, texture painting, Live Mirror | M6c and later |

@@ -47,10 +47,19 @@ export function clipOpActivity(program: RigProgram, sampler: ClipSampler): OpAct
     const slot = limb.attrSlots.ikFk;
     if (slot < 0) continue;
     const control = limb.params.ikControl;
-    const curve = sampler.curveInfo(control).find((info) => info.channel === '@ikFk');
+    // ANIM-LAYERS: one CurveInfo per playing layer's curve; several keyed ones combine, so only constant
+    // infinities keep the composite inside the values at the union of their key times.
+    const infos = sampler.curveInfo(control).filter((info) => info.channel === '@ikFk');
+    const keyed = infos.filter((info) => info.keyTimes.length > 0);
+    const curve = keyed.length > 1 ? undefined : (keyed[0] ?? infos[0]);
     const def = program.attrSlots[slot]?.def;
     let atMostZero: boolean;
-    if (curve === undefined || curve.keyTimes.length === 0) {
+    if (keyed.length > 1) {
+      const times = [...new Set(keyed.flatMap((info) => info.keyTimes))];
+      atMostZero =
+        keyed.every((info) => info.steppedThroughout && info.pre === 'constant' && info.post === 'constant') &&
+        times.every((t) => !((sampler.value(control, '@ikFk', t) ?? 0) > 0));
+    } else if (curve === undefined || curve.keyTimes.length === 0) {
       const value = sampler.value(control, '@ikFk', 0) ?? def?.default ?? 0;
       atMostZero = !(value > 0);
     } else {

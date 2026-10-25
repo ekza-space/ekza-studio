@@ -12,6 +12,7 @@ import {
   channelDisplayLabel,
   channelUnit,
   type EditorApp,
+  editLayerOf,
   type KeyPartSelection,
 } from '@ekza-studio/editor-core';
 import { CHANNEL_LABELS, type TrsChannel } from '../../i18n/channels';
@@ -54,7 +55,8 @@ export function listedControls(app: EditorApp, thread: ThreadContext): readonly 
   const ids = new Set(own.map((control) => control.id));
   const selected = app.session.getState().selection.controls.filter((control) => ids.has(control));
   if (selected.length > 0) return selected;
-  const base = app.store.query.baseLayer(thread.clip.id);
+  // ANIM-LAYERS: the layer keys go into
+  const base = editLayerOf(app, app.store, thread.clip.id);
   const animated = new Set<ControlId>();
   for (const curve of app.store.query.curvesOfClip(thread.clip.id)) {
     if (curve.layer === base?.id && app.store.query.keysOfCurve(curve.id).length > 0) animated.add(curve.control);
@@ -62,9 +64,10 @@ export function listedControls(app: EditorApp, thread: ThreadContext): readonly 
   return own.filter((control) => animated.has(control.id)).map((control) => control.id);
 }
 
-/** The curves of the listed controls in the active animation's base layer, in chip order per control. */
+/** The curves of the listed controls on the active animation's edit layer (ANIM-LAYERS), in chip order per control. */
 export function curveRows(app: EditorApp, thread: ThreadContext, controls: readonly ControlId[]): readonly CurveRow[] {
-  const base = app.store.query.baseLayer(thread.clip.id);
+  // ANIM-LAYERS: the layer keys go into
+  const base = editLayerOf(app, app.store, thread.clip.id);
   const listed = new Set(controls);
   const rows: CurveRow[] = [];
   for (const curve of app.store.query.curvesOfClip(thread.clip.id)) {

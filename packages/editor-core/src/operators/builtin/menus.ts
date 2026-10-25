@@ -258,6 +258,12 @@ export const BUILTIN_MENU_ITEMS: readonly MenuItemDef[] = [
   ]),
 
   ...items('clip', 'new', [{ name: 'new', op: 'clip.new' }]),
+  // ANIM-LAYERS (ADR 0026): animation layers of the active clip (the Layers panel holds the rest)
+  ...items('clip', 'layers', [
+    { name: 'adjustOnLayer', op: 'clip.adjustOnLayer', label: 'Adjust on a Layer' },
+    { name: 'addLayer', op: 'layer.add', label: 'New Animation Layer' },
+    { name: 'mergeLayers', op: 'layer.merge', args: { scope: 'all' }, label: 'Merge All Layers' },
+  ]),
 
   ...items(
     'graph.tangents',

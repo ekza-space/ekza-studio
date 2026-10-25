@@ -39,6 +39,7 @@ Code sketches inside ADRs are illustrative. The normative TypeScript contracts a
 | [0023](0023-studio-touch-ui.md) | Ekza Studio touch-first shell ("Halo"): a third shell over the same app, with Studio as its Pro layout | Proposed (2026-10-24, STUDIO-TOUCH-SPEC v0.2) |
 | [0024](0024-character-contract.md) | Character contract: OMOBA's slot specification, one-file packages, per-slot defaults | Proposed (2026-10-24, CHARACTER-CONTRACT-SPEC v0.1; names amended by 0025, v0.2) |
 | [0025](0025-game-protocol.md) | Ekza Game Protocol: game contracts, packages and fragments, one rule vocabulary, events | Proposed (2026-10-24, GAME-PROTOCOL-SPEC v0.1) |
+| [0026](0026-animation-layers.md) | Animation layers: additive and override, Euler accumulation, keying deltas on the active layer | Accepted (2026-10-25, ANIM-LAYERS-SPEC v1.0) |
 
 ADRs 0014–0016 were accepted on 2026-10-19 with the M6a build spec [`../M6A-SPEC.md`](../M6A-SPEC.md) v1.0, whose
 §4 holds their normative contracts (where an ADR sketch and the spec differ, the spec wins; its §12.2 lists the

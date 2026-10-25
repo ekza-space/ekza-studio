@@ -18,6 +18,8 @@ import { PANEL } from '@ekza-studio/editor-core';
 import { lazyPanelDef } from './lazyPanel';
 import { registerModelStartOverlays } from './viewport/modelOverlays';
 
+/** ANIM-LAYERS: the Layers panel body. */
+const loadLayersPanel = () => import('./layers');
 /** M6b: the Rig & Skin panel bodies, one lazy group (./rigPanels.ts). */
 const loadRigPanels = () => import('./rigPanels');
 /** C12 + CC C1: the Clip Library body and the Target panel body (named export `target`), one lazy group. */
@@ -60,6 +62,8 @@ export function registerBuiltinPanels(registry: PanelRegistry): Disposer {
     registry.register(lazyPanelDef('target', 'Target', loadClipLibraryPanels)),
     // M7 G-d (MODELING-PLAN §7.2): the Generate panel, a lazy chunk shown from File › Generate with AI…
     registerGeneratePanel(registry),
+    // ANIM-LAYERS (ADR 0026): the Layers panel, a lazy chunk (Windows › Layers, Clip › Animation Layers…)
+    registry.register(lazyPanelDef('layers', 'Layers', loadLayersPanel)),
   ];
   return () => {
     for (const dispose of [...disposers].reverse()) dispose();

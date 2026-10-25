@@ -77,6 +77,7 @@ import { deleteCurveKeys, insertTimeOn, keyedBaseCurves, wrapOffsetCurve } from 
 import type { AdjustPivot, ChannelTarget, OperatorMap, SeamMetrics } from '../args';
 import {
   baseCurveIn,
+  baseLayerIdIn,
   extendClipRange,
   hiddenByOverrides,
   keyedValuesAt,
@@ -276,7 +277,7 @@ export function writeKeys(
     const control = tx.get('controls', controlId);
     if (control === undefined) throw new EkzaError('invalid-record', `Control ${controlId} does not exist`);
     if (baseCurveIn(tx, clip, controlId, channel) === undefined) curvesCreated++;
-    const curve = ensureCurve(app, tx, clip.id, controlId, channel);
+    const curve = ensureCurve(app, tx, clip.id, controlId, channel, baseLayerIdIn(tx, clip));
     const fallback = newKeyTangents(control, channel, defaults);
     const atFrame = new Map<number, KeyRecord>();
     for (const key of tx.query.keysOfCurve(curve)) atFrame.set(frameSlot(key.t), key);
@@ -457,7 +458,7 @@ function keyAt(
   value: number,
   tangent?: TangentType,
 ): void {
-  const curve = ensureCurve(app, tx, clip.id, control.id, channel);
+  const curve = ensureCurve(app, tx, clip.id, control.id, channel, baseLayerIdIn(tx, clip));
   const defaults = newKeyTangents(control, channel, app.prefs.getState().defaultTangents);
   const tangents = tangent === undefined ? defaults : { in: tangent, out: tangent };
   const id = writeKeyAt(app, tx, curve, frame, value, tangents);
@@ -547,7 +548,7 @@ function setStatics(
       skipped.push({ control: control.id, channel, reason: 'animated' });
       continue;
     }
-    const curve = existing?.id ?? ensureCurve(app, tx, clip.id, control.id, channel);
+    const curve = existing?.id ?? ensureCurve(app, tx, clip.id, control.id, channel, baseLayerIdIn(tx, clip));
     if (tx.get('curves', curve)?.staticValue !== value) tx.patch('curves', curve, { staticValue: value });
     statics++;
   }
@@ -630,7 +631,7 @@ function switchRangeToIk(
   }
   const ikControl = tx.get('controls', limb.params.ikControl);
   if (ikControl === undefined) return keyed;
-  const curve = ensureCurve(app, tx, clip.id, ikControl.id, '@ikFk');
+  const curve = ensureCurve(app, tx, clip.id, ikControl.id, '@ikFk', baseLayerIdIn(tx, clip));
   for (const key of tx.query.keysOfCurve(curve)) {
     const between = key.t > range.start - 1 + SAME_FRAME_EPS && key.t < range.end + 1 - SAME_FRAME_EPS;
     const atEnd = Math.abs(key.t - range.start) < SAME_FRAME_EPS || Math.abs(key.t - range.end) < SAME_FRAME_EPS;

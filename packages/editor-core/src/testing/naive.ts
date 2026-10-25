@@ -5,11 +5,14 @@
 import {
   type AnimCurve,
   type CompiledAnimCurve,
+  composeLayerScalar,
+  composeLayerTrs,
   type CurveEngine,
   EkzaError,
   type Fps,
   type Frame,
   type KeyData,
+  type LayerStackEntry,
   Segment,
   type SegmentKind,
 } from '@ekza-studio/anim-core';
@@ -22,6 +25,7 @@ import type {
   CurveId,
   CurveRecord,
   DocumentStore,
+  LayerRecord,
   ReadView,
   RigId,
 } from '@ekza-studio/doc';
@@ -125,47 +129,116 @@ function naiveAttrSlot(program: RigProgram, control: ControlId, channel: string)
   return program.attrIndex.get(`${control}/@${channel.slice(1)}`) ?? -1;
 }
 
+/** The naive kit's reading of ANIM-LAYERS-SPEC §1: muted layers never play; solo keeps the base and the soloed. */
+function naivePlayingLayers(layers: readonly LayerRecord[]): readonly LayerRecord[] {
+  const soloing = layers.some((layer) => layer.solo);
+  return layers.filter((layer, i) => !layer.mute && (i === 0 || ((!soloing || layer.solo) && layer.weight > 0)));
+}
+
 export function createNaiveClipSampler(
   store: DocumentStore,
   cache: CurveCache,
   clip: ClipId,
   program: RigProgram,
 ): ClipSampler {
-  const baseCurves = (): CurveRecord[] => {
-    const base = store.query.baseLayer(clip);
-    return base === undefined ? [] : store.query.curvesOfClip(clip).filter((curve) => curve.layer === base.id);
+  const all = (): readonly LayerRecord[] => store.query.layersOfClip(clip);
+  const playing = (): readonly LayerRecord[] => naivePlayingLayers(all());
+  const playingCurves = (): CurveRecord[] => {
+    const ids = new Set(playing().map((layer) => layer.id));
+    return store.query.curvesOfClip(clip).filter((curve) => ids.has(curve.layer));
+  };
+  const affects = (layer: LayerRecord, base: boolean, control: ControlId): boolean =>
+    base || layer.mask === undefined || layer.mask === null || layer.mask.includes(control);
+  /** A curve's value on its layer: keys, else static, else identity (additive) or the default. */
+  const layerValue = (curve: CurveRecord, additive: boolean, frame: Frame): number => {
+    const compiled = cache.get(curve.id);
+    if (compiled.keyCount > 0 || curve.staticValue !== null || !additive) {
+      return naiveCurveValue(cache, curve, frame, program);
+    }
+    return curve.channel === 'sx' || curve.channel === 'sy' || curve.channel === 'sz' ? 1 : 0;
+  };
+  /** The 9 composite TRS values of `control` (null when no playing layer has a TRS curve for it). */
+  const composite = (control: ControlId, frame: Frame): Float64Array | null => {
+    const layers = playing();
+    const base = all()[0]?.id;
+    const entries: LayerStackEntry[] = [];
+    let any = false;
+    for (const layer of layers) {
+      const isBase = layer.id === base;
+      if (!affects(layer, isBase, control)) continue;
+      const additive = !isBase && layer.mode === 'additive';
+      const values = new Float64Array(9).fill(Number.NaN);
+      for (const curve of store.query.curvesOfControl(clip, control)) {
+        if (curve.layer !== layer.id) continue;
+        const slot = channelSlot(curve.channel);
+        if (slot === -1) continue;
+        values[slot] = layerValue(curve, additive, frame);
+        any = true;
+      }
+      entries.push({ mode: isBase ? 'override' : layer.mode, weight: isBase ? 1 : Math.min(1, layer.weight), values });
+    }
+    if (!any) return null;
+    const order = program.controls[program.controlIndex.get(control) ?? -1]?.rotateOrder ?? 'xyz';
+    return composeLayerTrs([0, 0, 0, 0, 0, 0, 1, 1, 1], entries, order, new Float64Array(9));
+  };
+  /** The composite of an attribute channel (undefined when no playing layer has a curve for it). */
+  const attrComposite = (control: ControlId, channel: ChannelId, frame: Frame): number | undefined => {
+    const base = all()[0]?.id;
+    let v: number | undefined;
+    for (const layer of playing()) {
+      const isBase = layer.id === base;
+      if (!affects(layer, isBase, control)) continue;
+      const curve = store.query.curveFor(clip, layer.id, control, channel);
+      if (curve === undefined) continue;
+      const additive = !isBase && layer.mode === 'additive';
+      const y = layerValue(curve, additive, frame);
+      const attr = naiveAttrSlot(program, control, channel);
+      const start = v ?? channelDefault(channel, program.attrSlots[attr]?.def);
+      v = isBase ? y : composeLayerScalar(start, [{ mode: layer.mode, weight: Math.min(1, layer.weight), value: y }]);
+    }
+    return v;
   };
   return {
     clip,
     sample(frame: Frame, out: ChannelBuffer): void {
       program.resetChannels(out);
-      for (const curve of baseCurves()) {
-        const index = program.controlIndex.get(curve.control);
+      const controls = new Set(playingCurves().map((curve) => curve.control));
+      for (const control of controls) {
+        const index = program.controlIndex.get(control);
         if (index === undefined) continue;
-        const slot = channelSlot(curve.channel);
-        if (slot !== -1) {
-          out.values[index * CHANNELS_PER_CONTROL + slot] = naiveCurveValue(cache, curve, frame, program);
-          continue;
+        const values = composite(control, frame);
+        if (values !== null) {
+          for (let slot = 0; slot < 9; slot++) {
+            const has = playingCurves().some((c) => c.control === control && channelSlot(c.channel) === slot);
+            if (has) out.values[index * CHANNELS_PER_CONTROL + slot] = values[slot] as number;
+          }
         }
+      }
+      for (const curve of playingCurves()) {
+        if (channelSlot(curve.channel) !== -1) continue;
         const attr = naiveAttrSlot(program, curve.control, curve.channel);
-        if (attr !== -1 && attr < out.attrs.length) out.attrs[attr] = naiveCurveValue(cache, curve, frame, program);
+        if (attr === -1 || attr >= out.attrs.length) continue;
+        const v = attrComposite(curve.control, curve.channel, frame);
+        if (v !== undefined) out.attrs[attr] = v;
       }
     },
     value(control: ControlId, channel: ChannelId, frame: Frame): number | undefined {
-      const curve = baseCurves().find((c) => c.control === control && c.channel === channel);
-      return curve === undefined ? undefined : naiveCurveValue(cache, curve, frame, program);
+      if (!playingCurves().some((c) => c.control === control && c.channel === channel)) return undefined;
+      const slot = channelSlot(channel);
+      if (slot === -1) return attrComposite(control, channel, frame);
+      return composite(control, frame)?.[slot];
     },
     keyTimes(controls: readonly ControlId[] | null): readonly Frame[] {
       const wanted = controls === null ? null : new Set(controls);
       const times = new Set<number>();
-      for (const curve of baseCurves()) {
+      for (const curve of playingCurves()) {
         if (wanted !== null && !wanted.has(curve.control)) continue;
         for (const key of store.query.keysOfCurve(curve.id)) times.add(key.t);
       }
       return [...times].sort((a, b) => a - b);
     },
     curveInfo(control: ControlId): readonly CurveInfo[] {
-      return baseCurves()
+      return playingCurves()
         .filter((curve) => curve.control === control)
         .sort((a, b) => compareStrings(a.channel, b.channel))
         .map((curve) => {

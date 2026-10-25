@@ -54,7 +54,7 @@ function curveIn(
     .map((other) => tx.query.curveFor(clip.id, layer.id, control.id, other))
     .find((curve) => curve !== undefined);
   if (sibling === undefined && tx.query.baseLayer(clip.id)?.id === layer.id) {
-    return ensureCurve(app, tx, clip.id, control.id, channel);
+    return ensureCurve(app, tx, clip.id, control.id, channel, layer.id);
   }
   const curve: CurveRecord = {
     ...curveRecord({ id: newRecordId(app, 'curve'), clip: clip.id, layer: layer.id, control: control.id, channel }),

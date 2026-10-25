@@ -3,7 +3,7 @@
 // - Keys: `selection.keys` entries whose key still exists (key parts and handle parts).
 // - Curves (§4.9 graph rows, WP-6 request): the curves of the selected keys; else the curves of the selected channels;
 //   else the curves of the selected controls; else every curve of the active clip — what the Graph Editor shows.
-//   Always the active clip's base layer.
+//   Always the active clip's edit layer (ANIM-LAYERS: the session's active layer, else the base).
 // - Controls: the selected ones; keying the character and selecting all use its visible controls.
 import type {
   ChannelId,
@@ -15,8 +15,10 @@ import type {
   CurveRecord,
   KeyId,
   KeyRecord,
+  LayerId,
   ReadView,
 } from '@ekza-studio/doc';
+import { editLayerOf } from '../edit/layers';
 import { activeClipOf } from '../evaluation/time';
 import type { BodyPart, EditorApp, KeyPartSelection, KeyTarget, SessionState } from '../types';
 import { bodyPartIn } from './bodyParts';
@@ -78,17 +80,33 @@ export function selectedControls(app: EditorApp, view: ReadView = app.store): re
   return out;
 }
 
-/** Base-layer curves of a clip, optionally limited to some controls. */
+/** Curves of one layer of a clip (the base unless `layer` is given), optionally limited to some controls. */
 export function baseCurves(
   view: ReadView,
   clip: ClipRecord,
   controls?: ReadonlySet<ControlId>,
+  layer?: LayerId,
 ): readonly CurveRecord[] {
-  const base = view.query.baseLayer(clip.id);
-  if (base === undefined) return [];
+  const target = layer ?? view.query.baseLayer(clip.id)?.id;
+  if (target === undefined) return [];
   return view.query
     .curvesOfClip(clip.id)
-    .filter((curve) => curve.layer === base.id && (controls === undefined || controls.has(curve.control)));
+    .filter((curve) => curve.layer === target && (controls === undefined || controls.has(curve.control)));
+}
+
+/** ANIM-LAYERS: the id of the layer the person edits in `clip` (the session's active layer, else the base). */
+export function editLayerIdOf(app: EditorApp, view: ReadView, clip: ClipRecord): LayerId | undefined {
+  return editLayerOf(app, view, clip.id)?.id;
+}
+
+/** The edit layer's curves of a clip (what the Dope Sheet and Graph Editor show), optionally of some controls. */
+export function editCurves(
+  app: EditorApp,
+  view: ReadView,
+  clip: ClipRecord,
+  controls?: ReadonlySet<ControlId>,
+): readonly CurveRecord[] {
+  return baseCurves(view, clip, controls, editLayerIdOf(app, view, clip));
 }
 
 /** Curves the curve-level Graph Editor operators act on (see the header). */
@@ -107,14 +125,17 @@ export function targetCurves(app: EditorApp, view: ReadView = app.store): readon
   }
   const clip = activeClipRecord(app, view);
   if (clip === undefined) return [];
+  const layer = editLayerIdOf(app, view, clip);
   const channels = app.session.getState().selection.channels;
   if (channels.length > 0) {
     const wanted = new Set(channels.map((ref) => `${ref.control}\u0000${ref.channel}`));
-    return baseCurves(view, clip).filter((curve) => wanted.has(`${curve.control}\u0000${curve.channel}`));
+    return baseCurves(view, clip, undefined, layer).filter((curve) =>
+      wanted.has(`${curve.control}\u0000${curve.channel}`),
+    );
   }
   const selected = selectedControls(app, view);
-  if (selected.length > 0) return baseCurves(view, clip, new Set(selected.map((control) => control.id)));
-  return baseCurves(view, clip);
+  if (selected.length > 0) return baseCurves(view, clip, new Set(selected.map((control) => control.id)), layer);
+  return baseCurves(view, clip, undefined, layer);
 }
 
 /** Every key of the given curves. */
@@ -122,24 +143,30 @@ export function keysOfCurves(view: ReadView, curves: readonly CurveRecord[]): re
   return curves.flatMap((curve) => view.query.keysOfCurve(curve.id).map((key) => key.id));
 }
 
-/** Sorted unique key times of the given controls' base-layer curves in a clip (all controls when null). */
-export function keyTimes(view: ReadView, clip: ClipRecord, controls: ReadonlySet<ControlId> | null): readonly number[] {
+/** Sorted unique key times of the given controls' curves on one layer of a clip (base unless `layer`; all controls when null). */
+export function keyTimes(
+  view: ReadView,
+  clip: ClipRecord,
+  controls: ReadonlySet<ControlId> | null,
+  layer?: LayerId,
+): readonly number[] {
   const times = new Set<number>();
-  for (const curve of baseCurves(view, clip, controls ?? undefined)) {
+  for (const curve of baseCurves(view, clip, controls ?? undefined, layer)) {
     for (const key of view.query.keysOfCurve(curve.id)) times.add(key.t);
   }
   return [...times].sort((a, b) => a - b);
 }
 
-/** The base-layer curve of a control channel in a clip. */
+/** The curve of a control channel on one layer of a clip (the base unless `layer` is given). */
 export function curveOf(
   view: ReadView,
   clip: ClipRecord,
   control: ControlId,
   channel: ChannelId,
+  layer?: LayerId,
 ): CurveRecord | undefined {
-  const base = view.query.baseLayer(clip.id);
-  return base === undefined ? undefined : view.query.curveFor(clip.id, base.id, control, channel);
+  const target = layer ?? view.query.baseLayer(clip.id)?.id;
+  return target === undefined ? undefined : view.query.curveFor(clip.id, target, control, channel);
 }
 
 /**

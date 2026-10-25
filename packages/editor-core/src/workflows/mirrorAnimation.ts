@@ -36,6 +36,7 @@ import { internalsOf, newRecordId } from '../app/internals';
 import { attrDefOf, channelDefaultOf, isKeyable, isLocked, isTrsChannel } from '../edit/channelMeta';
 import { keyDataOf } from '../edit/context';
 import { ensureCurve } from '../edit/keys';
+import { editLayerOf } from '../edit/layers';
 import type { EditorApp } from '../types';
 import { summarizeMirrorWarnings } from './mirrorWarnings';
 import { controlsOfCharacter } from './targets';
@@ -505,7 +506,8 @@ export function mirrorAnimation(
   opts: MirrorAnimationOptions,
 ): MirrorAnimationResult {
   const controls = controlsOfCharacter(tx, clip.character);
-  const layer = tx.query.baseLayer(clip.id);
+  // ANIM-LAYERS: the edit layer's curves mirror (on a fix layer: the fixes).
+  const layer = editLayerOf(app, tx, clip.id);
   const { writes, warnings } = planWrites(tx, controls, opts.mode, opts.controls);
   const curveOf = (control: ControlId, channel: ChannelId): CurveRecord | undefined =>
     layer === undefined ? undefined : tx.query.curveFor(clip.id, layer.id, control, channel);

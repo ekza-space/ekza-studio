@@ -212,6 +212,20 @@ const callArb: fc.Arbitrary<Call> = fc.oneof(
   // history
   fc.tuple(fc.constant('history_checkpoint'), fc.record({ label: fc.constant('Request'), list: fc.boolean() })),
   fc.tuple(fc.constant('history_revert'), fc.record({ to: fc.constant(LAST_CHECKPOINT), dryRun: fc.boolean() })),
+  // ANIM-LAYERS (ADR 0026): layers of the agent's clips; a missing layer or nothing below is a clean refusal
+  fc.tuple(
+    fc.constant('layer_add'),
+    fc.record({ clip: fc.constantFrom('c1', 'c2'), mode: fc.constantFrom('additive', 'override') }),
+  ),
+  fc.tuple(
+    fc.constant('layer_set'),
+    fc.record({
+      clip: fc.constantFrom('c1', 'c2'),
+      layer: fc.constant('Layer 1'),
+      weight: fc.double({ min: 0, max: 1, noNaN: true }),
+    }),
+  ),
+  fc.tuple(fc.constant('layer_merge'), fc.record({ clip: fc.constantFrom('c1', 'c2'), confirm: fc.constant(true) })),
 );
 
 /** Every tool the property draws (kept equal to the ready catalogue below). */
@@ -240,6 +254,9 @@ const DRAWN = [
   'clip_delete',
   'history_checkpoint',
   'history_revert',
+  'layer_add',
+  'layer_set',
+  'layer_merge',
 ];
 
 describe('the session-state invariant (§5.7, §9.2)', () => {
