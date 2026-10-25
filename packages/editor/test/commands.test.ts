@@ -5,7 +5,7 @@ import { GLOBAL_SCOPE, type MenuItemDef } from '@ekza-studio/editor-core';
 import { describe, expect, it } from 'vitest';
 import { menuContents, shortcutFor, stableKey, topMenus } from '../src/shell/menus';
 import { shellMenuItems } from '../src/shell/menuItems';
-import { createTestShell, waveFixtures } from './shell-helpers';
+import { createTestShell, waitFor, waveFixtures } from './shell-helpers';
 
 describe('shell operators', () => {
   it('ui.open / ui.close drive session.dialog; export needs a character', async () => {
@@ -81,6 +81,8 @@ describe('shell operators', () => {
 
   it('view.selectionMask merges into the session tool state', async () => {
     const { shell, app } = createTestShell();
+    // a host registration since STUDIO-TOUCH-SPEC T3 (a lazy chunk registered at once)
+    await waitFor(() => app.operators.get('view.selectionMask') !== undefined);
     await shell.runFromUi('view.selectionMask', { mask: { joints: true } });
     expect(app.session.getState().tools.selectionMask).toEqual({
       controls: true,
@@ -154,6 +156,15 @@ describe('shell operators', () => {
     const tolerance = { rotationRad: Math.PI / 180, translationM: 0.005, scale: 1e-3 };
     await shell.runFromUi('graph.curves.simplify', { tolerance });
     expect(shell.ui.getState().help?.text).toBe('Simplify: 41 → 24 keys (17 removed within 1°)');
+  });
+
+  it('prefs.set takes the rigging preferences (the status line joint size, option boxes; T6-INT P-T6B-3)', async () => {
+    const { shell, app } = createTestShell();
+    const rigging = app.prefs.getState().rigging;
+    const result = await shell.runFromUi('prefs.set', { patch: { rigging: { ...rigging, jointSize: 1.5 } } });
+    expect(result.status).toBe('finished');
+    expect(app.prefs.getState().rigging.jointSize).toBe(1.5);
+    expect(app.prefs.getState().rigging.brush).toEqual(rigging.brush);
   });
 
   it('typed run() accepts the shell operators added to OperatorMap', async () => {

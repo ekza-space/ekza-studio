@@ -23,6 +23,9 @@ export const frame = {
   redoStep: (label: string) => `Redo ${label}`,
   openStudio: 'Open in Studio',
   openStudioTitle: 'Continue with the full editor (same document, same undo history)',
+  // STUDIO-TOUCH-SPEC §16.3 (Halo T9): shown only when Auto-Rig was entered from Ekza Studio's Simple layout
+  backToStudio: 'Back to Studio',
+  backToStudioTitle: 'Back to Ekza Studio (same document, same undo history)',
   more: 'More',
   // pane badges (the pose view and a playing library preview, as Studio's HUD shows them)
   badgeBindPose: 'BIND POSE',

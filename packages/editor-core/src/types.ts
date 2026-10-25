@@ -1,4 +1,5 @@
-// Contract file: MVP-SPEC §4.5 with the M2A-SPEC §4.5, M6A-SPEC §4.6, M6B-SPEC §4.6/§0.5 and AUTORIG-SPEC §4.3–§4.5 additions, copied verbatim
+// Contract file: MVP-SPEC §4.5 with the M2A-SPEC §4.5, M6A-SPEC §4.6, M6B-SPEC §4.6/§0.5, AUTORIG-SPEC §4.3–§4.5 and
+// STUDIO-TOUCH-SPEC §20.4 (Halo, T2: the single owner of this file during the Halo build) additions, copied verbatim
 // (shapes are normative; change the spec first). M6a functions and constants (`meshOperator`, `meshSetOperator`,
 // `WORKSPACE`) and M6b ones (`registerChannelSourceProvider`) live in implementation modules (§4 placement rule).
 // Excluded from formatting in biome.json so it stays diffable against the spec.
@@ -6,12 +7,13 @@ import type { StoreApi } from 'zustand/vanilla';
 import type { AnimCurve, CompiledAnimCurve, Disposer, Frame, Handle, ParamDef, ParamValues, Quat, TangentType,
   Vec3 } from '@ekza-studio/anim-core';
 import type { AnyChange, AssetId, AssetRecord, CameraId, ChangeBatch, ChannelId, ChannelValues, CharacterId, ClipId, ConstraintId,
-  ControlId, CurveId, DocumentStore, GroupId, JointId, KeyId, MeshId, MeshRef, SkeletonId, Tx, UndoResult,
+  ControlId, CurveId, DocumentStore, GroupId, ImagePlaneId, JointId, KeyId, LayerId, MeshId, MeshRef, SkeletonId, Tx, UndoResult,
   UserId } from '@ekza-studio/doc';
 import type { ComponentKind, ComponentSelection, DirtySet, EditMesh, ElementRemap, FalloffCurve, HiddenSet, MeshData,
   MeshOp, MeshSetOp, Normals, OpFrame, OpResult, OpWarning, Refusal, SymmetryAxis, SymmetryMap,
   Triangulation } from '@ekza-studio/mesh-core';   // type-only: no kernel code is bundled
 import type { BindReport, PaintOp, SkinBindArgs, SkinWeights } from '@ekza-studio/mesh-core';   // M6b, type-only
+import type { GenerationClient } from '@ekza-studio/gen-core';                                   // M7 G-b, type-only
 import type { ExportArtifact, ExportKind, ExportProfileDef, ExportReduceSpec, ExportRequest, GlbContainer, LintIssue,
   StarterPackManifest, ValidationReport } from '@ekza-studio/io';
 import type { ChannelBuffer, ClipSampler, FootPin, LimbId, PoseBuffers, PoseClipboard, QuickRigMarker, QuickRigMarkers,
@@ -204,6 +206,8 @@ export interface SessionState {
   readonly dirty: boolean;                                        // unsaved document changes
   readonly activeCharacter: CharacterId | null;
   readonly activeClip: Readonly<Record<CharacterId, ClipId>>;
+  /** ANIM-LAYERS (ADR 0026): the layer keys go to, per clip; absent = the clip's base layer. Never saved. */
+  readonly activeLayer?: Readonly<Record<ClipId, LayerId>>;
   readonly selection: Selection;
   readonly time: TimeState;
   readonly tools: ToolState;
@@ -291,7 +295,14 @@ export interface Prefs {
   };
 }
 // prefs.modeling.undoSelection gains `rig: true` (selection undo in Rig & Skin, §5.24; M6b).
-export type PrefsStore = StoreApi<Prefs>;
+/** STUDIO-TOUCH-SPEC §16.4, §20.3 item 16 (T2 types, T0 implements; additive): the preference override layers. */
+export type PrefsLayer = 'device' | 'shell';
+/** With overrides (T0), `getState()` is the effective value: base ⊕ device ⊕ shell; persistence writes only the base. */
+export type PrefsStore = StoreApi<Prefs> & {
+  /** Overrides `patch` in `layer` until the disposer runs ('device': the host's memory profile, never removed during
+   *  the page's life; 'shell': a shell's session settings such as Halo's Rec). Absent: a host without overrides. */
+  override?(layer: PrefsLayer, patch: Partial<Omit<Prefs, 'version'>>): Disposer;
+};
 
 // ---------- operators ----------
 export type OperatorId = `${string}.${string}`;
@@ -476,6 +487,16 @@ export interface ToolPointerEvent {
   readonly pointerType: 'mouse' | 'pen' | 'touch';
   readonly timeStamp: number;
   readonly detail: number;                                        // click count (double-click = 2)
+  // ---------- Halo (STUDIO-TOUCH-SPEC §20.3 item 5, §20.4; T2 types, T1 fills them; additive: absent = today's) ----------
+  readonly pressure?: number;                                     // PointerEvent.pressure, 0…1 (read for pens only, ST-5)
+  readonly tiltX?: number; readonly tiltY?: number;               // degrees, −90…90
+  readonly altitude?: number; readonly azimuth?: number;          // radians: altitudeAngle 0…π/2, azimuthAngle 0…2π
+  readonly pointerId?: number; readonly isPrimary?: boolean;
+  /** This move's `getCoalescedEvents()` samples, oldest first: pane CSS px like x/y, pressure 0…1, t in ms. The arbiter
+   *  replays a buffered press with them, so a tool sees every Pencil sample (§20.4 arbiter semantics). */
+  readonly coalesced?: readonly { readonly x: number; readonly y: number; readonly pressure: number; readonly t: number }[];
+  /** A virtual modifier source (the Thumb key) set a modifier, a held key or the button of this event. */
+  readonly virtual?: boolean;
 }
 export interface ToolWheelEvent {
   readonly panel: PanelKind; readonly paneId: string | null;
@@ -484,7 +505,8 @@ export interface ToolWheelEvent {
   readonly shift: boolean; readonly alt: boolean; readonly mod: boolean; readonly ctrl: boolean;
 }
 export interface ToolKeyEvent { readonly type: 'down' | 'up'; readonly code: string; readonly shift: boolean; readonly alt: boolean; readonly mod: boolean;
-  readonly ctrl: boolean; readonly repeat: boolean }   // M6a, changed (additive): literal Ctrl
+  readonly ctrl: boolean; readonly repeat: boolean;   // M6a, changed (additive): literal Ctrl
+  readonly virtual?: boolean }                        // STUDIO-TOUCH-SPEC §20.3 item 3 (T1, a line patch for T2): a virtual hold
 /** Handlers return true when the event was consumed. */
 export interface ToolInstance {
   activate?(): void;
@@ -576,8 +598,19 @@ export interface AssetStore {
   peek(id: AssetId): Uint8Array | undefined;
   ids(): readonly AssetId[];
 }
+/** STUDIO-TOUCH-SPEC §19, §20.3 item 15 (T2 types, T0 implements; additive): a file kept until a fresh user activation
+ *  delivers it (`navigator.share({files})` on iOS, a download elsewhere or as the ~10 s fallback). */
+export interface SaveTicket {
+  readonly fileName: string; readonly mime: string;
+  readonly state: 'preparing' | 'ready' | 'delivered' | 'failed';   // current state (a getter)
+  readonly ready: Promise<void>;                                  // the bytes are prepared (rejects: 'failed')
+  deliver(): Promise<'shared' | 'downloaded' | 'cancelled'>;      // call from a fresh user activation on iOS
+}
 export interface FileService {
   download(fileName: string, bytes: Uint8Array, mime: string): void;
+  /** T0 (additive): prepare now, deliver from a later tap; `save(f).deliver()` where no activation is needed. Absent:
+   *  a host without the two-step flow (Node, headless) — callers fall back to `download`. */
+  save?(file: { readonly name: string; readonly mime: string; readonly bytes: Uint8Array | Promise<Uint8Array> }): SaveTicket;
 }
 export interface ClipboardService {
   writeText(text: string): Promise<void>;
@@ -611,10 +644,16 @@ export interface EditorServices {
   readonly kernelDebug?: boolean;
   /** M6b (§0.5, §0.4.7), changed (additive): base URL of the clip library, default '/library/'. */
   readonly libraryPath?: string;
+  /** CHARACTER-CONTRACT-SPEC §8.1 (C1, additive): base URL of the bundled contract snapshots, default '/contracts/'. */
+  readonly contractsPath?: string;
   /** M-AI: bytes of a bundled sample; when present `file.loadSample` uses it instead of fetch (Node hosts). */
   readonly readSample?: ((sample: SampleDef) => Promise<Uint8Array>) | null;
   /** M-AI: still and contact-sheet capture (live: WebGL + schematic fallback; headless: schematic). */
   readonly viewCapture?: ViewCaptureService | null;
+  /** M7 (ADR 0017 §2, additive): the `ekza-gen/v1` client of the configured gateway; absent or null hides AI
+   *  generation. The host creates it (`createGenerationClient` of @ekza-studio/gen-core) and never passes provider keys
+   *  or origins: only the gateway base URL, the operator's bearer token and, where allowed, a bring-your-own key. */
+  readonly generation?: GenerationClient | null;
 }
 
 /** M2a: content-addressed autosave slots (IndexedDB in the browser; null in Node). */
@@ -852,7 +891,9 @@ export interface ChannelEditResult {
   readonly statics: number;
   /** Override values to merge into session.overrides after the write (keyed channels edited without keying). */
   readonly overrides: ReadonlyMap<ControlId, ChannelValues>;
-  readonly skipped: readonly { readonly control: ControlId; readonly channel: ChannelId; readonly reason: 'locked' | 'non-keyable' }[];
+  /** ANIM-LAYERS: reason 'layer' — the active layer cannot take the key (locked, muted, covered…), `message` says why. */
+  readonly skipped: readonly { readonly control: ControlId; readonly channel: ChannelId;
+    readonly reason: 'locked' | 'non-keyable' | 'layer'; readonly message?: string }[];
 }
 /** One interactive edit (manipulator drag, Channels panel scrub): preview + overrides + auto-key on commit. */
 export interface ChannelEditGesture {
@@ -1026,6 +1067,9 @@ export interface ModelSessionState {
   readonly capture: NumericCaptureState;
   readonly lastTool: ToolId | null;                      // Y
   readonly activeSwatch: string | null;                  // SwatchId (Palette panel, Paint Colour)
+  /** STUDIO-TOUCH-SPEC §6.2 "Image plane" (Halo T8): the reference image plane a canvas tap or a Scene row selected
+   *  (`select.imagePlane`, U state); a scene-object pick clears it. Absent reads as none. */
+  readonly imagePlane?: ImagePlaneId | null;
   readonly tweakHandle: ManipHandle | null;              // last-picked handle of the W/E/R tool (MMB rule, §5.15)
 }
 
@@ -1329,7 +1373,9 @@ export interface SkinService {
 // ---------- validation (C7 service; rules from C2, C5, C8a, C10) ----------
 export type RigValidationSeverity = 'error' | 'warning' | 'info';
 export interface RigValidationRow {
-  readonly code: string; readonly severity: RigValidationSeverity; readonly area: 'skeleton' | 'skin' | 'transforms' | 'rig' | 'export';
+  readonly code: string; readonly severity: RigValidationSeverity;
+  /** 'animation' (CHARACTER-CONTRACT-SPEC §8.3, C1, additive): the bound target's slot checks. */
+  readonly area: 'skeleton' | 'skin' | 'transforms' | 'rig' | 'export' | 'animation';
   readonly message: string; readonly ids: readonly string[];    // joints, meshes, controls, constraints
   readonly points?: Readonly<Record<string, Uint32Array>>;      // per mesh, for Select
   readonly fix: { readonly label: string; readonly op: OperatorId; readonly args: unknown } | null;
@@ -1398,8 +1444,8 @@ export interface ClipParams {
 export type AutoRigSampleId = 'cube-lad' | 'polybot-tpose' | 'polybot-apose' | 'polybot' | 'seed-san';
 /** `autorig.fix` (§5.2): the one-click fixes of the Model step. */
 export type AutoRigFix = 'center' | 'face' | 'standUp' | 'scale' | 'freeze';
-/** `autorig.export` targets (§5.6.1). */
-export type AutoRigExportTarget = 'ekza-vrm' | 'glb' | 'vrma' | 'omoba-kit';
+/** `autorig.export` targets (§5.6.1); `omoba-hero`: the OMOBA hero package (CHARACTER-CONTRACT-SPEC §8.5, C2). */
+export type AutoRigExportTarget = 'ekza-vrm' | 'omoba-hero' | 'glb' | 'vrma' | 'omoba-kit';
 export interface AutoRigRigResult {
   readonly character: CharacterId; readonly skeleton: SkeletonId;
   readonly straightened: boolean;              // A-posed input: "Straighten to T-Pose" ran (the third undo step)
@@ -1412,13 +1458,25 @@ export interface AutoRigExportResult {
 }
 
 // ---------- navigation port (§3.4, §4.4; D0 types, D1 provides it from the host, eager) ----------
-export type ShellRoute = 'autorig' | 'studio' | 'chooser';
+// STUDIO-TOUCH-SPEC §20.3 item 11, §20.4 (T2, additive): the third shell `halo` (`/app`, Ekza Studio's Simple layout),
+// the arrival action (`arrival`: the spec sketch's `then`, renamed, since a `then` field makes the object a thenable;
+// ST-T2-1) and the Halo state a switch or a handoff record carries. `'studio'` keeps meaning the Pro layout
+// (`/editor`) everywhere internally (§1.3).
+export type ShellRoute = 'autorig' | 'studio' | 'halo' | 'chooser';
+/** A route that mounts a shell in the host (every route but the chooser page): `MountedShell.kind`, `from`. */
+export type ShellKind = Exclude<ShellRoute, 'chooser'>;
+/** What the arriving shell opens once it is shown (§16.1); a shell that does not know the kind or the id ignores it. */
+export type ArrivalAction =
+  | { readonly kind: 'preset'; readonly preset: string }        // a layout preset, e.g. 'polish' (Pro)
+  | { readonly kind: 'panel'; readonly panel: PanelKind }       // a panel, e.g. 'validation', 'paintWeights' (Pro)
+  | { readonly kind: 'dialog'; readonly dialog: UiDialog };     // a host dialog, e.g. 'export' (every shell)
 export interface NavigationRequest {
   readonly to: ShellRoute;
-  readonly workspace?: WorkspaceId;            // Studio's workspace on arrival (`/editor?ws=…`)
-  readonly from?: 'studio' | 'autorig';        // labels the entry (`?from=studio`)
+  readonly workspace?: WorkspaceId;            // the workspace on arrival (`/editor?ws=…`, `/app?ws=…`)
+  readonly from?: ShellKind;                   // labels the entry (`?from=studio`, `?from=halo`)
   readonly newTab?: boolean;                   // the explicit new-tab flow through a handoff record
   readonly subject?: AutoRigSubject;           // in-memory hand-over to the arriving shell (never in the URL)
+  readonly arrival?: ArrivalAction;            // T2: in memory or in the record (never in the URL); optional
 }
 export interface NavigationPort {
   /** Switches shells: same-page navigation keeping the app (shared layout), or a handoff record (new tab, islands). */
@@ -1426,12 +1484,24 @@ export interface NavigationPort {
   /** The subject handed over by the last `go`, once (the arriving shell reads it), else null. */
   takeSubject(): AutoRigSubject | null;
 }
+/** Halo's stages (STUDIO-TOUCH-SPEC §7.1, ST-3): Make, Paint, Rig, Animate; Share is a sheet, not a stage. */
+export type HaloStage = 'make' | 'paint' | 'rig' | 'animate';
+/** What a switch from Halo or a handoff record carries of Halo (§16.2, §16.3; T2). Halo's own round trip through
+ *  Pro on one page restores from its session mirror (`ekza-studio:halo:session:v1`), not from this. */
+export interface HaloHandoffState {
+  readonly stage: HaloStage;
+  readonly sheet?: string;                     // the open sheet ('share', 'numbers', …)
+  readonly threadLayer?: 0 | 1 | 2;            // the Thread's layer: Timeline · Keys · Curves
+  readonly destination?: string;               // the destination id (§7.3)
+  readonly fingers?: 'mittens' | 'thumb' | 'all';   // the finger preset; read by Auto-Rig ① when entered from Halo
+}
 /** What a handoff record carries besides the document (§4.4). */
 export interface HandoffInfo {
-  readonly route: 'autorig' | 'studio';
+  readonly route: ShellKind;                   // T2: + 'halo'
   readonly workspace: WorkspaceId | null;
   readonly subject: AutoRigSubject | null;
   readonly autorig: { readonly step: AutoRigStep; readonly startPose: AutoRigPoseClass | null } | null;
+  readonly halo?: HaloHandoffState;            // T2 (additive): the leaving Halo shell's state; absent otherwise
+  readonly arrival?: ArrivalAction;            // T2 (additive): the request's arrival action
   readonly createdAt: number;                  // ms since epoch (pruned after 10 minutes)
 }
-

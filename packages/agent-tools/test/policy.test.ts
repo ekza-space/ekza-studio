@@ -5,7 +5,7 @@
 // `prepare` of each of them leaves the session alone (runner rule 6). Operators that fail the invariant until P1
 // migrates them are gated on READY.p1, and READY.p1 switches the expected outcomes to P1's (the scope-ready operators
 // then must finish on the scope's keys), so P1's migration is visible and cannot regress silently.
-import type { KeyId } from '@ekza-studio/doc';
+import { fractionalIndex, type KeyId } from '@ekza-studio/doc';
 import {
   AGENT_PROTECTED_SESSION_FIELDS,
   type EditorApp,
@@ -188,10 +188,26 @@ const ARGS: Readonly<Record<string, ArgsOf>> = {
   }),
   // confirm
   'clip.delete': (fx) => ({ args: { clip: fx.agentClip } }),
+  // ANIM-LAYERS (ADR 0026): the layer operators on the agent's clip (a fix layer seeded for the ones that need one)
+  'layer.add': (fx) => ({ args: { clip: fx.agentClip, name: 'Agent fixes' } }),
+  'clip.adjustOnLayer': (fx) => ({ args: { clip: fx.agentClip } }),
+  'layer.set': (fx) => ({ args: { layer: seedLayer(fx), weight: 0.5, solo: true } }),
+  'layer.reorder': (fx) => ({ args: { layer: seedLayer(fx, 2), to: 'down' } }),
+  'layer.duplicate': (fx) => ({ args: { layer: seedLayer(fx) } }),
+  'layer.remove': (fx) => ({ args: { layer: seedLayer(fx) } }),
+  'layer.merge': (fx) => ({ args: { layer: seedLayer(fx), scope: 'down' } }),
+  'layer.setActive': (fx) => ({ args: { layer: seedLayer(fx) } }),
   'clip.setSettings': (fx) => ({ args: { clip: fx.agentClip, slot: 'wave' } }),
   'rig.addLimbIk': (fx) => ({ args: { character: fx.character, limbs: ['arm.L'] } }),
   'rig.setFootParams': (fx) => ({ args: { limb: 'leg.L', character: fx.character, params: { heelBack: 0.05 } } }),
   'rig.setRotateOrder': (fx) => ({ args: { control: controlOf(fx.app, fx.character, 'fk.hand.L'), order: 'zyx' } }),
+  // M7 G-d: generation (this fixture has no gateway: every one refuses before anything is sent)
+  'gen.submit': () => ({
+    args: { provider: 'tripo', op: 'text-to-model', prompt: 'a chair', maxCostUsd: 1, tier: 'paid' },
+  }),
+  'gen.retry': () => ({ args: { job: 'job_1' } }),
+  'gen.cancel': () => ({ args: { job: 'job_1' } }),
+  'gen.import': () => ({ args: { job: 'job_1' } }),
   // view access (exempt from the invariant; they must not end internal)
   'select.controls': (fx) => ({ args: { ids: [controlOf(fx.app, fx.character, 'fk.hand.L')], mode: 'replace' } }),
   'select.keys': (fx) => ({ args: { items: [{ key: fx.keys[0] }], mode: 'replace' } }),
@@ -284,6 +300,15 @@ const P1_STUBS = [
  * the curve editor only.
  */
 const EXPECTED_D0: Readonly<Record<string, string>> = {
+  // ANIM-LAYERS (their pinned outcomes are in EXPECTED_P1)
+  'layer.add': 'finished',
+  'clip.adjustOnLayer': 'finished',
+  'layer.set': 'finished',
+  'layer.reorder': 'finished',
+  'layer.duplicate': 'finished',
+  'layer.remove': 'finished',
+  'layer.merge': 'finished',
+  'layer.setActive': 'finished',
   'graph.tangent.set': 'refused: No curves to edit',
   'graph.tangent.break': 'refused: No keys are selected',
   'graph.tangent.unify': 'refused: No keys are selected',
@@ -317,6 +342,10 @@ const EXPECTED_D0: Readonly<Record<string, string>> = {
   'time.play': 'finished',
   'time.stop': 'finished',
   'time.setFrame': 'finished',
+  'gen.submit': 'refused: AI generation is not set up on this server',
+  'gen.retry': 'refused: AI generation is not set up on this server',
+  'gen.cancel': 'refused: AI generation is not set up on this server',
+  'gen.import': 'refused: AI generation is not set up on this server',
 };
 
 /**
@@ -352,7 +381,40 @@ const EXPECTED_P1: Readonly<Record<string, string | RegExp>> = {
   'graph.key.insert': /^finished \{"key":"k_[A-Za-z0-9]+"\}$/,
   'rig.ikFk.matchRange': 'finished {"count":279}',
   'clip.delete': 'finished',
+  'layer.add': /^finished \{"layer":"lay_[A-Za-z0-9]+"\}$/,
+  'clip.adjustOnLayer': /^finished \{"layer":"lay_[A-Za-z0-9]+"\}$/,
+  'layer.set': 'finished',
+  'layer.reorder': 'finished',
+  'layer.duplicate': /^finished \{"layer":"lay_[A-Za-z0-9]+"\}$/,
+  'layer.remove': 'finished',
+  'layer.merge': /^finished \{"layer":"lay_[A-Za-z0-9]+","keys":0\}$/,
+  'layer.setActive': 'finished',
 };
+
+/** ANIM-LAYERS: `count` fix layers on the agent's clip (seeded directly); the top one's id. */
+function seedLayer(fx: Fixture, count = 1): string {
+  let top = '';
+  for (let i = 0; i < count; i++) {
+    const layers = fx.app.store.query.layersOfClip(fx.agentClip);
+    const order = fractionalIndex(layers.at(-1)?.order ?? null, null);
+    top = `lay_AgentFix${String(layers.length).padStart(8, '0')}`;
+    fx.app.store.transact({ label: 'seed layer' }, (tx) =>
+      tx.put('layers', {
+        id: top as never,
+        clip: fx.agentClip,
+        name: `Fix ${layers.length}`,
+        mode: 'additive',
+        weight: 1,
+        mute: false,
+        solo: false,
+        owner: null,
+        order,
+        deleted: null,
+      }),
+    );
+  }
+  return top;
+}
 
 /**
  * The outcome a run must have: D0's record, or with READY.p1 P1's pinned outcome for the operators P1 implements or

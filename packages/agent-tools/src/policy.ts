@@ -17,6 +17,12 @@ const DENIED_MODELING = 'modeling and scene editing are not available to agents 
 const DENIED_QUICK_RIG = 'Quick Rig runs through rig_create';
 const DENIED_WEIGHTS = 'weight edits are not available to agents yet';
 const DENIED_EXPORT_SETUP = 'files go through project_export';
+// STUDIO-TOUCH-SPEC §14, §20.3 item 7 (T5a): the touch shell's public wrappers read the user's session; agents call
+// the operators they wrap, so the toolset and its generated reference stay as they are.
+const DENIED_UI_WRAPPER =
+  "a touch-shell command on the user's selection, playhead and copied pose; use pose_set, pose_transfer, pose_ik_target, pose_aim, keys_adjust, keys_retime or clip_make_loop";
+// M7 G-d: a generation is a paid request to a third-party service (ADR 0017 §10): the person confirms each one.
+const DENIED_SPEND = 'spends money: a paid request to the AI 3D generation service (the person confirms each one)';
 /** The reason an operator without a classification answers `denied_operator` with. */
 export const UNCLASSIFIED_REASON = 'this operator is not classified for agents';
 
@@ -265,6 +271,12 @@ export const OPERATOR_POLICY: Readonly<Record<string, OperatorAgentPolicy>> = nu
   'mesh.uv.box': denied(DENIED_MODELING),
   'mesh.uv.cylindrical': denied(DENIED_MODELING),
   'mesh.cleanup': denied(DENIED_MODELING),
+  // M7 G-a: the intake operators (modeling, denied like the rest until agents get modeling tools).
+  'mesh.normalize': denied(DENIED_MODELING),
+  'mesh.reduce': denied(DENIED_MODELING),
+  'mesh.paletteBake': denied(DENIED_MODELING),
+  'mesh.textureDownsize': denied(DENIED_MODELING),
+  'mesh.intake': denied(DENIED_MODELING),
   'mesh.paint': denied(DENIED_MODELING),
   'mesh.paint.fillShell': denied(DENIED_MODELING),
   'mesh.paint.remap': denied(DENIED_MODELING),
@@ -292,6 +304,8 @@ export const OPERATOR_POLICY: Readonly<Record<string, OperatorAgentPolicy>> = nu
   'select.mesh.convert': denied(DENIED_USER_STATE),
   'select.mesh.matching': denied(DENIED_USER_STATE),
   'select.objects': denied(DENIED_USER_STATE),
+  // Halo T8 (STUDIO-TOUCH-SPEC §6.2): the selected reference image plane, the user's selection like `select.objects`
+  'select.imagePlane': denied(DENIED_USER_STATE),
   'select.mesh.pickWalk': denied(DENIED_USER_STATE),
   'view.hide': denied(DENIED_USER_STATE),
   'view.showAll': denied(DENIED_USER_STATE),
@@ -411,7 +425,39 @@ export const OPERATOR_POLICY: Readonly<Record<string, OperatorAgentPolicy>> = nu
   'library.preview': denied(DENIED_USER_STATE),
   'library.stop': denied(DENIED_USER_STATE),
   'library.open': denied(DENIED_USER_STATE),
+  // STUDIO-TOUCH-SPEC §20.3 item 7 (T5a): the UI wrappers (a lazy chunk, `loadUiWrappers`), denied by default
+  'pose.hold': denied(DENIED_UI_WRAPPER),
+  'pose.pasteAt': denied(DENIED_UI_WRAPPER),
+  'pose.placeGoal': denied(DENIED_UI_WRAPPER),
+  'pose.lookAt': denied(DENIED_UI_WRAPPER),
+  'pose.reach': denied(DENIED_UI_WRAPPER),
+  'clip.loop': denied(DENIED_UI_WRAPPER),
+  'key.scaleValues': denied(DENIED_UI_WRAPPER),
+  'key.offsetValues': denied(DENIED_UI_WRAPPER),
+  'key.offsetInLoop': denied(DENIED_UI_WRAPPER),
+  'imagePlane.replace': denied(DENIED_MODELING),
+  // M7 G-d (MODELING-PLAN §7.2; DECISIONS M7-GD-*): AI generation. Submitting or retrying spends the person's money at
+  // a paid service: every call asks the person first (an explicit grant per spend); stopping and importing too.
+  'gen.submit': { policy: 'confirm', access: 'edit', reason: DENIED_SPEND },
+  'gen.retry': { policy: 'confirm', access: 'edit', reason: DENIED_SPEND },
+  'gen.cancel': { policy: 'confirm', access: 'view', reason: 'stops an AI generation the person started' },
+  'gen.import': { policy: 'confirm', access: 'edit', reason: 'adds a generated model to the scene and selects it' },
+  // ANIM-LAYERS (ADR 0026): layers of a clip. An agent run never changes the layer the user keys into (the operators
+  // write the session only with the View grant); merging every layer asks the person.
+  'layer.add': ALLOWED_EDIT,
+  'clip.adjustOnLayer': ALLOWED_EDIT,
+  'layer.set': ALLOWED_EDIT,
+  'layer.reorder': ALLOWED_EDIT,
+  'layer.duplicate': ALLOWED_EDIT,
+  'layer.setActive': ALLOWED_VIEW,
+  'layer.remove': { ...CONFIRM_EDIT, reason: 'deleting a layer loses its keys (undo restores them)' },
+  'layer.merge': { policy: 'allowed', access: 'edit', confirmWhen: layerMergeConfirm },
 });
+
+/** `layer.merge {scope: 'all'}` bakes every layer into the base: the person confirms it. */
+function layerMergeConfirm(_app: EditorApp, args: unknown): string | null {
+  return isRecord(args) && args['scope'] === 'all' ? 'AI wants to merge every animation layer into the base' : null;
+}
 
 function nullPrototype<T>(entries: Readonly<Record<string, T>>): Readonly<Record<string, T>> {
   return Object.freeze(Object.assign(Object.create(null) as Record<string, T>, entries));

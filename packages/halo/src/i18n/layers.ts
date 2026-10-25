@@ -1,0 +1,48 @@
+// The words of animation layers in Ekza Studio (ANIM-LAYERS-SPEC §5; ADR 0026): the layer chip in the Thread, its
+// Halo, the Layers sheet, *Adjust on a layer* and ◆ Key's "Keying into" line. The same rules as every catalogue
+// (`./en.ts`): plain words, no DCC jargon at L0 or L1, *Animation* only for a clip (so these say *layer*). The shell's
+// vocabulary lint (`test/rules.test.ts`) runs over it under `layers.`.
+
+export const layerWords = {
+  adjust: 'Adjust on a layer',
+  layers: 'Layers',
+  sheetTitle: (clip: string): string => `Layers · ${clip}`,
+  base: 'Base',
+  modes: { additive: 'Adds', override: 'Replaces' },
+  modeHint: {
+    additive: 'Adds to what is below: posing keys the difference',
+    override: 'Replaces what is below, by its weight',
+  },
+  keyingInto: (name: string): string => `Keying into: ${name}`,
+  chip: (name: string): string => `Keys go into ${name}. Tap for this layer`,
+  weight: 'Weight',
+  weightValue: (percent: number): string => `${percent} %`,
+  mute: 'Mute',
+  unmute: 'Unmute',
+  solo: 'Solo',
+  unsolo: 'Stop solo',
+  lock: 'Lock',
+  unlock: 'Unlock',
+  muted: 'muted',
+  soloed: 'solo',
+  locked: 'locked',
+  active: 'Keys go here',
+  keyHere: 'Key into this layer',
+  newFix: 'New fix layer',
+  newLayer: 'New layer',
+  newReplace: 'New replacing layer',
+  mergeDown: 'Merge down',
+  mergeAll: 'Merge all',
+  mergeMenu: 'Merge',
+  mergeKeys: 'at the keys',
+  mergeFrames: 'on every frame',
+  rename: 'Rename',
+  renameLabel: 'Layer name',
+  duplicate: 'Duplicate',
+  up: 'Up',
+  down: 'Down',
+  remove: 'Delete',
+  allLayers: 'All layers',
+  rowMenu: (name: string): string => `More for ${name}`,
+  onlyBase: 'One layer: what you pose keys the base.',
+} as const;

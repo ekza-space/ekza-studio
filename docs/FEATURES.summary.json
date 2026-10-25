@@ -1,27 +1,33 @@
 {
   "product": "Ekza Studio",
   "url": "https://studio.ekza.io",
-  "release": "v0.5.1",
-  "updated": "2026-10-24",
+  "release": "v0.7.0",
+  "updated": "2026-10-25",
   "source": "docs/FEATURES.md",
   "statusLegend": {
     "shipped": "in the current release",
+    "beta": "in the current release; one release-gate item still open (the real-iPad run)",
     "experimental": "in the code, acceptance pending",
     "next": "in integration, coming next release",
     "planned": "on the roadmap, not built"
   },
   "categories": [
     {
-      "category": "Two modes",
+      "category": "One studio, two layouts",
       "features": [
         {
-          "name": "Start chooser",
-          "description": "Pick the full Studio or the Auto-Rig wizard; the choice can be remembered.",
+          "name": "Ekza Studio and Ekza Studio Pro",
+          "description": "One studio with two layouts over the same document and undo history: the touch-first Simple layout (the front door) and the docked, hotkey-driven Pro layout.",
           "status": "shipped"
         },
         {
-          "name": "One document, two shells",
-          "description": "Switch between Studio and Auto-Rig with the same document and undo history.",
+          "name": "Start chooser",
+          "description": "A first visit opens Ekza Studio; /?chooser=1 lists Ekza Studio, Ekza Studio Pro and Rig a model for me; the choice can be remembered.",
+          "status": "shipped"
+        },
+        {
+          "name": "One document, three shells",
+          "description": "Switch between the two layouts and Auto-Rig on the same page with the same document, undo history, selection, time and camera.",
           "status": "shipped"
         }
       ]
@@ -323,6 +329,16 @@
           "name": "Publish to Ekza Hub",
           "description": "One-click avatar publishing to Ekza Hub.",
           "status": "planned"
+        },
+        {
+          "name": "Game targets (character contract)",
+          "description": "Bind a character to a game's contract (OMOBA's bundled): every slot with its status, timing, game defaults and fixes.",
+          "status": "shipped"
+        },
+        {
+          "name": "OMOBA hero package",
+          "description": "VRM 1.0 with your animations and ekza_package_v1, byte lints, timeline markers and a developer zip.",
+          "status": "shipped"
         }
       ]
     },
@@ -332,22 +348,87 @@
         {
           "name": "MCP server and live bridge",
           "description": "AI agents such as Claude Code connect to the open editor with a pairing code and granted permissions.",
-          "status": "next"
+          "status": "shipped"
         },
         {
           "name": "Undoable AI edits",
           "description": "Every agent action is one labelled undo step; revert all AI changes in one click.",
-          "status": "next"
+          "status": "shipped"
         },
         {
           "name": "Rig and animate by prompt",
           "description": "An agent can inspect, fix, rig, add library clips and export a character.",
-          "status": "next"
+          "status": "shipped"
         },
         {
           "name": "Agent sees the scene",
           "description": "View captures and contact sheets from the user's or preset cameras.",
-          "status": "next"
+          "status": "shipped"
+        }
+      ]
+    },
+    {
+      "category": "Ekza Studio (Simple layout)",
+      "features": [
+        {
+          "name": "Halo verbs",
+          "description": "Touch anything and up to six plain verbs appear next to it; More lists every operator with its Pro name.",
+          "status": "beta"
+        },
+        {
+          "name": "Search or ask",
+          "description": "Every operator by name, recipes (Wave, Loop it, Rig it for me, Fix where it bends badly) and Ask AI.",
+          "status": "beta"
+        },
+        {
+          "name": "Path and readiness",
+          "description": "Make, Paint, Rig, Animate and Share; one list of checks behind the glyphs, the status count and the Next chip.",
+          "status": "beta"
+        },
+        {
+          "name": "Pencil and fingers",
+          "description": "The Pencil makes, fingers move the view; the Thumb key carries every modifier; palm rejection; Reduce gestures.",
+          "status": "beta"
+        },
+        {
+          "name": "Animate by touch",
+          "description": "Timeline in frames with a tick on every frame, Rec on by default, the Animations row, Keys, Curves, Reach posing, the Library and History.",
+          "status": "beta"
+        },
+        {
+          "name": "Make, Paint and Rig by touch",
+          "description": "Clean-up for a game in two touches, swatches with Matte or Shiny, Rig it for me on one card, dots in front and side panes, weights with Pencil pressure.",
+          "status": "beta"
+        },
+        {
+          "name": "Home, Share and resume",
+          "description": "Continue cards, samples, byte-sniffed files, destination-first Share byte-equal to Pro, Save project to Files, silent resume after a reload.",
+          "status": "beta"
+        }
+      ]
+    },
+    {
+      "category": "AI generation and clean-up",
+      "features": [
+        {
+          "name": "Clean-up operators",
+          "description": "Clean up for a game in one undo step: reduce to a budget without cracking seams, normalize, palette bake, downsize textures. Local, no provider.",
+          "status": "shipped"
+        },
+        {
+          "name": "Generation gateway",
+          "description": "Self-hosted gateway with adapters for two text/image-to-3D services, a token and spend caps; off by default. Tested against mock providers.",
+          "status": "experimental"
+        },
+        {
+          "name": "Generate panel and Create with AI",
+          "description": "Words or a photo, size presets, terms, plan and price, jobs, Bring it in cleaned, then Rig it.",
+          "status": "shipped"
+        },
+        {
+          "name": "AI disclosure",
+          "description": "The generator is recorded in exports and shown as a Made with AI badge.",
+          "status": "shipped"
         }
       ]
     },
@@ -356,12 +437,12 @@
       "features": [
         {
           "name": "Runs in the browser",
-          "description": "Chrome and Edge; no install.",
+          "description": "Chrome and Edge; Ekza Studio also on Safari 26+ on iPad (beta). No install.",
           "status": "shipped"
         },
         {
           "name": "Private by design",
-          "description": "Files never leave the browser; no telemetry.",
+          "description": "Files never leave the browser; no telemetry. AI generation only through a gateway you configure, only when you press Create.",
           "status": "shipped"
         },
         {
@@ -370,7 +451,7 @@
           "status": "shipped"
         },
         {
-          "name": "Firefox and Safari",
+          "name": "Firefox, and Pro on Safari",
           "description": "Support for more browsers.",
           "status": "planned"
         }

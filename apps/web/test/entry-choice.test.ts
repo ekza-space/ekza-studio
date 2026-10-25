@@ -33,13 +33,16 @@ function blockedStorage(): EntryStorage {
 describe('the remembered choice (§3.3)', () => {
   it('uses the new ekza-studio key and the two routes', () => {
     expect(ENTRY_KEY).toBe('ekza-studio:entry:v1');
-    expect(ENTRY_ROUTES).toEqual({ autorig: '/autorig', studio: '/editor' });
+    // STUDIO-TOUCH-SPEC §1.2 (T2): + Ekza Studio's `/app` (honoured only with HALO_ENTRY, entry-contract.test.ts)
+    expect(ENTRY_ROUTES).toEqual({ autorig: '/autorig', studio: '/editor', halo: '/app' });
   });
 
   it.each([
     [null, null],
     ['{"choice":"autorig","at":1}', 'autorig'],
     ['{"choice":"studio","at":1}', 'studio'],
+    // STUDIO-TOUCH-SPEC §1.2: Ekza Studio's choice, honoured since T12 turned HALO_ENTRY on
+    ['{"choice":"halo","at":1}', 'halo'],
     ['{"choice":"editor"}', null],
     ['{"choice":"toString"}', null],
     ['{"choice":"__proto__"}', null],
@@ -77,7 +80,11 @@ describe('the landing redirect (§3.3)', () => {
   it.each([
     ['', 'autorig', false, '/autorig'],
     ['', 'studio', false, '/editor'],
-    ['', null, false, null],
+    ['', 'halo', false, '/app'],
+    // STUDIO-TOUCH-SPEC §1.2, ST-2 (HALO_ENTRY on since T12): nothing remembered opens Ekza Studio
+    ['', null, false, '/app'],
+    ['?e2e=1', null, false, '/app?e2e=1'],
+    ['?chooser=1', null, false, null],
     ['?chooser=1', 'autorig', false, null],
     ['?e2e=1&chooser=1', 'studio', false, null],
     ['?chooser=0', 'studio', false, '/editor'],

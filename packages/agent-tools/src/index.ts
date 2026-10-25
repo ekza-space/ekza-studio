@@ -179,5 +179,5 @@ export {
   SETUP_SAMPLE_FILES,
   SETUP_SAMPLES,
 } from './tools/setup/files';
-export { SETUP_TOOL_COUNT } from './tools/catalogue';
+export { LAYER_TOOL_COUNT, SETUP_TOOL_COUNT } from './tools/catalogue';
 export { type RigAndAnimateCall, type RigAndAnimateOptions, rigAndAnimateScript } from './text/rigAndAnimate';

@@ -101,9 +101,12 @@ After the publish: `"command": "npx", "args": ["-y", "ekza-studio-mcp", "--works
 
 ## 2. Pair the agent with your editor
 
-1. Open the editor: `pnpm dev` → <http://localhost:3000/editor>, or the hosted editor.
+1. Open the editor: `pnpm dev` → <http://localhost:3000/editor> (Ekza Studio Pro) or <http://localhost:3000/app>
+   (Ekza Studio, the Simple layout), or the hosted editor.
 2. Open the **Agent panel**: click the **AI** pill in the status line (or Windows › Agent). Click **Connect**. The
-   panel finds the server and shows a code such as `K7Q-M4P` (valid for two minutes, single use).
+   panel finds the server and shows a code such as `K7Q-M4P` (valid for two minutes, single use). In Ekza Studio's
+   Simple layout: search › type the request › **Ask AI** — the Ask sheet connects, shows the code and the same grants
+   in plain words, and while the agent works a line under the search pill says what it does.
 3. Tell the agent: *"Connect to the editor with code K7Q-M4P"*. It calls `editor_connect`.
 4. The editor asks **"Allow … to work in this project?"** with the grants:
    - **Read** — see the project and pictures of the viewport (always on);
@@ -123,6 +126,13 @@ other apps and services on this device"** (Local Network Access). Choose **Allow
 icon left of the address › Site settings › *Local network access* › Allow, reload, Connect again. Safari does not
 let an https page reach a loopback WebSocket: use Chrome, Edge or Firefox, or the local editor. An editor on another
 address needs `--allow-origin <its origin>` on the server.
+
+**On an iPad** (Safari, and every iPad browser, which are all WebKit) the agent cannot reach the tab: the bridge needs a
+loopback WebSocket on the computer that runs the agent. Ekza Studio on the iPad says so in its Ask sheet and offers the
+recipes (*Wave*, *Loop it*, *Rig it for me*, …), which run on the device. To work with an agent on a project you started
+on the iPad, use *Save project to Files*, open the `.ekzanim` in Chrome or Edge on the computer, and pair there; the
+other way round, save it on the computer and open it on the iPad (Home › *Bring a model* reads `.ekzanim`). An iPad
+relay or an in-app assistant is an open owner question (STUDIO-TOUCH-SPEC OQ-5, T17).
 
 ## 3. What to ask
 

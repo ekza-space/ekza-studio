@@ -285,6 +285,37 @@ describe('Agent panel over a fake session (MCP-SPEC §7.2)', () => {
     expect(app.history.entries().undo.some((s) => s.id === user)).toBe(true);
   });
 
+  it('keeps the project as it was before the pairing’s first edit (§5.13; T12, P-T10-4)', async () => {
+    const app = await waveApp();
+    await loadAgentOperators(app);
+    const fake = createFakeAgentSession(app);
+    const clip = app.store.list('clips')[0];
+    if (clip === undefined) throw new Error('no clip');
+    const nameBefore = clip.name;
+    // a read takes nothing
+    expect((await fake.call('scene_summary', {})).ok).toBe(true);
+    expect([fake.beforeAgentSnapshot(), fake.store.getState().beforeAgent]).toEqual([null, null]);
+    // the first edit call takes it, before its tool runs (this fake app answers the tool with a refusal)
+    await fake.call('clip_update', { clip: clip.name, name: 'ai-1' });
+    const kept = fake.beforeAgentSnapshot();
+    expect(kept).not.toBeNull();
+    if (kept === null) return;
+    expect((kept.tables['clips'] as Record<string, { name: string }>)[clip.id]?.name).toBe(nameBefore);
+    expect(fake.store.getState().beforeAgent?.approxBytes ?? 0).toBeGreaterThan(0);
+    // the agent's change, then another edit call: the first snapshot stays
+    await app.runUntyped(
+      'test.patch',
+      { table: 'clips', id: clip.id, patch: { name: 'ai-1' } },
+      { source: 'api', actor: AGENT, access: 'edit' },
+    );
+    await fake.call('clip_update', { clip: 'ai-1', name: 'ai-2' });
+    expect(fake.beforeAgentSnapshot()).toBe(kept);
+    // the shells put it back with one restore step (*Restore the project as it was before the AI*)
+    expect(app.store.list('clips')[0]?.name).toBe('ai-1');
+    await app.runUntyped('edit.restoreDocument', { snapshot: kept, label: 'Restore before the AI' });
+    expect(app.store.list('clips')[0]?.name).toBe(nameBefore);
+  });
+
   it('pauses, resumes, toggles grants and disconnects through the session', async () => {
     const { app, fake } = await setup();
     rendered = await render(

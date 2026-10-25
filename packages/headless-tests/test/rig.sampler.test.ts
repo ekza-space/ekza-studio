@@ -224,7 +224,9 @@ describe('rig: curve cache and clip sampler (shared test kit store)', () => {
     expect(sampler.curveInfo(ARM).map((info) => info.channel)).toEqual(['rz']);
   });
 
-  it('ignores curves of other layers and of controls outside the program', () => {
+  // ANIM-LAYERS (ADR 0026): the MVP's sampler read the base layer only; every playing layer folds in now (an additive
+  // layer's static value adds), a muted one does not, and curves of controls outside the program stay ignored.
+  it('folds playing layers, skips muted ones and ignores controls outside the program', () => {
     const { store, program, sampler } = setup();
     const second: LayerRecord = {
       id: 'lay_SecondLayer00001' as LayerId,
@@ -244,6 +246,10 @@ describe('rig: curve cache and clip sampler (shared test kit store)', () => {
       tx.put('curves', curveRecord('crv_ForeignControl1', 'rig_Other:fk.head' as ControlId, 'rx', { staticValue: 9 }));
     });
     const ch = program.allocChannels();
+    sampler.sample(0, ch);
+    expect(readControlChannels(program, ch, HEAD).rx).toBe(9);
+    expect(sampler.value(HEAD, 'rx', 0)).toBe(9);
+    store.transact({ label: 'Mute' }, (tx) => tx.patch('layers', second.id, { mute: true }));
     sampler.sample(0, ch);
     expect(readControlChannels(program, ch, HEAD).rx).toBe(0);
     expect(sampler.value(HEAD, 'rx', 0)).toBeUndefined();

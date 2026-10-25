@@ -1,11 +1,11 @@
-// Contract file: MVP-SPEC §4.5 with the M2A-SPEC §4.5 additions, the M6A-SPEC §6 rows (B0a), the M6B-SPEC §6/§0.6 rows (C0) and the AUTORIG-SPEC §4.5/§10 rows (D0) and MCP-SPEC §4.10 additions, copied verbatim (shapes are normative; change the spec first).
+// Contract file: MVP-SPEC §4.5 with the M2A-SPEC §4.5 additions, the M6A-SPEC §6 rows (B0a), the M6B-SPEC §6/§0.6 rows (C0) and the AUTORIG-SPEC §4.5/§10 rows (D0), MCP-SPEC §4.10 and STUDIO-TOUCH-SPEC §20.3/§20.4 (T2) additions, copied verbatim (shapes are normative; change the spec first).
 // Excluded from formatting in biome.json so it stays diffable against the spec.
 import type { Fps, Frame, InfinityMode, ParamValues, Quat, ReadonlyVec3, ReadonlyXf, RotateOrder, TangentType, Vec3 } from '@ekza-studio/anim-core';
 import type { CameraId, ChannelId, CharacterId, CharacterVrmMeta, ClipId, ConstraintId, ControlId, CurveId, DerivedFrom, DocSnapshot,
-  GroupId, HumanBoneName, ImagePlaneId, ImagePlaneRecord, JointId, JointRole, KeyId, MeshId, MeshRecord, OrthoCamera,
+  GroupId, HumanBoneName, ImagePlaneId, ImagePlaneRecord, JointId, JointRole, KeyId, LayerId, MeshId, MeshRecord, OrthoCamera,
   PaletteId, Redistributable, RootMotionMode, Side, SkeletonId, SwatchId, SwatchShader } from '@ekza-studio/doc';
 import type { BindMethod, ComponentKind, PaintOp, StrokeStamp } from '@ekza-studio/mesh-core';
-import type { CharacterExportRequest, ExportArtifact, ExportRequest, StaticExportRequest } from '@ekza-studio/io';
+import type { CharacterExportRequest, ExportArtifact, ExportRequest, LintIssue, StaticExportRequest } from '@ekza-studio/io';
 import type { BakeConstraintsArgs, ConstraintType, FootRollParams, LimbId, MirrorMode, QuickRigMarker, QuickRigMarkers,
   ReduceSpec, SkeletonPreset } from '@ekza-studio/rig';
 import type { BodyPart, ChannelEditResult, ChannelRef, DisplayFlags, GraphViewMode, HistoryResult, IkFkKeyMode,
@@ -16,6 +16,9 @@ import type { ComponentMode, MeshOpArgs, MeshOpOutcome, MeshSetCommitResult, Sce
 import type { BrushSettings, PaintMode, PoseView, RigMode } from '../types';
 import type { AutoRigExportResult, AutoRigExportTarget, AutoRigFix, AutoRigRigResult, AutoRigSampleId, ClipParams,
   IntakeReport, ShellRoute } from '../types';
+import type { ArrivalAction, ShellKind } from '../types';   // STUDIO-TOUCH-SPEC §20.4 (T2)
+import type { IntakeArgs, IntakeOutcome } from '../intake/types';   // M7 G-a (MODELING-PLAN §7.2; DECISIONS M7-GA-CONTRACT-*)
+import type { GenImportArgs, GenImportResult, GenJobArgs, GenJobResult, GenSubmitArgs } from '../genFlow/types';   // M7 G-d
 
 export type SampleId = 'seed-san' | 'polybot' | 'quaternius-ual';
 export interface FileArgs { readonly name: string; readonly bytes: Uint8Array }
@@ -43,7 +46,7 @@ export interface SwatchShaderArgs {
   readonly glossiness?: number;
   readonly specular?: readonly [number, number, number];
 }
-export type KeyChannels = 'all' | 'translate' | 'rotate' | 'scale' | 'attributes' | 'selected';   // changed: + 'attributes'
+export type KeyChannels = 'all' | 'translate' | 'rotate' | 'scale' | 'attributes' | 'selected' | 'changed';   // changed: + 'attributes'; + 'changed' (ST-KEY-3)
 /** M2a §5.19: the body parts a 'bodyPart' key target groups controls into (re-exported for operator authors). */
 export type { BodyPart };
 export interface ClipSettingsArgs {
@@ -173,6 +176,17 @@ export interface OperatorMap {
   'clip.delete': { args: { readonly clip: ClipId }; result: void };
   'clip.setActive': { args: { readonly clip: ClipId }; result: void };
   'clip.setSettings': { args: ClipSettingsArgs; result: void };
+  // ANIM-LAYERS (ADR 0026, ANIM-LAYERS-SPEC §4): animation layers
+  'clip.adjustOnLayer': { args: { readonly clip?: ClipId } | void; result: { readonly layer: LayerId } };
+  'layer.add': { args: { readonly clip?: ClipId; readonly name?: string; readonly mode?: LayerMode;
+    readonly weight?: number; readonly activate?: boolean } | void; result: { readonly layer: LayerId } };
+  'layer.remove': { args: { readonly layer: LayerId }; result: void };
+  'layer.setActive': { args: { readonly layer: LayerId }; result: void };
+  'layer.set': { args: { readonly layer: LayerId } & LayerSetFields; result: void };
+  'layer.reorder': { args: { readonly layer: LayerId; readonly to: 'up' | 'down' | number }; result: void };
+  'layer.duplicate': { args: { readonly layer: LayerId }; result: { readonly layer: LayerId } };
+  'layer.merge': { args: { readonly layer?: LayerId; readonly scope?: 'down' | 'all'; readonly times?: 'keys' | 'frames' } | void;
+    result: { readonly layer: LayerId; readonly keys: number } };
   // view
   'view.layout': { args: { readonly layout: ViewportLayout }; result: void };
   'view.toggleMaximize': { args: { readonly paneId?: string; readonly panel?: PanelKind } | void; result: void };
@@ -381,6 +395,8 @@ export interface OperatorMap {
   'imagePlane.set': { args: { readonly id: ImagePlaneId; readonly patch: Partial<Pick<ImagePlaneRecord, 'name' | 'camera'
     | 'offset' | 'size' | 'opacity' | 'depth' | 'locked' | 'visible'>> }; result: void };
   'imagePlane.delete': { args: { readonly id: ImagePlaneId }; result: void };
+  // STUDIO-TOUCH-SPEC §6.2 (Halo T8): the selected reference image plane (U state; null clears)
+  'select.imagePlane': { args: { readonly id: ImagePlaneId | null }; result: void };
   'scene.group': { args: { readonly ids?: readonly SceneObjectId[] } | void; result: { readonly group: GroupId } };
   'scene.parent': { args: { readonly ids?: readonly SceneObjectId[]; readonly parent?: SceneObjectId } | void; result: void };
   'scene.unparent': { args: { readonly ids?: readonly SceneObjectId[] } | void; result: void };
@@ -391,6 +407,12 @@ export interface OperatorMap {
 
   // ===================== M6b (M6B-SPEC §6, §0.6; C0 registers every id from its owner's stub file) =====================
   // ---------- §6.1 characters and skeletons ----------
+  // ===================== M7 G-a (MODELING-PLAN §7.2; DECISIONS M7-GA-CONTRACT-1…6): the AI intake operators =====================
+  'mesh.normalize': { args: IntakeArgs | void; result: IntakeOutcome };
+  'mesh.reduce': { args: IntakeArgs | void; result: IntakeOutcome };
+  'mesh.paletteBake': { args: IntakeArgs | void; result: IntakeOutcome };
+  'mesh.textureDownsize': { args: IntakeArgs | void; result: IntakeOutcome };
+  'mesh.intake': { args: IntakeArgs | void; result: IntakeOutcome };
   'mesh.importStatic': { args: { readonly bytes: Uint8Array; readonly name: string;
     readonly dropSkin?: boolean };                                // AUTORIG D0 (CR-AR-6, typed): import a skinned GLB's meshes at the bind pose
     result: { readonly meshes: readonly MeshId[] } };
@@ -547,7 +569,8 @@ export interface OperatorMap {
   'library.stop': { args: void; result: void };
   'library.useClip': { args: { readonly character: CharacterId; readonly clip: string;
     readonly params?: ClipParams;                                  // AUTORIG D0 (CR-AR-2a, D5): the derived asset, library clip first in derivedFrom
-    readonly replace?: ClipId };                                   // AUTORIG D0 (D5): one step deletes it and adds the new clip (name and slot kept)
+    readonly replace?: ClipId;                                     // AUTORIG D0 (D5): one step deletes it and adds the new clip (name and slot kept)
+    readonly slot?: string };                                      // CC C1: the new clip's slot (a contract slot moves off other clips)
     result: { readonly clip: ClipId } };
 
   // ===================== Auto-Rig (AUTORIG-SPEC §4.5; D0 registers every id from its owner's stub file) =====================
@@ -562,11 +585,14 @@ export interface OperatorMap {
     result: AutoRigRigResult };                                                                                    // D4; `rigidParts` AR-R4-5
   'autorig.cancel': { args: void; result: void };                                                                  // D4 (U)
   'autorig.clip.add': { args: { readonly character: CharacterId; readonly clip: string; readonly params: ClipParams;
-    readonly replace?: ClipId }; result: { readonly clip: ClipId } };                                              // D5
+    readonly replace?: ClipId; readonly slot?: string }; result: { readonly clip: ClipId } };                      // D5; `slot` CC C1
   'autorig.export': { args: { readonly character: CharacterId; readonly target: AutoRigExportTarget; readonly fileName: string };
     result: AutoRigExportResult };                                                                                 // D6
-  'autorig.navigate': { args: { readonly to: ShellRoute; readonly workspace?: WorkspaceId; readonly from?: 'studio' | 'autorig';
-    readonly newTab?: boolean }; result: void };                                                                   // D1 (U)
+  'autorig.navigate': { args: { readonly to: Exclude<ShellRoute, 'halo'>; readonly workspace?: WorkspaceId;
+    readonly from?: 'studio' | 'autorig'; readonly newTab?: boolean }; result: void };                            // D1 (U); T2: unchanged
+  // STUDIO-TOUCH-SPEC §20.3 item 11 (T2): the host-level shell switch of every route (agent-denied; U)
+  'shell.navigate': { args: { readonly to: ShellRoute; readonly workspace?: WorkspaceId; readonly from?: ShellKind;
+    readonly newTab?: boolean; readonly arrival?: ArrivalAction }; result: void };                                 // T2 (U)
   'autorig.controls': { args: { readonly hidden: boolean }; result: void };                                        // D9 (U, AR-D9-8)
   'autorig.parts': { args: { readonly hidden: readonly MeshId[] }; result: void };                                 // D10 (U, AR-D10-1)
 
@@ -625,6 +651,31 @@ export interface OperatorMap {
       readonly skippedFields: readonly { readonly table: string; readonly id: string; readonly fields: readonly string[] | null }[] } };
   'edit.restoreDocument': { args: { readonly snapshot: DocSnapshot; readonly label: string };   // user runs only (denied to agents)
     result: { readonly writes: number } };
+  // ---------- CHARACTER-CONTRACT-SPEC §8.2 (C1, additive): the target binding (lazy chunk `workflows/target`) ----------
+  'target.bind': { args: { readonly character: CharacterId; readonly game: string; readonly target: string;
+    readonly revision?: string }; result: { readonly revision: string } };
+  'target.unbind': { args: { readonly character: CharacterId }; result: void };
+  'target.update': { args: { readonly character: CharacterId; readonly revision?: string }; result: { readonly revision: string } };
+  'target.slot.assign': { args: { readonly character: CharacterId; readonly slot: string; readonly clip: ClipId }; result: void };
+  'target.slot.clear': { args: { readonly character: CharacterId; readonly slot: string }; result: void };
+  'target.slot.alias': { args: { readonly character: CharacterId; readonly slot: string; readonly to: string | null };
+    result: void };
+  // ---------- CHARACTER-CONTRACT-SPEC §8.7–§8.10 (C2, additive): slot setup, fixes, markers, the hero package ----------
+  'target.slot.create': { args: { readonly character: CharacterId; readonly slot: string;
+    readonly from: 'blank' | 'default' | 'library' | 'file'; readonly libraryClip?: string; readonly params?: ClipParams;
+    readonly fileName?: string; readonly bytes?: Uint8Array }; result: { readonly clip: ClipId } };
+  'target.fix': { args: { readonly character: CharacterId; readonly slot: string; readonly rule: string;
+    readonly marker?: string }; result: void };
+  'target.marker.set': { args: { readonly clip: ClipId; readonly marker: string; readonly frame: Frame | null };
+    result: void };
+  'target.exportPackage': { args: { readonly character: CharacterId; readonly devZip?: boolean; readonly fileName?: string };
+    result: { readonly fileName: string; readonly saved: boolean; readonly artifact: ExportArtifact;
+      readonly lints: readonly LintIssue[]; readonly bytes: Uint8Array | null } };
+  // ---------- M7 G-d (MODELING-PLAN §7.2; DECISIONS M7-GD-*, additive): the generation operators (lazy bodies) ----------
+  'gen.submit': { args: GenSubmitArgs; result: GenJobResult };
+  'gen.cancel': { args: GenJobArgs; result: GenJobResult };
+  'gen.retry': { args: GenJobArgs; result: GenJobResult };
+  'gen.import': { args: GenImportArgs; result: GenImportResult };
   // stretch (D0 types only, MCP-SPEC §1.2; not registered until built): 'pose.plantContacts', 'pose.recipe'
   'pose.plantContacts': { args: { readonly clip: ClipId; readonly feet?: readonly ('L' | 'R')[];
     readonly contacts?: readonly { readonly foot: 'L' | 'R'; readonly range: { readonly start: Frame; readonly end: Frame } }[];
@@ -633,4 +684,17 @@ export interface OperatorMap {
   'pose.recipe': { args: { readonly clip: ClipId; readonly recipe: PoseRecipeName; readonly startFrame?: Frame;
     readonly params?: Readonly<Record<string, number | string | boolean>>; readonly label?: string };
     result: { readonly keyed: number; readonly range: { readonly start: Frame; readonly end: Frame } } };
+}
+
+/** ANIM-LAYERS: a layer's blend mode. */
+export type LayerMode = 'additive' | 'override';
+/** ANIM-LAYERS: the fields `layer.set` changes (the base takes only mute, solo and locked). */
+export interface LayerSetFields {
+  readonly weight?: number;
+  readonly mute?: boolean;
+  readonly solo?: boolean;
+  readonly locked?: boolean;
+  readonly mode?: LayerMode;
+  readonly name?: string;
+  readonly mask?: readonly ControlId[] | null;
 }

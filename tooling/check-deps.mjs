@@ -23,13 +23,20 @@ const UI = scope('ui');
 const EDITOR = scope('editor');
 const MESH_CORE = scope('mesh-core');
 const MESH_VIEW = scope('mesh-view');
+// MODELING-PLAN §3.1, §7.2 G-a (M7): the lazy WASM adapters (meshoptimizer) and the AI intake chain, run in a worker.
+const MESH_WASM = scope('mesh-wasm');
 const AUTORIG = scope('autorig');
+// STUDIO-TOUCH-SPEC §20.1 (T2): Ekza Studio's Simple layout (the Halo shell).
+const HALO = scope('halo');
 // M-AI (MCP-SPEC §2): the agent bridge packages.
 const MOTION_ANALYSIS = scope('motion-analysis');
 const SCHEMATIC_RENDER = scope('schematic-render');
 const AGENT_TOOLS = scope('agent-tools');
 const AGENT_EVALS = scope('agent-evals');
 const MCP_SERVER = 'ekza-studio-mcp';
+// M7 (ADR 0017 §2): the ekza-gen/v1 contract and typed client (browser + Node), and the server-only gateway.
+const GEN_CORE = scope('gen-core');
+const GEN_GATEWAY = scope('gen-gateway');
 const MCP_CLIENT = '@modelcontextprotocol/client';
 
 const VITEST = ['@types/node', 'vitest'];
@@ -78,6 +85,11 @@ export const ALLOWED = {
     // Browser tests (P1, P4, P5, P6 in Chromium, M6A-SPEC §9 B1) next to the Node run.
     devDependencies: [...BROWSER_TESTS, 'fast-check'],
   },
+  // MODELING-PLAN §3.1: mesh-wasm imports the kernel and the WASM libraries only (never three, React or doc).
+  [MESH_WASM]: {
+    dependencies: [ANIM_CORE, MESH_CORE, 'meshoptimizer'],
+    devDependencies: VITEST,
+  },
   [MESH_VIEW]: {
     dependencies: [ANIM_CORE, MESH_CORE, 'three', 'three-mesh-bvh'],
     devDependencies: [...BROWSER_TESTS, '@types/three'],
@@ -111,7 +123,9 @@ export const ALLOWED = {
     ],
   },
   [EDITOR_CORE]: {
-    dependencies: [ANIM_CORE, DOC, RIG, IO, MESH_CORE, 'zustand'],
+    // GEN_CORE: the type of the optional `EditorServices.generation` slot only (oxlint: type imports).
+    // M7 G-a: mesh-wasm is reached through one lazy loader (editor-core/src/intake/load.ts).
+    dependencies: [ANIM_CORE, DOC, RIG, IO, MESH_CORE, GEN_CORE, MESH_WASM, 'zustand'],
     devDependencies: [...VITEST, 'fast-check', 'gltf-validator'],
   },
   // M-AI (MCP-SPEC §2 layering table). `ekza-studio-mcp` is the only published package: every runtime dependency is
@@ -120,6 +134,16 @@ export const ALLOWED = {
   [MOTION_ANALYSIS]: {
     dependencies: [ANIM_CORE],
     devDependencies: [...VITEST, 'fast-check'],
+  },
+  // M7 G-b (ADR 0017 §2): gen-core has no runtime dependency (doc only for a type-compatibility test); gen-gateway is
+  // server-only and depends on gen-core alone (node:* built-ins only in its node/ and testing/ subpaths).
+  [GEN_CORE]: {
+    dependencies: [],
+    devDependencies: [...VITEST, DOC],
+  },
+  [GEN_GATEWAY]: {
+    dependencies: [GEN_CORE],
+    devDependencies: VITEST,
   },
   [SCHEMATIC_RENDER]: {
     dependencies: [ANIM_CORE, 'fflate'],
@@ -181,12 +205,18 @@ export const ALLOWED = {
       EDITOR_CORE,
       MESH_CORE,
       MESH_VIEW,
+      MESH_WASM,
+      // M7 G-d: the Generate flow against the real gateway and the mock provider server (headless acceptance).
+      GEN_CORE,
+      GEN_GATEWAY,
       ...VRM,
       '@types/three',
       'gltf-validator',
       'three',
       // M6B-SPEC §2.1: the CI-only VRM validator of the character writer's gates.
       'vrm-validator',
+      // CHARACTER-CONTRACT-SPEC §4.1 (C2): the written package manifest against the pinned ekza.package.v1 schema.
+      'ajv',
     ],
   },
   [VIEWPORT]: {
@@ -217,11 +247,15 @@ export const ALLOWED = {
       IO,
       EDITOR_CORE,
       MESH_CORE,
+      // M7 G-a: the intake worker entry (editor/src/workers/intake.worker.ts).
+      MESH_WASM,
       VIEWPORT,
       CURVE_EDITOR,
       UI,
       // M-AI: editor/src/agent/** (a React.lazy chunk; MCP-SPEC §2)
       AGENT_TOOLS,
+      // M7 G-d (ADR 0017 §2): the host's generation client, loaded with a dynamic import (oxlint: type imports only)
+      GEN_CORE,
       SCHEMATIC_RENDER,
       ...REACT,
       '@react-three/fiber',
@@ -241,9 +275,19 @@ export const ALLOWED = {
     dependencies: [ANIM_CORE, DOC, EDITOR_CORE, VIEWPORT, UI, EDITOR, 'react'],
     devDependencies: [...VITEST, '@types/react'],
   },
+  // STUDIO-TOUCH-SPEC §20.1 (T2): the Halo shell — anim-core, doc, editor-core, viewport, curve-editor (lazy imports
+  // only, oxlint), ui, React and the editor through its `./host` (and the measured T5c) subpaths only; never autorig,
+  // mesh-core, rig, io, mesh-view or dockview. Node unit tests; its browser tests are the app's `ha-*` e2e.
+  // T8 (ADR 0017 §2): gen-core's `createGenerationClient` for *Create with AI*'s availability (a lazy import).
+  [HALO]: {
+    dependencies: [ANIM_CORE, DOC, EDITOR_CORE, VIEWPORT, CURVE_EDITOR, UI, EDITOR, GEN_CORE, 'react'],
+    devDependencies: [...VITEST, '@types/react'],
+  },
   web: {
-    // AUTORIG-SPEC §3.1 (D0): `/autorig` mounts the Auto-Rig shell (the only importer of @ekza-studio/autorig).
-    dependencies: [EDITOR, UI, AUTORIG, ...REACT, ...VRM, 'next', 'three'],
+    // AUTORIG-SPEC §3.1 (D0): `/autorig` mounts the Auto-Rig shell (the only importer of @ekza-studio/autorig);
+    // STUDIO-TOUCH-SPEC §20.1 (T2): `/app` mounts the Halo shell (the only importer of @ekza-studio/halo).
+    // ADR 0017 §2 (M7 G-b): the generation route of server builds (`app/api/gen/**/route.gen.ts`) mounts the gateway.
+    dependencies: [EDITOR, UI, AUTORIG, HALO, GEN_GATEWAY, ...REACT, ...VRM, 'next', 'three'],
     // e2e specs may import io and doc (ARCHITECTURE §3).
     devDependencies: [
       ...VITEST,
@@ -257,6 +301,8 @@ export const ALLOWED = {
       '@playwright/test',
       '@tailwindcss/postcss',
       '@types/three',
+      // STUDIO-TOUCH-SPEC §20.7 ha-15, AS-ST-14 (T12, ST-INT-6): axe's WCAG 2.2 AA run over Ekza Studio's sheets.
+      'axe-core',
       'gltf-validator',
       'playwright',
       'tailwindcss',

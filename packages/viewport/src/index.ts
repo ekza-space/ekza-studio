@@ -5,6 +5,7 @@ export { resolveControl, type ViewportTestApi, viewportTestApi } from './manager
 export {
   type AgentOverlayPass,
   DEFAULT_DISPLAY,
+  type DisplayOverlay,
   type PanePointerMenus,
   type PanePointerPress,
   type PaneState,
@@ -18,8 +19,63 @@ export { type ImagePlaneCamera, type ImagePlaneSpec } from './manager/imagePlane
 export { defaultCameraOf, defaultDisplayOf, MODEL_DISPLAY } from './manager/workspaceViews';
 export { LAYER } from './layers';
 export { isMmbStandIn } from './navigation/profiles';
+// STUDIO-TOUCH-SPEC §20.4 (T1): a touch shell's pointer arbiter (`ViewportManager.setPointerArbiter`) and the
+// tolerances by pointer type (§5.4).
+export {
+  type ArbiterClaim,
+  type ArbiterConfig,
+  type ArbiterFollow,
+  type ArbiterHost,
+  type ArbiterPointer,
+  type ArbiterPointerType,
+  type ArbiterPort,
+  type ArbiterRouting,
+  type ArbiterTap,
+  type CoalescedSample,
+  createPointerArbiter,
+  hostPort,
+  onChrome,
+  type PipeStep,
+  type PointerArbiter,
+  type PointerArbiterStage,
+  pointerArbiter,
+  type ViewGesture,
+} from './input/arbiter';
+export {
+  createModifierSource,
+  type ModifierSource,
+  NO_MODIFIERS,
+  type VirtualHoldCode,
+  type VirtualModifiers,
+  virtualKey,
+} from './input/modifiers';
+export {
+  handleGrowPx,
+  POINTER_TOLERANCE,
+  type PointerKind,
+  pointerInUse,
+  pointerKind,
+  setPointerTolerance,
+} from './input/tolerance';
 // AUTORIG-SPEC §8.1 (D3): a shell's per-press navigation override (`ViewportManager.setNavigationOverride`).
 export type { NavGesture, NavigationOverride, NavPointerInput } from './navigation/override';
+/** A pane view's camera state (`ViewportManager.viewState` / `setViewState`; STUDIO-TOUCH-SPEC J10, T12). */
+export type { NavState } from './navigation/NavigationController';
+// AUTORIG-SPEC §8.1, §8.3 (D3), moved from Auto-Rig by STUDIO-TOUCH-SPEC §20.3 item 1 (T1): Simple navigation and the
+// two-finger stage (a lazy chunk of `installSimpleNavigation`).
+export {
+  addNavigationClaim,
+  BRUSH_TOOLS,
+  createTwoFingerStage,
+  type Finger,
+  installSimpleNavigation,
+  MESH_TOOLS,
+  type NavigationClaim,
+  type SimplePress,
+  simpleGesture,
+  toolClaims,
+  twoFingerStep,
+} from './navigation/touch';
 export { loadScaleKit } from './manipulators/scale/load';
 export { SCALE_LABEL, scaleToolDef } from './tools/scaleTool';
 export {
@@ -77,6 +133,8 @@ export { mmbHandleFor, withModelTransform } from './tools/transformTool';
 // M6b (C6): Skin mode's runtime of a viewport (the skinned and weight display, the Paint Skin Weights tool), loaded on
 // the first Rig & Skin entry.
 export { type RigSkinRuntime, rigSkinOf } from './tools/rig/paint';
+// STUDIO-TOUCH-SPEC §12.4 (Halo T9): the Pencil pressure toggle of the weight brush (the brush tray's *Pressure* chip).
+export { setStrokePressure, strokePressure, subscribeStrokePressure } from './tools/rig/paint/pressure';
 // M-AI (MCP-SPEC §5.15.3; B3): one offscreen view_capture tile through the agent host (imported by the lazy agent module)
 export {
   type AgentTileCamera,
@@ -85,3 +143,5 @@ export {
   renderAgentTile,
   tileCamera,
 } from './manager/agentTile';
+// Halo T0 (STUDIO-TOUCH-SPEC S8): the memory profile's texture cap at GPU upload (applied by the host's GL canvas)
+export { applyTextureCap, TEXTURE_CAP_PX, type TextureCapTarget } from './gl/textureCap';

@@ -256,7 +256,11 @@ describe('every M6a operator resolves and poll-fails cleanly (§3 rule 1)', () =
     'edit.adjustLast',
     'edit.repeatLast',
   ]);
-  const M6A = BUILTIN_OPERATORS.filter((def) => def.workspaces?.includes('model') === true || GLOBAL.has(def.id));
+  /** M7 G-a's intake operators also list the Model workspace; they are not §6 rows (test/m7/intake.test.ts). */
+  const M7 = new Set(['mesh.normalize', 'mesh.reduce', 'mesh.paletteBake', 'mesh.textureDownsize', 'mesh.intake']);
+  const M6A = BUILTIN_OPERATORS.filter(
+    (def) => (def.workspaces?.includes('model') === true || GLOBAL.has(def.id)) && !M7.has(def.id),
+  );
   /** Poll reasons of the operators that have landed, for the arguments below (headless: no viewport, no shell). */
   const LANDED: Readonly<Record<string, readonly string[]>> = {
     'workspace.set': ['expects { workspace }'],
@@ -346,9 +350,10 @@ describe('every M6a operator resolves and poll-fails cleanly (§3 rule 1)', () =
     'mesh.setAttributes',
   ]);
 
-  // Literal update (SHADING-SPEC §5): + palette.assignMaterial (78 editor operators).
-  it('covers the §6 operators: 38 kernel ops, 4 set-ops and 78 editor operators', () => {
-    expect(M6A.length).toBe(38 + 4 + 78);
+  // Literal update (SHADING-SPEC §5): + palette.assignMaterial; STUDIO-TOUCH-SPEC §6.2 (Halo T8): + select.imagePlane
+  // (79 editor operators).
+  it('covers the §6 operators: 38 kernel ops, 4 set-ops and 79 editor operators', () => {
+    expect(M6A.length).toBe(38 + 4 + 79);
     expect(M6A.filter((d) => d.id.startsWith('mesh.') && d.extraArgs?.includes('kind') === true)).toHaveLength(42);
   });
 
@@ -379,6 +384,8 @@ describe('every M6a operator resolves and poll-fails cleanly (§3 rule 1)', () =
     'imagePlane.import',
     'imagePlane.set',
     'imagePlane.delete',
+    // Halo T8 (STUDIO-TOUCH-SPEC §6.2): its own argument check, "expects { id }" (halo/test/make-paint.test.ts)
+    'select.imagePlane',
     'scene.group',
     'scene.parent',
     'scene.unparent',

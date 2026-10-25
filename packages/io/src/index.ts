@@ -51,6 +51,7 @@ export {
   LOCAL_PROFILE_ID,
   MODEL_CHARACTER_PROFILE_IDS,
   OMOBA_GLB_PROFILE_ID,
+  OMOBA_PACKAGE_PROFILE_ID,
   SPACE_PROFILE_ID,
 } from './profiles/character';
 export {
@@ -110,3 +111,5 @@ export {
 } from './skeleton/fromDoc';
 // Auto-Rig D6 (AUTORIG-SPEC §5.6.4): the OMOBA local test kit packer and the deterministic zip of the VRMA bundle.
 export * from './omoba';
+// GAME-PROTOCOL-SPEC §3–§4, §8.10 (C1): the `ekza.game-contract.v1` reader, its profiles, canonical JSON, the index.
+export * from './contract';

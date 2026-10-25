@@ -3,14 +3,18 @@
 // the avatar metadata (C10's `VrmMetaFields`) and its thumbnail (C10's `ThumbnailPreview`) — every edit one operator
 // run. In the side panel, the checklist of the target (`./labels`: plain sentences over `characterExportRows` and,
 // after a download, the written file's byte rows and measures), each error with its row's Fix, and the OMOBA notes.
-// The footer's primary is *Download* (`autorig.export`): disabled while an error row is open; a blocking byte lint
-// saves nothing and the column shows it. *Publish to Ekza Hub* is absent (§5.6.5, `./hub`).
+// The footer's primary is *Download* (`autorig.export` through editor-core's `autorigFlow`, T5b, with the target naming
+// and the recommended target): disabled while an error row is open; a blocking byte lint saves nothing and the column
+// shows it. *Publish to Ekza Hub* is absent (§5.6.5, `./hub`).
 import { ThumbnailPreview, useCharacterRows, VrmMetaFields } from '@ekza-studio/editor/bodies';
 import {
   type AutoRigExportResult,
   type AutoRigExportTarget,
+  downloadExport,
   type EditorApp,
+  exportAvatarName,
   isModelCharacter,
+  recommendedTarget,
   type RigValidationRow,
 } from '@ekza-studio/editor-core';
 import { buttonClass, cn, RadioGroup, RadioGroupItem } from '@ekza-studio/ui';
@@ -22,6 +26,7 @@ import type { StepViewProps } from '../../shell/steps';
 import { type SmallStore, smallStore, useSmall } from '../../shell/store';
 import type { AutoRigSession } from '../../types';
 import { useHiddenControls } from '../markers/controls';
+import { flowHost } from '../model/flowHost';
 import { useHiddenParts } from '../model/hiddenParts';
 import { rememberAuthor } from './author';
 import { exportCharacter } from './enter';
@@ -37,7 +42,8 @@ const t = (): ReturnType<typeof messages>['export'] => messages().export;
 const coarse = 'pointer-coarse:min-h-11';
 const SPACE = 'ekza/space-avatar-v1';
 const LOCAL = 'local/generic';
-const TARGETS: readonly AutoRigExportTarget[] = ['ekza-vrm', 'glb', 'vrma', 'omoba-kit'];
+const PACKAGE = 'ekza/omoba-humanoid-v2';
+const TARGETS: readonly AutoRigExportTarget[] = ['ekza-vrm', 'omoba-hero', 'glb', 'vrma', 'omoba-kit'];
 /** Studio's Animate workspace (*Continue in Studio*: same-page switch through the navigation port, §5.6.6). */
 const STUDIO_ANIMATE = '/editor?ws=animate';
 const selectExport = (s: AutoRigSession): AutoRigSession['export'] => s.export;
@@ -117,8 +123,7 @@ interface ExportView {
 }
 
 /** The recommended target of a character: the Ekza avatar, or the GLB for an imported glTF avatar. */
-const recommendedOf = (record: CharacterRecord): AutoRigExportTarget =>
-  isModelCharacter(record) || record.format !== 'gltf' ? 'ekza-vrm' : 'glb';
+const recommendedOf = recommendedTarget;
 
 /** The poll's reason when the recommended target is unavailable, else null. */
 function unavailableReason(app: EditorApp, record: CharacterRecord | null): string | null {
@@ -172,8 +177,7 @@ function noTargetsText(view: ExportView): string {
 }
 
 /** The display name the file is named after (as `autorig.export` names it). */
-const avatarName = (record: CharacterRecord): string =>
-  (isModelCharacter(record) ? (record.vrm?.name ?? '').trim() : '') || record.name;
+const avatarName = exportAvatarName;
 
 // ---------------------------------------------------------------------------------------------------------------------
 // over the pane: targets, Continue in Studio, metadata
@@ -192,6 +196,7 @@ function TargetLabel(props: {
     );
   }
   if (props.target === 'glb') return <>{props.clips === 0 ? m.targetGlbRigged : m.targetGlb}</>;
+  if (props.target === 'omoba-hero') return <>{m.targetHero}</>;
   return <>{props.target === 'vrma' ? m.targetVrma : m.targetKit}</>;
 }
 
@@ -202,6 +207,8 @@ function hintOf(target: AutoRigExportTarget, view: ExportView): string {
       return view.vrm0 ? m.targetVrm0Hint : m.targetVrmHint;
     case 'glb':
       return m.targetGlbHint;
+    case 'omoba-hero':
+      return m.targetHeroHint;
     case 'vrma':
       return m.targetVrmaHint(
         view.clips,
@@ -253,7 +260,10 @@ function Targets(props: { readonly ctx: WizardContext }): JSX.Element {
   const developers = ui.developers || view.target === 'omoba-kit';
   const main = view.available.filter((target) => target !== 'omoba-kit');
   const kit = view.available.includes('omoba-kit');
-  const meta = view.model && view.record !== null && (view.target === 'ekza-vrm' || view.target === 'omoba-kit');
+  const meta =
+    view.model &&
+    view.record !== null &&
+    (view.target === 'ekza-vrm' || view.target === 'omoba-kit' || view.target === 'omoba-hero');
   return (
     <div className="pointer-events-none absolute inset-0 overflow-auto p-3">
       <section
@@ -563,8 +573,8 @@ function Panel(props: { readonly ctx: WizardContext }): JSX.Element {
   const view = useExportView(ctx);
   const ui = useSmall(exportUi(ctx));
   const { record, target } = view;
-  const vrm = target === 'ekza-vrm' || target === 'omoba-kit';
-  const profile = target === 'glb' ? LOCAL : SPACE;
+  const vrm = target === 'ekza-vrm' || target === 'omoba-kit' || target === 'omoba-hero';
+  const profile = target === 'glb' ? LOCAL : target === 'omoba-hero' ? PACKAGE : SPACE;
   const live = useCharacterRows(
     app,
     view.model && record !== null && target !== 'vrma' ? record.id : null,
@@ -626,7 +636,7 @@ function Panel(props: { readonly ctx: WizardContext }): JSX.Element {
       )}
       {vrm ? (
         <p className="text-fg-2" data-testid="ar-export-omoba-note">
-          {m.omobaNote}
+          {target === 'omoba-hero' ? m.heroNote : m.omobaNote}
         </p>
       ) : null}
       {target === 'ekza-vrm' && !publishToHub() ? (
@@ -654,15 +664,14 @@ function useExportFooter(
   const name =
     record === null || target === null
       ? null
-      : expectedFileName(target, avatarName(record), view.clips, view.firstClip);
+      : expectedFileName(target, avatarName(record), view.clips, view.firstClip, view.available.includes('omoba-hero'));
   useEffect(() => {
     const m = t();
     const download = async (): Promise<void> => {
       if (record === null || target === null) return;
-      const result = await ctx.run('autorig.export', { character: record.id, target, fileName: '' });
-      if (result.status !== 'finished') return;
-      const value = result.value as AutoRigExportResult;
-      const saved = !value.lints.some((lint) => lint.severity === 'error');
+      const downloaded = await downloadExport(flowHost(ctx), record.id, target);
+      if (downloaded === null) return;
+      const { result: value, saved } = downloaded;
       exportUi(ctx).set((current) => ({
         ...current,
         last: {
@@ -675,7 +684,11 @@ function useExportFooter(
         },
       }));
       recordDownload(ctx.session, saved);
-      if (saved && (target === 'ekza-vrm' || target === 'omoba-kit') && isModelCharacter(record)) {
+      if (
+        saved &&
+        (target === 'ekza-vrm' || target === 'omoba-kit' || target === 'omoba-hero') &&
+        isModelCharacter(record)
+      ) {
         rememberAuthor(ctx.app.store.get('characters', record.id)?.vrm?.authors[0]);
       }
     };

@@ -10,7 +10,7 @@ import {
   type CurveRecord,
   TRS_CHANNELS,
 } from '@ekza-studio/doc';
-import { type EditorApp, sortChannelsForDisplay } from '@ekza-studio/editor-core';
+import { type EditorApp, editLayerOf, sortChannelsForDisplay } from '@ekza-studio/editor-core';
 import type { ChannelTreeNode } from '../types';
 import { CHANNEL_COLORS, channelColor, channelLabel } from './colors';
 
@@ -39,7 +39,8 @@ export function buildChannelTree(
 ): ChannelTreeNode[] {
   const { store } = app;
   const filter = (opts.filter ?? '').trim().toLowerCase();
-  const base = opts.clip === null ? undefined : store.query.baseLayer(opts.clip);
+  // ANIM-LAYERS: the Graph Editor lists the curves of the layer the person keys into.
+  const base = opts.clip === null ? undefined : editLayerOf(app, store, opts.clip);
   const characters = new Map<CharacterId, { name: string; controls: ChannelTreeNode[] }>();
   const seen = new Set<ControlId>();
 

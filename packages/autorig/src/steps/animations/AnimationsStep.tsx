@@ -7,6 +7,7 @@
 // Hover never auto-plays; the preview starts on a click, Enter or Space only. Keys: `/` search, `Space` play / stop
 // (form controls keep their own Space), `A` adds the focused or selected card, `Esc` stops (the frame's fall-through).
 import type { ClipRecord } from '@ekza-studio/doc';
+import { pickerAccept } from '@ekza-studio/editor/host';
 import { buttonClass, cn } from '@ekza-studio/ui';
 import {
   type JSX,
@@ -63,6 +64,7 @@ import {
 import { useHiddenControls } from '../markers/controls';
 import { useHiddenParts } from '../model/hiddenParts';
 import { clearDraft, markSkipped } from './slice';
+import { hasTarget, TargetSection } from './TargetChecklist';
 import './strings';
 
 const t = (): ReturnType<typeof messages>['animations'] => messages().animations;
@@ -393,6 +395,10 @@ function ClipRow(props: {
               {slot}
             </option>
           ))}
+          {/* a target slot (CHARACTER-CONTRACT-SPEC §8.2) set by contract mode stays selectable */}
+          {record.slot !== null && !SLOT_VOCABULARY.includes(record.slot) ? (
+            <option value={record.slot}>{record.slot}</option>
+          ) : null}
         </select>
       </label>
     </li>
@@ -432,6 +438,10 @@ function CharacterClips(props: { readonly ctx: WizardContext }): JSX.Element {
 function DropZone(props: { readonly ctx: WizardContext }): JSX.Element {
   const { ctx } = props;
   const a = t();
+  const targeted = useDocument(ctx.app, () => {
+    const character = subjectCharacter(ctx);
+    return character !== null && hasTarget(ctx, character.id);
+  });
   const picker = useRef<HTMLInputElement>(null);
   return (
     <div className="flex flex-col gap-2">
@@ -446,7 +456,7 @@ function DropZone(props: { readonly ctx: WizardContext }): JSX.Element {
       <input
         ref={picker}
         type="file"
-        accept=".vrma"
+        accept={pickerAccept('.vrma')}
         multiple
         className="hidden"
         data-testid="ar-anim-picker"
@@ -456,7 +466,8 @@ function DropZone(props: { readonly ctx: WizardContext }): JSX.Element {
           if (files.length > 0) void importVrmaFiles(ctx, files);
         }}
       />
-      <p className="text-fg-3">{a.omobaNote}</p>
+      {/* P-6: the note stays until OMOBA plays custom clips (C3); a bound character's checklist says it instead */}
+      {targeted ? null : <p className="text-fg-3">{a.omobaNote}</p>}
     </div>
   );
 }
@@ -547,7 +558,13 @@ function Panel(props: { readonly ctx: WizardContext }): JSX.Element {
 
   return (
     <div className="flex flex-col gap-4" data-testid="ar-anim-panel">
-      <CharacterClips ctx={ctx} />
+      {/* CHARACTER-CONTRACT-SPEC §8.5 (C1): *For a game…*; bound, the slot checklist replaces the free clip list */}
+      <TargetSection
+        ctx={ctx}
+        character={character === null ? null : { id: character.id, name: characterName(character) }}
+      >
+        <CharacterClips ctx={ctx} />
+      </TargetSection>
       <Library ctx={ctx} />
       <DropZone ctx={ctx} />
       {count === 0 && !slice.skipped ? (

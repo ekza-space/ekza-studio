@@ -21,6 +21,12 @@
       "path": "./packages/io"
     },
     {
+      "path": "./packages/gen-core"
+    },
+    {
+      "path": "./packages/gen-gateway"
+    },
+    {
       "path": "./packages/editor-core"
     },
     {
@@ -55,6 +61,9 @@
     },
     {
       "path": "./packages/autorig"
+    },
+    {
+      "path": "./packages/halo"
     },
     {
       "path": "./packages/headless-tests"

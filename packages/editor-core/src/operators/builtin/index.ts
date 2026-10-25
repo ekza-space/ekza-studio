@@ -13,11 +13,13 @@ import type { AnyOperator } from './define';
 import { EDIT_OPERATORS } from './edit';
 import { BUILTIN_EXPORTERS } from './exporters';
 import { FILE_OPERATORS } from './file';
+import { GEN_OPERATORS } from './gen';
 import { GRAPH_OPERATORS } from './graph';
 import { GRAPH_BUFFER_OPERATORS } from './graphBuffer';
 import { IK_OPERATORS } from './ik';
 import { BUILTIN_IMPORTERS } from './importers';
 import { KEY_OPERATORS } from './key';
+import { LAYER_OPERATORS } from './layer';
 import { BUILTIN_MENU_ITEMS } from './menus';
 import { MIRROR_ANIMATION_OPERATORS } from './mirrorAnimation';
 import { POSE_OPERATORS } from './pose';
@@ -49,6 +51,8 @@ export const BUILTIN_OPERATORS: readonly AnyOperator[] = [
   ...TIME_OPERATORS,
   ...GRAPH_OPERATORS,
   ...CLIP_OPERATORS,
+  // ANIM-LAYERS (ADR 0026)
+  ...LAYER_OPERATORS,
   ...VIEW_OPERATORS,
   ...RIG_OPERATORS,
   // M2a (M2A-SPEC §3 rule 2: new operators live in new files; A0 registers their stubs here)
@@ -67,6 +71,8 @@ export const BUILTIN_OPERATORS: readonly AnyOperator[] = [
   ...KEYMAP_SHADOW_OPERATORS,
   ...MODEL_OPERATOR_PROXIES.content,
   // M-AI: the explicit-target operators register lazily (`agentChunk.ts`, MCP-SPEC §0.4).
+  // M7 G-d (MODELING-PLAN §7.2): the generation operators; their bodies are a lazy chunk (`genFlow/ops`).
+  ...GEN_OPERATORS,
 ];
 
 function disposeAll(disposers: Disposer[]): Disposer {

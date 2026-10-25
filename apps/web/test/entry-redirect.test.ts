@@ -72,16 +72,20 @@ describe('REDIRECT_SCRIPT (§3.3)', () => {
     expect(run.globals).toEqual([]);
   });
 
+  // STUDIO-TOUCH-SPEC §1.2, ST-2 (HALO_ENTRY on since T12): a malformed record or blocked storage is a first visit,
+  // which opens Ekza Studio; `?chooser=1` still shows the chooser (entry-contract.test.ts runs the off rule too)
   it.each([['{"choice":"editor"}'], ['{"choice":"toString"}'], ['not json'], ['null'], ['42']])(
-    'a malformed record %s shows the chooser',
+    'a malformed record %s is a first visit: Ekza Studio',
     (stored) => {
-      expect(runScript({ search: '', stored }).replaced).toEqual([]);
+      expect(runScript({ search: '', stored }).replaced).toEqual(['/app']);
+      expect(runScript({ search: '?chooser=1', stored }).replaced).toEqual([]);
     },
   );
 
-  it('blocked storage shows the chooser and throws nothing', () => {
+  it('blocked storage is a first visit (Ekza Studio) and throws nothing', () => {
     expect(() => runScript({ search: '', blocked: true })).not.toThrow();
-    expect(runScript({ search: '', blocked: true }).replaced).toEqual([]);
+    expect(runScript({ search: '', blocked: true }).replaced).toEqual(['/app']);
+    expect(runScript({ search: '?chooser=1', blocked: true }).replaced).toEqual([]);
   });
 
   it('a back/forward visit never redirects (no history trap)', () => {

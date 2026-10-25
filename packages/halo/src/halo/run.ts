@@ -1,0 +1,118 @@
+// Running a verb (STUDIO-TOUCH-SPEC §5.6, §6.1, D5): a petal, a ring slot or a More row. A stage verb switches the stage
+// (committing, §7.1). An operator with a pre-run form (Halo-only form data, `@ekza-studio/editor-core/forms`, or the
+// ParamDefs of an operator that cannot be adjusted after the run) opens its chips first, filled with the defaults,
+// with ✓ to run. Anything else runs at once; an adjustable run then shows its Echo chips (`edit.adjustLast`), and after
+// a face operation a reduced Halo stays beside them so the next face verb is one tap away. A ring closes into the arc.
+import type { EditorApp, HaloStage, OperatorId } from '@ekza-studio/editor-core';
+import type * as Forms from '@ekza-studio/editor-core/forms';
+import type { ShellContext } from '../shell/context';
+import type { Verb } from './verbSource';
+
+/** §6.1: after these the reduced Halo (Pull again · Bevel · Inset) stays beside the Echo chips. */
+export const FACE_OPS: ReadonlySet<string> = new Set<OperatorId>(['mesh.extrude', 'mesh.inset', 'mesh.bevel']);
+
+export interface RunnerDeps {
+  enterStage(stage: HaloStage): Promise<void>;
+  openSheet(sheet: string): void;
+}
+
+/** §6.4: the verb waits for a tap on its target (the subject is the selection when it was chosen). */
+export function startTarget(ctx: ShellContext, label: string, op: OperatorId): void {
+  ctx.store.set({
+    target: { label, op, subject: [...ctx.app.session.getState().selection.objects] },
+    halo: null,
+    focus: null,
+  });
+}
+
+type FormsModule = typeof Forms;
+let forms: Promise<FormsModule> | null = null;
+/** The forms chunk (Halo-only, lazy; prefetched at idle). */
+export function loadForms(): Promise<FormsModule> {
+  forms ??= import('@ekza-studio/editor-core/forms').catch((error: unknown) => {
+    forms = null;
+    throw error;
+  });
+  return forms;
+}
+
+/**
+ * A stage's own action for a verb id (T9 seam: a petal that goes to Rig, `stage:rig`, opens the Rig-it card on what is
+ * selected); it runs in place of the verb's stage switch, sheet or operator. The disposer removes it.
+ */
+const verbActions = new WeakMap<EditorApp, Map<string, () => void>>();
+
+export function registerVerbAction(app: EditorApp, id: string, action: () => void): () => void {
+  let actions = verbActions.get(app);
+  if (actions === undefined) {
+    actions = new Map();
+    verbActions.set(app, actions);
+  }
+  actions.set(id, action);
+  return () => {
+    if (verbActions.get(app)?.get(id) === action) verbActions.get(app)?.delete(id);
+  };
+}
+
+export function createVerbRunner(
+  ctx: ShellContext,
+  deps: RunnerDeps,
+): (verb: Verb, from: 'petal' | 'ring' | 'more') => void {
+  const { app, store } = ctx;
+  return (verb, from) => {
+    store.set((s) => ({ touches: s.touches + 1, loupe: null }));
+    if (from === 'more') store.set({ sheet: null });
+    // a ▾ petal shows its choices beside the Halo (§6.2); a ring closes into the arc that holds them
+    if (verb.choices !== undefined && verb.choices.length > 0 && from !== 'more') {
+      store.set((s) => ({
+        sub: s.sub === verb.id ? null : verb.id,
+        ...(s.halo?.mode === 'ring' ? { halo: { mode: 'arc' as const, at: s.halo.at } } : {}),
+      }));
+      return;
+    }
+    if (store.get().sub !== null) store.set({ sub: null });
+    const own = verbActions.get(app)?.get(verb.id);
+    if (own !== undefined) {
+      store.set({ halo: null, focus: null });
+      own();
+      return;
+    }
+    if ('stage' in verb.run) {
+      void deps.enterStage(verb.run.stage);
+      return;
+    }
+    if ('sheet' in verb.run) {
+      deps.openSheet(verb.run.sheet);
+      return;
+    }
+    const { op, args } = verb.run;
+    if (verb.target === true) {
+      // §6.4: "now tap the target" — the next tap's object becomes the verb's `parent`
+      startTarget(ctx, verb.label, op);
+      return;
+    }
+    const anchor = store.get().halo?.at ?? store.get().anchor;
+    void (async () => {
+      const def = app.operators.get(op);
+      let form = null;
+      try {
+        form = (await loadForms()).formOf(op, def);
+      } catch {
+        form = null; // offline after a redeploy: the operator runs with its defaults
+      }
+      if (form !== null) {
+        store.set({ form: { op, ...(args === undefined ? {} : { args }) }, halo: null });
+        return;
+      }
+      const result = await ctx.run(op, args);
+      if (result.status !== 'finished') return;
+      if (FACE_OPS.has(op) && app.session.getState().lastRun?.id === op) {
+        store.set({ halo: { mode: 'arc', at: anchor, reduced: true } });
+        return;
+      }
+      const halo = store.get().halo;
+      // a ring was transient: the Halo stays as the arc beside what is selected (a run may have changed it)
+      if (halo !== null && halo.mode === 'ring') store.set({ halo: { mode: 'arc', at: anchor } });
+    })();
+  };
+}

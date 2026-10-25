@@ -10,6 +10,7 @@ import type {
   CurveRecord,
   KeyId,
   KeyRecord,
+  LayerId,
   ReadView,
   Tx,
 } from '@ekza-studio/doc';
@@ -27,6 +28,7 @@ import {
   SAME_FRAME_EPS,
   sameKeyData,
 } from './context';
+import { editLayerOf, isCurveLocked } from './layers';
 import { fromDisplayValue } from './numeric';
 import { type RippleScope, rippleScopeOf } from './ripple';
 
@@ -40,17 +42,26 @@ const MIN_SCALE = 0.01;
 // ---------- curves ----------
 
 /**
- * The canonical base-layer curve of (clip, control, channel), created when missing (§4.11.0). This is the shared
+ * The canonical curve of (clip, edit layer, control, channel), created when missing (§4.11.0). This is the shared
  * curve-creation helper of keying (key.set, auto-key, tween keys, pastes): on a clip with `loop: true` a new curve
  * gets `pre` and `post` 'cycle' (M2A-SPEC §5.23), so the editor's cycle-aware auto tangents make the seam C¹.
- * Existing curves are never rewritten.
+ * Existing curves are never rewritten. ANIM-LAYERS: the layer is the session's active layer of the clip (the base
+ * when none is active), or `layer` when given.
  */
-export function ensureCurve(app: EditorApp, tx: Tx, clip: ClipId, control: ControlId, channel: ChannelId): CurveId {
+export function ensureCurve(
+  app: EditorApp,
+  tx: Tx,
+  clip: ClipId,
+  control: ControlId,
+  channel: ChannelId,
+  layerId?: LayerId,
+): CurveId {
   const clipRecord = requireClip(tx, clip);
   if (tx.get('controls', control) === undefined) {
     throw new EkzaError('invalid-record', `Control ${control} does not exist`);
   }
-  const layer = ensureBaseLayer(app, tx, clip);
+  const chosen = layerId === undefined ? editLayerOf(app, tx, clip) : tx.get('layers', layerId);
+  const layer = chosen ?? ensureBaseLayer(app, tx, clip);
   const existing = tx.query.curveFor(clip, layer.id, control, channel);
   if (existing !== undefined) return existing.id;
   const curve: CurveRecord = {
@@ -442,10 +453,10 @@ function byCurve(tx: ReadView, keys: readonly KeyId[]): Map<CurveId, Set<KeyId>>
   return groups;
 }
 
-/** Editable curve of a key group, or undefined for missing and Graph-Editor-locked curves. */
+/** Editable curve of a key group, or undefined for missing, Graph-Editor-locked and locked-layer curves. */
 function editableCurve(tx: ReadView, curve: CurveId): CurveRecord | undefined {
   const record = tx.get('curves', curve);
-  return record === undefined || record.locked ? undefined : record;
+  return record === undefined || isCurveLocked(tx, record) ? undefined : record;
 }
 
 /** Min and max time of the edited keys. */
@@ -893,7 +904,7 @@ export function setTangentTypes(
 export function insertKeyOnCurve(app: EditorApp, tx: Tx, curve: CurveId, frame: Frame): KeyId {
   if (!Number.isFinite(frame)) throw new EkzaError('invalid-record', 'insertKeyOnCurve: frame must be finite');
   const record = requireCurve(tx, curve);
-  if (record.locked) throw new EkzaError('unsupported', `Curve ${curve} is locked`);
+  if (isCurveLocked(tx, record)) throw new EkzaError('unsupported', `Curve ${curve} is locked`);
   const keys = tx.query.keysOfCurve(curve);
   const existing = keys.find((key) => Math.abs(key.t - frame) < SAME_FRAME_EPS);
   if (existing !== undefined) return existing.id;

@@ -27,6 +27,9 @@
       "path": "../../editor-core/src"
     },
     {
+      "path": "../../gen-core/src"
+    },
+    {
       "path": "../../viewport/src"
     },
     {

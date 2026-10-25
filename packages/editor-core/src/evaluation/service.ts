@@ -2,20 +2,37 @@
 // clip time per character, once-per-tick pose evaluation into each runtime's buffers, and channel values/states for
 // the Channels panel. Channel values and states read the store directly (preview overlay included), so they are
 // correct between ticks and for characters without a runtime.
-import { type CompiledAnimCurve, type Disposer, EkzaError, type Frame } from '@ekza-studio/anim-core';
+import {
+  type CompiledAnimCurve,
+  composeLayerScalar,
+  composeLayerTrs,
+  type Disposer,
+  EkzaError,
+  type Frame,
+} from '@ekza-studio/anim-core';
 import {
   type ChannelId,
   type ChannelValues,
   type CharacterId,
   type ClipId,
   type ControlId,
+  type ControlRecord,
   type CurveId,
   type CurveRecord,
   type DocumentStore,
+  type LayerRecord,
   TRS_CHANNELS,
   type TrsChannel,
 } from '@ekza-studio/doc';
-import type { ChannelBuffer, CurveCache, LimbId, PoseBuffers, RigProgram } from '@ekza-studio/rig';
+import {
+  attrStackAt,
+  type ChannelBuffer,
+  type CurveCache,
+  controlStackAt,
+  type LimbId,
+  type PoseBuffers,
+  type RigProgram,
+} from '@ekza-studio/rig';
 import type { KernelDeps } from '../app/deps';
 import { channelDefault, channelDefaultOf, isKeyable, isLocked } from '../edit/channelMeta';
 import type {
@@ -135,6 +152,9 @@ export function createEvaluationService(ctx: {
       return rig.get(control)?.[channel] ?? channelDefaultOf(store.get('controls', control) ?? null, channel);
     const override = session.getState().overrides.get(control)?.[channel];
     if (override !== undefined) return override;
+    // ANIM-LAYERS: a layered clip shows the composite of its playing layers.
+    const layered = layeredAt(control);
+    if (layered !== null) return compositeOf(layered, channel);
     const { curve, frame } = curveAt(control, channel);
     if (curve !== undefined && frame !== null) return curveValue(curve, frame);
     return channelDefaultOf(store.get('controls', control) ?? null, channel);
@@ -151,6 +171,45 @@ export function createEvaluationService(ctx: {
     const base = store.query.baseLayer(clip.id);
     const curve = base === undefined ? undefined : store.query.curveFor(clip.id, base.id, control, channel);
     return { curve, frame: clipFrame(character) };
+  };
+
+  /** ANIM-LAYERS: the control's active clip and frame when the clip has more than one layer (else null). */
+  const layeredAt = (
+    control: ControlId,
+  ): { readonly clip: ClipId; readonly record: ControlRecord; readonly frame: Frame } | null => {
+    const character = characterOf(control);
+    const clip = character === null ? undefined : activeClipOf(store, session.getState(), character);
+    const record = store.get('controls', control);
+    if (character === null || clip === undefined || record === undefined) return null;
+    if (store.query.layersOfClip(clip.id).length <= 1) return null;
+    const frame = clipFrame(character);
+    return frame === null ? null : { clip: clip.id, record, frame };
+  };
+
+  /** The composite of one channel over the clip's playing layers (no overrides). */
+  const compositeOf = (
+    at: { readonly clip: ClipId; readonly record: ControlRecord; readonly frame: Frame },
+    channel: ChannelId,
+  ): number => {
+    const keyed = (curve: CurveRecord): number | null => {
+      const compiled = cache.get(curve.id);
+      return compiled.keyCount > 0 ? engine.evaluate(compiled, at.frame) : null;
+    };
+    if (channel.startsWith('@')) {
+      const stack = attrStackAt(store, at.clip, at.record, channel, keyed);
+      return composeLayerScalar(stack.input, stack.entries);
+    }
+    const slot = TRS_CHANNELS.indexOf(channel as TrsChannel);
+    if (slot === -1) return channelDefaultOf(at.record, channel);
+    const stack = controlStackAt(store, at.clip, at.record, keyed);
+    return composeLayerTrs(stack.input, stack.entries, at.record.rotateOrder, new Float64Array(9))[slot] as number;
+  };
+
+  /** ANIM-LAYERS: the layer the person edits in a clip (the session's active layer, else the base). */
+  const editLayerIn = (clip: ClipId): LayerRecord | undefined => {
+    const layers = store.query.layersOfClip(clip);
+    const id = session.getState().activeLayer?.[clip];
+    return (id === undefined ? undefined : layers.find((layer) => layer.id === id)) ?? layers[0];
   };
 
   /** Samples and evaluates a runtime; false when its channels did not change (the pose is kept, M-1). */
@@ -234,7 +293,10 @@ export function createEvaluationService(ctx: {
       const clip = character === null ? undefined : activeClipOf(store, session.getState(), character);
       const frame = character === null ? null : clipFrame(character);
       const base = clip === undefined ? undefined : store.query.baseLayer(clip.id);
-      if (clip !== undefined && base !== undefined && frame !== null) {
+      const layered = layeredAt(control);
+      if (layered !== null) {
+        for (const channel of TRS_CHANNELS) values[channel] = compositeOf(layered, channel);
+      } else if (clip !== undefined && base !== undefined && frame !== null) {
         for (const channel of TRS_CHANNELS) {
           const curve = store.query.curveFor(clip.id, base.id, control, channel);
           if (curve !== undefined) values[channel] = curveValue(curve, frame);
@@ -255,6 +317,22 @@ export function createEvaluationService(ctx: {
       if (record === undefined || !isKeyable(record, channel)) return 'non-keyable';
       if (isLocked(record, channel)) return 'locked';
       if (session.getState().overrides.get(control)?.[channel] !== undefined) return 'changed';
+      const layered = layeredAt(control);
+      if (layered !== null) {
+        // ANIM-LAYERS: keyed on frame = a key of the edit layer at the frame; keyed = keys on it or a layer below.
+        const layer = editLayerIn(layered.clip);
+        const curve = layer === undefined ? undefined : store.query.curveFor(layered.clip, layer.id, control, channel);
+        const own = curve === undefined ? [] : store.query.keysOfCurve(curve.id);
+        if (own.some((key) => Math.abs(key.t - layered.frame) < 1e-6)) return 'keyed-on-frame';
+        if (own.length > 0) return 'keyed';
+        const layers = store.query.layersOfClip(layered.clip);
+        for (const below of layers) {
+          if (below.id === layer?.id) break;
+          const other = store.query.curveFor(layered.clip, below.id, control, channel);
+          if (other !== undefined && store.query.keysOfCurve(other.id).length > 0) return 'keyed';
+        }
+        return 'static';
+      }
       const { curve, frame } = curveAt(control, channel);
       const keys = curve === undefined ? [] : store.query.keysOfCurve(curve.id);
       if (keys.length === 0) return 'static';

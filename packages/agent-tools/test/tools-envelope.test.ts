@@ -54,6 +54,10 @@ const CALLS: readonly (readonly [string, Record<string, unknown>])[] = [
   ['history_checkpoint', { label: 'Envelope check', list: true }],
   ['history_revert', { steps: [], dryRun: true }],
   ['clip_delete', { clip: 'clip1', confirm: true }], // not the active clip: deleting that is P1's actor-safe clip.delete
+  // ANIM-LAYERS (ADR 0026)
+  ['layer_add', { clip: 'agent', name: 'Fixes' }],
+  ['layer_set', { clip: 'agent', layer: 'Fixes', weight: 0.5 }],
+  ['layer_merge', { clip: 'agent', layer: 'Fixes' }],
 ];
 
 describe('success envelopes against the manifest (§5.3, §5.21)', () => {

@@ -2,8 +2,9 @@
 // line, plus Studio's overlays (marking menus, the shell slots). It renders inside `StudioHost`, which owns the GL
 // canvas, the dialogs, the command palette, the toasts and the drop target on every route. `StudioShell` is the
 // `/editor` route's shell: it creates the Studio shell core over the page's host when it mounts and disposes it when
-// it unmounts (a switch to Auto-Rig), and it alone opens the first-run dialog.
-import { switchWorkspace } from '@ekza-studio/editor-core';
+// it unmounts (a switch to Auto-Rig or Halo), and it alone opens the first-run dialog. STUDIO-TOUCH-SPEC §16.1 (T2):
+// arriving from Halo (`from=halo`) it opens no first-run dialog either, and it applies a switch's arrival action.
+import { type ArrivalAction, switchWorkspace } from '@ekza-studio/editor-core';
 import { TooltipProvider } from '@ekza-studio/ui';
 import { type JSX, useEffect } from 'react';
 import { useHost } from '../host/context';
@@ -79,6 +80,27 @@ function startStudio(host: HostShell, panels: PanelRegistry | undefined): Shell 
 
 const disposals = new Map<Shell, ReturnType<typeof setTimeout>>();
 
+/** Pro's toast on a same-page arrival from Ekza Studio's Simple layout (STUDIO-TOUCH-SPEC §16.1, J9). */
+export const HALO_ARRIVAL_TOAST = 'Same project, every panel at once · Undo still works';
+/** Shells that showed it (StrictMode replays effects in development: one toast per arrival). */
+const arrivalToasted = new WeakSet<Shell>();
+
+/** The operator each kind of arrival action runs with the action as its arguments (STUDIO-TOUCH-SPEC §16.1, T2). */
+const ARRIVAL_OPS = { preset: 'workspace.preset.apply', panel: 'workspace.showPanel', dialog: 'ui.open' } as const;
+
+/**
+ * Applies a same-page switch's arrival action once the shell shows (Halo's Curves → the Polish preset, its Share
+ * sheet → the Export dialog): presets and panels wait up to 60 frames for the dockview workspace to attach.
+ */
+function applyArrival(shell: Shell, arrival: ArrivalAction, tries = 60): void {
+  if (shell.mounted.getState() !== shell) return;
+  if (arrival.kind !== 'dialog' && shell.workspace.dockview === null && tries > 0) {
+    requestAnimationFrame(() => applyArrival(shell, arrival, tries - 1));
+    return;
+  }
+  void shell.runFromUi(ARRIVAL_OPS[arrival.kind], arrival);
+}
+
 export interface StudioShellProps {
   /** Panels to show; default: the built-in panels. */
   readonly panels?: PanelRegistry;
@@ -88,9 +110,16 @@ export interface StudioShellProps {
 
 export function StudioShell(props: StudioShellProps): JSX.Element {
   const host = useHost();
-  // Arriving from Auto-Rig (a switch on this page, or `from=autorig`): no first-run dialog over the hand-over (AR-D8-6).
-  const [shell, arrived] = useConstant(
-    () => [startStudio(host, props.panels), shellShown.has(host) || host.params.from === 'autorig'] as const,
+  // Arriving from Auto-Rig or Halo (a switch on this page, or `from=`): no first-run dialog over the hand-over
+  // (AR-D8-6, STUDIO-TOUCH-SPEC §16.1). A same-page switch's arrival action is read once with the shell.
+  const [shell, arrived, arrival, from] = useConstant(
+    () =>
+      [
+        startStudio(host, props.panels),
+        shellShown.has(host) || host.params.from !== null,
+        host.navigation.takeArrival(),
+        host.navigation.takeFrom(),
+      ] as const,
   );
   const { onShell } = props;
 
@@ -115,6 +144,19 @@ export function StudioShell(props: StudioShellProps): JSX.Element {
   }, [host, shell]);
 
   useEffect(() => onShell?.(shell), [shell, onShell]);
+
+  // STUDIO-TOUCH-SPEC §16.1 (T2): what the switch asked Studio to open (after the mount effect above made it current).
+  useEffect(() => {
+    if (arrival !== null) applyArrival(shell, arrival);
+  }, [shell, arrival]);
+
+  // STUDIO-TOUCH-SPEC §16.1, J9 (T12, P-T11-4): a same-page switch from the Simple layout says what stayed the same.
+  // A new-tab hand-over has its own toast (the undo history starts there), so only `takeFrom()` asks for this one.
+  useEffect(() => {
+    if (from !== 'halo' || arrivalToasted.has(shell)) return;
+    arrivalToasted.add(shell);
+    shell.app.services.notify.toast({ kind: 'info', text: HALO_ARRIVAL_TOAST });
+  }, [shell, from]);
 
   // The first-run dialog is Studio's (AUTORIG-SPEC §4.4): Auto-Rig never shows it, nor a hand-over from it.
   useEffect(() => {

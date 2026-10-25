@@ -90,6 +90,18 @@ export {
 } from './quickrig';
 export { type CurveCache, createClipSampler, createCurveCache } from './sampler/cache';
 export {
+  attrStackAt,
+  type ControlStack,
+  controlStackAt,
+  isLayerPlaying,
+  layerAffects,
+  layerMode,
+  layerRestValue,
+  layerWeight,
+  playingLayers,
+  type StackOptions,
+} from './sampler/layers';
+export {
   applyOverrides,
   channelDefaultValue,
   readAttr,

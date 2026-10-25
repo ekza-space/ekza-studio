@@ -14,6 +14,7 @@ import { EditorAppProvider } from '../hooks';
 import { CommandPaletteHost } from '../overlays/CommandPalette';
 import { createShellServices } from '../services/browser';
 import type { ToastNotifier } from '../services/notify';
+import { installIntakeWorker } from '../services/intakeWorker';
 import { installSkinWorker } from '../services/skinWorker';
 import type { Summarizer } from '../shell/summary';
 import { Toaster } from '../shell/Toaster';
@@ -54,6 +55,9 @@ export interface StudioHostProps {
   readonly kernelDebug?: boolean;
   /** Overrides the URL parameters (harnesses and tests). */
   readonly params?: EditorParams;
+  /** M7 G-d (ADR 0017 §2; M7-GB-12): the generation gateway's base (`NEXT_PUBLIC_EKZA_GEN_GATEWAY`); '' or absent
+   *  hides AI generation. */
+  readonly genGateway?: string;
   readonly summarize?: Summarizer;
   readonly createValidatorWorker?: () => Worker;
   /** A same-page navigation between the shells (Next's `router.push`); without it a switch reloads the page with a
@@ -91,6 +95,10 @@ function boot(props: StudioHostProps, push: (href: string) => void): Boot {
     pointerLock: params.pointerLock,
     kernelDebug: props.kernelDebug === true || params.e2e,
     onDownload: (record) => host?.exports.recordDownload(record),
+    // M7 G-d: e2e pages poll a job faster (their gateway is routed in the page, which cannot stream events).
+    ...(props.genGateway === undefined || props.genGateway === ''
+      ? {}
+      : { generation: { baseUrl: props.genGateway, pollMs: params.e2e ? 400 : 3000 } }),
     ...(props.createValidatorWorker === undefined ? {} : { createValidatorWorker: props.createValidatorWorker }),
   });
   let app: EditorApp;
@@ -106,6 +114,8 @@ function boot(props: StudioHostProps, push: (href: string) => void): Boot {
   }
   // M6b C4: Bind Skin solves in the skin worker (its code is a lazy entry of its own).
   installSkinWorker(app);
+  // M7 G-a: the intake operators (normalize, reduce, palette bake) run their chain in the intake worker.
+  installIntakeWorker(app);
   if (params.e2e) {
     app.prefs.setState({
       firstRunDone: !params.firstRun,

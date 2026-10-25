@@ -566,6 +566,8 @@ const layerShape = shape({
   owner: nullable(str),
   order,
   deleted: tombstone,
+  locked: optional(bool),
+  mask: optional(nullable(array(nonEmpty, 4096))),
 });
 
 const curveShape = shape({

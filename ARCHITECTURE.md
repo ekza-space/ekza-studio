@@ -193,9 +193,11 @@ space is VRM 1.0: +Y up, +Z forward, character left = +X; VRM 0.x gets a π-yaw 
 
 ### 4.4 Clips and layers
 
-`Character 1─* Clip 1─* Layer 1─* Curve 1─* Key`. The MVP creates exactly one base layer per clip
-(`mode: 'override'`, weight 1) and evaluates only it; additive/override layer evaluation (R01 NL-02) is V2
-without schema change (layers already carry `owner` for per-user layers, R06 D11). Clips carry `contact`, `tags`
+`Character 1─* Clip 1─* Layer 1─* Curve 1─* Key`. Every clip has a base layer (`mode: 'override'`, weight 1). Since
+ANIM-LAYERS ([ADR 0026](docs/adr/0026-animation-layers.md), [spec](docs/ANIM-LAYERS-SPEC.md)) additive and override
+layers above it evaluate too — the `ClipSampler` folds the playing layers (anim-core's blend; a lone base is the M1
+path bit for bit) — without a schema change (`locked` and `mask` are optional fields; layers already carry `owner` for
+per-user layers, R06 D11). Keys go into the session's active layer, as the value that keeps the pose. Clips carry `contact`, `tags`
 and provenance (`derivedFrom`, `redistributable`) for Ekza metadata (ADR 0010). The active clip per character is U
 state.
 

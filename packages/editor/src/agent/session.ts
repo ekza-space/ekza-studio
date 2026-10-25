@@ -18,9 +18,11 @@ import {
   WAITING_FOR_DRAG,
   WAITING_FOR_REDO,
 } from '@ekza-studio/agent-tools';
+import type { DocSnapshot } from '@ekza-studio/doc';
 import { EDITOR_VERSION, type EditorApp, type RunActor } from '@ekza-studio/editor-core';
 import type { ViewportManager } from '@ekza-studio/viewport';
 import { createStore, type StoreApi } from 'zustand/vanilla';
+import { type BeforeAgent, takeBeforeAgent } from './beforeAgent';
 import { discoverServers, lnaState, pageIsLoopback, type ProbeAnswer } from './bridge/discovery';
 import { type ConfirmAnswer, createLiveHost } from './bridge/host';
 import { setAgentSession } from './bridge/slot';
@@ -66,6 +68,11 @@ export interface AgentSession {
   setPaused(on: boolean): void;
   /** The confirm card's [Allow] / [Deny]. */
   answerConfirm(id: string, answer: 'allow' | 'deny'): void;
+  /**
+   * T12 (P-T10-4, §5.13): the document as it was before the agent's first edit of this pairing (`state.beforeAgent`
+   * describes it), or null before that edit. *Restore the project as it was before the AI* puts it back.
+   */
+  beforeAgentSnapshot?(): DocSnapshot | null;
 }
 
 export const DEFAULT_GRANTS: Grants = { read: true, edit: true, files: false, view: false, workspace: false };
@@ -160,6 +167,8 @@ export function createAgentSession(app: EditorApp, deps: AgentSessionDeps): Agen
   const controllers = new Map<string, AbortController>();
   const inFlight = new Map<string, InFlight>();
   let group: string | null = null;
+  /** The document before this pairing's first edit (§5.13; T12, P-T10-4). */
+  let before: BeforeAgent | null = null;
   // files of the running edit/files call (queued calls run one at a time, §5.8 3)
   const attached = new Map<string, Uint8Array>();
   let writes: { name: string; bytes: Uint8Array }[] = [];
@@ -292,6 +301,11 @@ export function createAgentSession(app: EditorApp, deps: AgentSessionDeps): Agen
     for (const file of message.files) {
       const bytes = sock.takeBlob(file.blob);
       if (bytes !== null) attached.set(file.path, bytes);
+    }
+    // §5.13 (T12, P-T10-4): the project as it is before the pairing's first edit, kept for *Restore before the AI*
+    if (edit && before === null) {
+      before = takeBeforeAgent(app);
+      set({ beforeAgent: { at: before.at, approxBytes: before.approxBytes } });
     }
     const row = pushRow(message.tool, message.args);
     const call: InFlight = { id: message.id, tool: message.tool, edit, row, started: Date.now(), waitingFor: null };
@@ -469,7 +483,16 @@ export function createAgentSession(app: EditorApp, deps: AgentSessionDeps): Agen
         });
         rowSeq = 0;
         group = null;
-        set({ status: 'paired', actor: message.actor, code: null, audit: [], checkpoints: [], error: null });
+        before = null;
+        set({
+          status: 'paired',
+          actor: message.actor,
+          code: null,
+          audit: [],
+          checkpoints: [],
+          beforeAgent: null,
+          error: null,
+        });
         sock.send({
           t: 'tab',
           title: (globalThis.document?.title ?? 'Ekza Studio').slice(0, 500),
@@ -631,6 +654,9 @@ export function createAgentSession(app: EditorApp, deps: AgentSessionDeps): Agen
     },
     answerConfirm(id, answer) {
       answerCard?.(id, answer);
+    },
+    beforeAgentSnapshot() {
+      return before?.snapshot ?? null;
     },
     disconnect() {
       socket?.send({ t: 'bye', reason: 'user' });

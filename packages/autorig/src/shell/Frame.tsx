@@ -200,6 +200,35 @@ function OpenInStudio(props: { readonly ctx: WizardContext }): JSX.Element {
   );
 }
 
+/**
+ * *Back to Studio ▸* (STUDIO-TOUCH-SPEC §1.1, §16.3; Halo T9): only when Auto-Rig was entered from Ekza Studio's Simple
+ * layout (`from=halo`); a same-page switch back to `/app`, the document and undo history kept. *Open in Studio ▸* still
+ * goes to the Pro layout.
+ */
+function BackToStudio(props: { readonly ctx: WizardContext }): JSX.Element | null {
+  const { ctx } = props;
+  const fromHalo = useSmall(ctx.ui, selectFromHalo);
+  const step = useSession(ctx.session, selectStep);
+  if (!fromHalo) return null;
+  const workspace = studioWorkspace(step);
+  return (
+    <a
+      href={`/app?ws=${workspace}`}
+      className={cn(buttonClass('primary', 'sm'), coarse)}
+      title={f().backToStudioTitle}
+      data-testid="ar-back-to-studio"
+      onClick={(e: MouseEvent) => {
+        e.preventDefault();
+        void ctx.host.navigation.go({ to: 'halo', workspace, from: 'autorig' });
+      }}
+    >
+      {f().backToStudio} ▸
+    </a>
+  );
+}
+
+const selectFromHalo = (ui: { readonly fromHalo: boolean }): boolean => ui.fromHalo;
+
 function Header(props: { readonly ctx: WizardContext }): JSX.Element {
   return (
     <header className="flex h-11 shrink-0 items-center gap-2 border-b border-line bg-header px-2">
@@ -213,6 +242,7 @@ function Header(props: { readonly ctx: WizardContext }): JSX.Element {
       <SubjectName ctx={props.ctx} />
       <span className="flex-1" />
       <UndoRedo ctx={props.ctx} />
+      <BackToStudio ctx={props.ctx} />
       <OpenInStudio ctx={props.ctx} />
       <MoreMenu ctx={props.ctx} />
     </header>

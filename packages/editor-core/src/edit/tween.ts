@@ -25,6 +25,7 @@ import { attrDefOf, channelDefaultOf, isKeyable, isLocked, isTrsChannel } from '
 import { SAME_FRAME_EPS } from './context';
 import { beginKeyEditGesture } from './gesture';
 import { writeKeyAt } from './keys';
+import { editLayerOf } from './layers';
 
 /** The five tween modes (§5.13), in menu order. */
 export const TWEEN_MODES: readonly TweenMode[] = ['tween', 'neighbor', 'ease', 'pushPull', 'toDefault'];
@@ -178,8 +179,10 @@ function planFrame(app: EditorApp, target: Extract<TweenTarget, { readonly kind:
         : target.clip === undefined
           ? activeClipOf(view, state, character)
           : view.get('clips', target.clip);
-    const layer = clip === undefined ? undefined : view.query.baseLayer(clip.id);
+    const layer = clip === undefined ? undefined : editLayerOf(app, view, clip.id);
     if (character === undefined || clip === undefined || layer === undefined) continue;
+    // ANIM-LAYERS: session overrides are composite values; on a layered clip the tween blends the layer's keys only.
+    const single = view.query.layersOfClip(clip.id).length <= 1;
     if (clip.character !== character) continue;
     const channels =
       target.channels === null
@@ -188,7 +191,10 @@ function planFrame(app: EditorApp, target: Extract<TweenTarget, { readonly kind:
     const current = target.keyed === true ? null : app.evaluation.clipFrame(character);
     // The session's overrides belong to the active clip's current frame only (a tween in another clip reads curves).
     const atCurrent =
-      current !== null && Math.abs(current - t) < 1e-9 && activeClipOf(view, state, character)?.id === clip.id;
+      single &&
+      current !== null &&
+      Math.abs(current - t) < 1e-9 &&
+      activeClipOf(view, state, character)?.id === clip.id;
     for (const channel of new Set(channels)) {
       const curve = view.query.curveFor(clip.id, layer.id, id, channel);
       if (curve === undefined || !curveEditable(curve, control)) continue;

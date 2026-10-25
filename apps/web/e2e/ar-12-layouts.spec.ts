@@ -31,20 +31,11 @@ async function expectFrame(page: Page, size: (typeof SIZES)[number]): Promise<vo
   // no horizontal page scroll; the frame fills the window
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
   expect(overflow).toBeLessThanOrEqual(0);
-  // the two boxes are read together once the layout settles (a lazy report grows the sheet a frame later)
-  const boxes = async () => ({
-    panes: await page.getByTestId('ar-panes').boundingBox(),
-    panel: await page.getByTestId('ar-step-panel').boundingBox(),
-  });
-  if (!size.side) {
-    await expect
-      .poll(async () => {
-        const { panes, panel } = await boxes();
-        return panes !== null && panel !== null && panel.y >= panes.y + panes.height - 1;
-      })
-      .toBe(true);
-  }
-  const { panes, panel } = await boxes();
+  // The two boxes come from one layout: the step's lazy panel (the report, ② Markers) grows the bottom sheet a few
+  // frames after the step shows, and two separate `boundingBox()` reads can straddle that growth — the panes measured
+  // before it, the sheet after it — so a phone under load once read the sheet's top (578) above the panes' bottom
+  // (762). `settledBoxes` reads both rects in the same frame and waits until they hold still for two frames.
+  const { panes, panel } = await settledBoxes(page);
   if (panes === null || panel === null) throw new Error('no panes or panel');
   if (size.side) {
     // the step panel beside the panes, at most 320 px wide
@@ -78,6 +69,37 @@ async function expectFrame(page: Page, size: (typeof SIZES)[number]): Promise<vo
     );
     expect(small).toEqual([]);
   }
+}
+
+type Rect = { x: number; y: number; width: number; height: number };
+
+/**
+ * The panes' and the step panel's boxes from one layout (both rects read in the same frame), once they hold still for
+ * two consecutive animation frames — or, if the frame keeps changing for 5 s, the last pair read together.
+ */
+async function settledBoxes(page: Page): Promise<{ panes: Rect | null; panel: Rect | null }> {
+  return page.evaluate(
+    () =>
+      new Promise<{ panes: Rect | null; panel: Rect | null }>((resolve) => {
+        const rect = (id: string): Rect | null => {
+          const box = document.querySelector(`[data-testid="${id}"]`)?.getBoundingClientRect();
+          return box === undefined ? null : { x: box.x, y: box.y, width: box.width, height: box.height };
+        };
+        const read = () => ({ panes: rect('ar-panes'), panel: rect('ar-step-panel') });
+        let last = read();
+        let still = 0;
+        const deadline = performance.now() + 5_000;
+        const tick = (): void => {
+          const now = read();
+          if (JSON.stringify(now) === JSON.stringify(last)) still += 1;
+          else still = 0;
+          last = now;
+          if (still >= 2 || performance.now() > deadline) resolve(now);
+          else requestAnimationFrame(tick);
+        };
+        requestAnimationFrame(tick);
+      }),
+  );
 }
 
 type Camera = { position: number[]; quaternion: number[] };

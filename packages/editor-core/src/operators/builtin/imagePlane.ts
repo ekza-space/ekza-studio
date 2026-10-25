@@ -151,4 +151,34 @@ const deletePlane = defineOperator({
   },
 });
 
-export const IMAGE_PLANE_OPERATORS: readonly AnyOperator[] = [importPlane, setPlane, deletePlane];
+// STUDIO-TOUCH-SPEC §6.2 "Image plane" (Halo T8): the canvas selects a plane by a tap in the view that shows it, and
+// the Scene sheet's Reference rows do too. A plane is not a scene object (`select.objects` drops its id), so its
+// selection is its own session field, `model.imagePlane`: picking a plane clears the object selection, and a
+// scene-object pick clears the plane (`select.objects`). U state, as Studio Pro's Outliner slot; never an undo step.
+const selectPlane = defineOperator({
+  id: 'select.imagePlane',
+  label: 'Select Image Plane',
+  description: 'Selects a reference image plane (null clears the plane selection).',
+  category: 'select',
+  scope: 'model',
+  workspaces: ['model'],
+  flags: { selection: true },
+  extraArgs: ['id'],
+  poll({ app }, args): PollResult {
+    if (!isRecord(args) || (args['id'] !== null && typeof args['id'] !== 'string')) return fail('expects { id }');
+    if (args['id'] === null) return OK;
+    const plane = app.store.get('imagePlanes', args['id']);
+    return plane === undefined || plane.deleted !== null ? fail(`Unknown image plane ${args['id']}`) : OK;
+  },
+  apply({ app }, args) {
+    const state = app.session.getState();
+    const model = state.model;
+    if ((model.imagePlane ?? null) === args.id && (args.id === null || state.selection.objects.length === 0)) return;
+    app.session.setState({
+      model: { ...model, imagePlane: args.id },
+      ...(args.id === null ? {} : { selection: { ...state.selection, objects: [] } }),
+    });
+  },
+});
+
+export const IMAGE_PLANE_OPERATORS: readonly AnyOperator[] = [importPlane, setPlane, deletePlane, selectPlane];

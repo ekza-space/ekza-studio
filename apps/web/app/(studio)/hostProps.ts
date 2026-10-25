@@ -11,6 +11,8 @@ export function hostProps(navigate: (href: string) => void): StudioHostProps {
     libraryPath: '/library/',
     e2e: E2E_BUILD,
     kernelDebug: process.env.NODE_ENV !== 'production' || E2E_BUILD,
+    // M7 G-d (M7-GB-12): '/api/gen' in server builds, the build-time gateway URL in static exports, '' = none.
+    genGateway: process.env.NEXT_PUBLIC_EKZA_GEN_GATEWAY ?? '',
     navigate,
   };
 }

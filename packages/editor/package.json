@@ -10,6 +10,10 @@
     ".": "./src/index.ts",
     "./host": "./src/host/index.ts",
     "./bodies": "./src/bodies.ts",
+    "./models": "./src/models.ts",
+    "./overlays": "./src/overlays.ts",
+    "./toolkit": "./src/toolkit.ts",
+    "./agent": "./src/agent.ts",
     "./testing": "./src/testing/index.ts"
   },
   "scripts": {
@@ -22,8 +26,10 @@
     "@ekza-studio/curve-editor": "workspace:*",
     "@ekza-studio/doc": "workspace:*",
     "@ekza-studio/editor-core": "workspace:*",
+    "@ekza-studio/gen-core": "workspace:*",
     "@ekza-studio/io": "workspace:*",
     "@ekza-studio/mesh-core": "workspace:*",
+    "@ekza-studio/mesh-wasm": "workspace:*",
     "@ekza-studio/rig": "workspace:*",
     "@ekza-studio/schematic-render": "workspace:*",
     "@ekza-studio/ui": "workspace:*",

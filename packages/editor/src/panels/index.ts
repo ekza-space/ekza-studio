@@ -4,6 +4,7 @@ import { registerAttributesPanel } from './attributes';
 import { registerChannelsPanel } from './channels';
 import { registerClipsPanel } from './clips';
 import { registerDopeSheetPanel } from './dopesheet';
+import { registerGeneratePanel } from './generate';
 import { registerGraphPanel } from './graph';
 import { registerMeshCheckPanel } from './meshcheck';
 import { registerOutlinerPanel } from './outliner';
@@ -17,8 +18,12 @@ import { PANEL } from '@ekza-studio/editor-core';
 import { lazyPanelDef } from './lazyPanel';
 import { registerModelStartOverlays } from './viewport/modelOverlays';
 
+/** ANIM-LAYERS: the Layers panel body. */
+const loadLayersPanel = () => import('./layers');
 /** M6b: the Rig & Skin panel bodies, one lazy group (./rigPanels.ts). */
 const loadRigPanels = () => import('./rigPanels');
+/** C12 + CC C1: the Clip Library body and the Target panel body (named export `target`), one lazy group. */
+const loadClipLibraryPanels = () => import('./clipLibrary');
 
 /**
  * Registers every built-in panel. Each panel directory exports `register<Name>Panel`; panel owners edit only their
@@ -43,7 +48,7 @@ export function registerBuiltinPanels(registry: PanelRegistry): Disposer {
     // M6a (B13): the Model start card and the Getting started card (pane overlay slots).
     registerModelStartOverlays(),
     // M6b (C0 registration lines; bodies: C12, C3, C7, C7, C6)
-    registry.register(lazyPanelDef(PANEL.clipLibrary, 'Clip Library', () => import('./clipLibrary'))),
+    registry.register(lazyPanelDef(PANEL.clipLibrary, 'Clip Library', loadClipLibraryPanels)),
     registry.register(lazyPanelDef(PANEL.quickRig, 'Quick Rig', loadRigPanels)),
     registry.register(lazyPanelDef(PANEL.rigToolkit, 'Rig Toolkit', loadRigPanels)),
     registry.register(lazyPanelDef(PANEL.validation, 'Validation', loadRigPanels)),
@@ -52,6 +57,13 @@ export function registerBuiltinPanels(registry: PanelRegistry): Disposer {
     // so Windows never lists a panel that can show nothing (Q-MVP-15). Its stub body stays in ./componentEditor.
     // M-AI (MCP-SPEC §7.1): the Agent panel, a lazy chunk opened from Windows › Agent or the status pill
     registerAgentPanel(registry),
+    // CHARACTER-CONTRACT-SPEC §8.4 (C1): the Target panel docked beside Clips (Windows › Target); its body rides the
+    // Clip Library's lazy chunk (one loader for both: no extra chunk entry on the route, CC-C1-17)
+    registry.register(lazyPanelDef('target', 'Target', loadClipLibraryPanels)),
+    // M7 G-d (MODELING-PLAN §7.2): the Generate panel, a lazy chunk shown from File › Generate with AI…
+    registerGeneratePanel(registry),
+    // ANIM-LAYERS (ADR 0026): the Layers panel, a lazy chunk (Windows › Layers, Clip › Animation Layers…)
+    registry.register(lazyPanelDef('layers', 'Layers', loadLayersPanel)),
   ];
   return () => {
     for (const dispose of [...disposers].reverse()) dispose();

@@ -7,6 +7,7 @@ import {
   bodyPartOf,
   controlVisibility,
   type EditorApp,
+  editLayerOf,
   sortChannelsForDisplay,
 } from '@ekza-studio/editor-core';
 import { channelLabel } from '../channel-tree/colors';
@@ -78,7 +79,8 @@ export function buildRows(
 ): DopeSheetRow[] {
   if (opts.clip === null) return [];
   const clip = app.store.get('clips', opts.clip);
-  const base = clip === undefined ? undefined : app.store.query.baseLayer(clip.id);
+  // ANIM-LAYERS: the rows show the keys of the layer the person keys into.
+  const base = clip === undefined ? undefined : editLayerOf(app, app.store, clip.id);
   const rig = clip === undefined ? undefined : app.store.query.rigOfCharacter(clip.character);
   if (clip === undefined || base === undefined || rig === undefined) return [];
   const wanted = new Set(opts.controls);

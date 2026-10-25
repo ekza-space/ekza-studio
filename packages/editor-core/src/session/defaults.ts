@@ -59,6 +59,7 @@ export function defaultModelSession(): ModelSessionState {
     capture: { armed: null, field: null, text: null },
     lastTool: null,
     activeSwatch: null,
+    imagePlane: null,
     tweakHandle: null,
   };
 }
@@ -70,6 +71,7 @@ export function defaultSession(user: UserId = 'local' as UserId): SessionState {
     dirty: false,
     activeCharacter: null,
     activeClip: {},
+    activeLayer: {},
     selection: { controls: [], keys: new Map(), channels: [], objects: [], joints: [], constraints: [] },
     time: DEFAULT_TIME,
     tools: DEFAULT_TOOLS,

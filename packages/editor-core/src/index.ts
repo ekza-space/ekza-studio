@@ -13,6 +13,18 @@ export { createEditorApp } from './app/createEditorApp';
 export { createHeadlessEditorApp, createHeadlessServices, type HeadlessServicesOptions } from './app/headless';
 export { CHANGE_JOURNAL_CAP } from './history/history';
 export { AGENT_OPERATOR_IDS, loadAgentOperators } from './operators/builtin/agentChunk';
+// STUDIO-TOUCH-SPEC §20.3 item 7 (T5a): the public UI wrappers of the AI-only operators (a lazy chunk, denied to agents).
+export {
+  loadReachSolver,
+  loadUiWrappers,
+  type ReachSolver,
+  UI_WRAPPER_IDS,
+  type UiKeyScopeArgs,
+  type UiLoopMethod,
+  type UiLoopTravel,
+  type UiScalePivot,
+  type UiWrapperId,
+} from './operators/builtin/uiWrapperChunk';
 export {
   AI_LABEL_MAX,
   AI_LABEL_PREFIX,
@@ -25,6 +37,19 @@ export { createPresenceRegistry, PRESENCE_MAX_CONTROLS } from './presence/regist
 export { EDITOR_VERSION, isSampleId, SAMPLES, type SampleDef } from './workflows/samples';
 export { channelDefaultOf, channelUnit } from './edit/channelMeta';
 export { applyChannelEdits, beginChannelEditGesture } from './edit/channels';
+// ANIM-LAYERS (ADR 0026): the active layer, the layer keys go to, locks and keying refusals
+export {
+  activeLayerIdOf,
+  channelKeyedAtOrBelow,
+  compositeValueIn,
+  editLayerOf,
+  isBaseLayer,
+  isCurveLocked,
+  layerKeyProblem,
+  layersOf,
+  solveLayerValues,
+} from './edit/layers';
+export { playingLayers } from '@ekza-studio/rig';
 export { beginKeyEditGesture } from './edit/gesture';
 export {
   copyKeys,
@@ -100,6 +125,26 @@ export {
 export { MODEL_MENU_ITEMS } from './operators/builtin/modelMenus';
 export { defaultPrefs } from './prefs/defaults';
 export {
+  PREF_DESCRIPTORS,
+  PREF_SECTIONS,
+  type PrefDescriptor,
+  type PrefDisplay,
+  type PrefKind,
+  type PrefOption,
+  type PrefPath,
+  type PrefSection,
+  type PrefSectionDef,
+  type PrefUnit,
+  type PrefWrite,
+  prefDescriptor,
+  prefLeafPaths,
+  prefPatch,
+  prefShownValue,
+  prefStoredValue,
+  prefValue,
+  prefWrite,
+} from './prefs/descriptors';
+export {
   LEGACY_ARGS,
   LEGACY_IDS,
   type LegacyIdField,
@@ -108,6 +153,8 @@ export {
   migrateLegacyPanelId,
   migrateLegacyPrefs,
 } from './prefs/legacy';
+export { overridePrefs, type PrefsLayer, type PrefsPatch, prefsOverrideLayers } from './prefs/overrides';
+export { basePrefs } from './prefs/persist';
 export { createMemoryAssetStore } from './services/assets';
 export { activeClip, activeClipFrame, activeRuntime } from './session/active';
 export { defaultSession } from './session/defaults';
@@ -447,6 +494,8 @@ export { type ChannelSources, previewValues, registerChannelSourceProvider } fro
 export { defaultRiggingPrefs } from './prefs/defaults';
 export { DEFAULT_BRUSH, defaultRigSession } from './session/rig';
 export { isRigWorkspaceOperator, lazyOperatorChunk, RIG_MENUS, RIG_STATUS_GROUPS, rigStatus } from './workspaces/rig';
+// CHARACTER-CONTRACT-SPEC §8 (C1): the open slot vocabulary and the loader of the lazy target chunk (its module type).
+export { isTargetSlotId, loadTargetKit, type TargetKit } from './workflows/targetSlots';
 // M6b C7 (rig shell): the Validation service's shapes, the checklist, the Rig keymap rows and the mode rules. Values
 // here are read by lazy UI code and tests only (the rig-workspace chunk creates the services).
 export {
@@ -485,6 +534,18 @@ export type {
   SkinWorkerRequest,
   SkinWorkerResponse,
 } from './rig/skinService';
+// M7 G-a (MODELING-PLAN §7.2; DECISIONS M7-GA-CONTRACT-*): the intake operators' contract, the worker host types
+// (type-only: the client and the bodies are lazy) and the params the Halo and the Generate panel read.
+export type { IntakeRun, IntakeWorkerHost, IntakeWorkerPort } from './intake/client';
+export {
+  DECIMATE_FIRST_ABOVE,
+  INTAKE_BUDGETS,
+  INTAKE_HEIGHTS,
+  type IntakeArgs,
+  type IntakeOutcome,
+  type IntakePreset,
+  type IntakeStepOutcome,
+} from './intake/types';
 // C10 (§5.22, §6.4): the character export's request defaults, checks and gating rows (the Export dialog's Character
 // section and the Rig Toolkit read them; the pipeline itself loads with the rig-workspace chunk).
 export {
@@ -558,3 +619,18 @@ export {
   rebindRequest,
   unbindRequest,
 } from './operators/builtin/rig/bind';
+
+// Halo (STUDIO-TOUCH-SPEC §20.4, ST-T2 P1): shell.navigate, registered by the host on every route.
+export { NO_SHELL_NAVIGATION, registerShellNavigate, SHELL_ROUTES } from './operators/builtin/shellNavigate';
+
+// T5b (STUDIO-TOUCH-SPEC §20.3 item 10): Auto-Rig's orchestration, run by the Auto-Rig wizard and Halo alike; read by
+// lazy shell chunks only (tree-shaken here, so no route's first visit grows).
+export * from './autorigFlow';
+
+// M7 G-d (MODELING-PLAN §7.2): the Generate flow both shells bind, the session of jobs and the provenance helpers; read
+// by lazy chunks only (tree-shaken here), the operators' polls read the session.
+export * from './genFlow';
+
+// T5c (STUDIO-TOUCH-SPEC §20.3 item 10): Auto-Rig's derived progress, read by the Auto-Rig wizard and Halo's readiness
+// (tree-shaken here; `/autorig` keeps its checklist chunk lazy).
+export * from './progress';

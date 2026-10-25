@@ -1,7 +1,8 @@
-// Contract file: MVP-SPEC §4.8 with the M2A-SPEC §4.8, M6A-SPEC §4.8, M6B-SPEC §4.8/§0.5 and AUTORIG-SPEC §10 D0 and MCP-SPEC §4.9 additions, copied verbatim (shapes are normative; change the spec first).
+// Contract file: MVP-SPEC §4.8 with the M2A-SPEC §4.8, M6A-SPEC §4.8, M6B-SPEC §4.8/§0.5 and AUTORIG-SPEC §10 D0, MCP-SPEC §4.9 and STUDIO-TOUCH-SPEC §20.7 (T2) additions, copied verbatim (shapes are normative; change the spec first).
 // Excluded from formatting in biome.json so it stays diffable against the spec.
 import type { ChannelId } from '@ekza-studio/doc';
-import type { ManipHandle } from '@ekza-studio/editor-core';
+import type { ManipHandle, NavigationRequest, ShellKind } from '@ekza-studio/editor-core';
+import type { HaloTestState } from './halo';
 export interface EkzaStudioTestApi {
   readonly ready: Promise<void>;                              // editor mounted, WebGL context created
   readonly webgl: { readonly ok: boolean; readonly renderer: string | null };
@@ -27,6 +28,10 @@ export interface EkzaStudioTestApi {
   curves(clip: string, control?: string): { id: string; control: string; channel: ChannelId; weighted: boolean; pre: string; post: string;
     keys: { id: string; t: number; v: number; inType: string; outType: string; broken: boolean; inHandle: { dt: number; dv: number }; outHandle: { dt: number; dv: number };
       breakdown: boolean }[] }[];   // M2a: breakdown (additive)
+  /** ANIM-LAYERS (additive): a clip's layers base first (default: the active clip), with the one keys go into and
+   *  the ids of each layer's curves (`curves()` lists every layer's). */
+  layers(clip?: string): { id: string; name: string; mode: string; weight: number; mute: boolean; solo: boolean;
+    locked: boolean; base: boolean; active: boolean; playing: boolean; curves: string[] }[];
   /** Evaluates the curve exactly (anim-core) at a clip frame. */
   curveValue(curve: string, frame: number): number;
   channelValues(control: string, clipFrame?: number): Record<string, number>;   // default: current frame
@@ -197,6 +202,13 @@ export interface EkzaStudioTestApi {
 
   // ---------- Auto-Rig (AUTORIG-SPEC §10 D0; `test-api/autorig.ts`, fed by the shell's provider; null without it) ----------
   autorig(): { step: string; reachable: Record<string, boolean>; done: Record<string, boolean>; subject: { character: string | null; meshes: readonly string[] }; intake: unknown; startPose: { armAngle: number; kind: 't' | 'a' } | null; busy: { stage: string; fraction: number | null } | null; slices: Record<string, unknown> } | null;
+  // ---------- Halo (STUDIO-TOUCH-SPEC §20.7, T2; `test-api/halo.ts`) ----------
+  /** The Halo shell's state, fed by its provider (`provideHaloTestState`); null while no Halo shell is mounted. */
+  halo(): HaloTestState | null;
+  /** The shell mounted in the host ('studio' = the Pro layout, 'autorig', 'halo'); null between two shells. */
+  mountedShell(): ShellKind | null;
+  /** Switches shells through the host's navigation port, as a UI control does (`shell.navigate`'s request). */
+  navigate(request: NavigationRequest): Promise<void>;
   // ---------- M-AI (MCP-SPEC §4.9) ----------
   /** Agent session; null while the agent module is not loaded. */
   agent(): {

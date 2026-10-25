@@ -122,8 +122,10 @@ against Pro, the framing the owner ruled out. v0.2:
   next time", Preferences › Start in and `entry-contract.test.ts` change together (T2).
 - **Default ST-2 (changed in v0.2).** Owner question OQ-2: confirm that a first visit on a desktop also opens Ekza
   Studio (the alternative keeps today's chooser for fine-pointer first visits).
-- Until the release gate (T12), `/app` is reachable by URL only and `/` behaves as today. The new entry and the "Ekza
-  Studio Pro" title land together at T12 (ST-30).
+- Until the release gate (T12), `/app` was reachable by URL only and `/` behaved as before. The new entry and the
+  "Ekza Studio Pro" title landed together at T12 (ST-30, ST-INT-1): `HALO_ENTRY` is on in its three copies (the
+  landing's `apps/web/app/entry.ts`, Studio Pro's `dialogs/entryChoice.ts`, Halo's `shell/entry.ts`, pinned together by
+  `entry-contract.test.ts`), `PRO_TITLE` is on and Pro's *Simple layout* switch is unconditional.
 
 ### 1.3 Naming rules
 
@@ -375,7 +377,7 @@ drag already wrote a key; there is no question card and no "not keyed" pill.
 │ (Hand leads)╱  (⋯)                                                               │
 │                                                                                  │
 │ ↶        Animations: [Idle] [Walk] [Wave ▾] [+ New]                  Library ▸   │
-│ ⊕ ≈ Fine  ▶ 0.50 s ·◆····◆····┃···◆······◆· 2 s  ● Rec  [Timeline│Keys│Curves]   │
+│ ⊕ ≈ Fine  ▶ 15 f  ·◆····◆····┃···◆······◆· 60 f  ● Rec  ◆ Key  [Keys│Curves]     │
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -397,7 +399,7 @@ visible together. The key Halo is docked in the layer header, not over the keys.
 │ │0.0│──────────────o====o── 2 keys ──────────────          │ │ Heel ⟨0°⟩ Ball ⟨0°⟩│
 │ └─────────────────────────────────────────────────────────┘ │                    │
 │ ⟨Time 0.40 s⟩ ⟨Value 0.000 m⟩ ⟨In 0°⟩ ⟨Out 0°⟩   Fewer keys · Fix flips · Cycle ▾ ⋯│
-│ ▶ 0.40 s ··········┃································· 1 s   ● Rec                 │
+│ ▶ 12 f   ··········┃···························· 30 f  ● Rec  ◆ Key               │
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -459,7 +461,7 @@ The Path moves under the top row. Sheets rise from the bottom. Halo, Thread, Thu
 │ ↶                                     ┌───┐    │
 │ ⊕ ≈ Fine                              │ P │    │
 │ Animations: [Idle][Walk][Wave ▾][+]   └───┘    │
-│ ▶ 0.5 s ·◆··◆·┃·◆··◆· 2 s  ●Rec  [Tl│Keys│Crv] │
+│ ▶ 15 f ·◆··◆┃·◆··◆ 60 f ●Rec ◆Key [Keys│Curves]│
 │ ═════════════ Numbers (peek) ══════════════    │
 │ Forearm R   Bend ⟨34°⟩  Twist ⟨0°⟩  Side ⟨−5°⟩ │
 └────────────────────────────────────────────────┘
@@ -483,7 +485,8 @@ and a smoke test, nothing more, until the owner decides otherwise.
 │                         (P)  │
 │ ──────────────────────────── │
 │ (Key◆)(Mirror)(Reset)   (⋯)  │ ← the Halo docks as a verb bar; ⋯ is pinned
-│ ▶ ·◆··┃··◆··◆· 2s  [Tl│K│C]  │ ← Thread (Animate)
+│ ▶  ● Rec  ◆ Key  [K│C]       │ ← Thread (Animate): ▶ · ● Rec · ◆ Key · the switch,
+│ ·◆··┃··◆··◆·········· 60     │   then the ruler on a row of its own
 │ ⊕ ≈ Fine                     │
 │ Make │ Paint │ Rig │ Animate●│ ← the Path becomes a tab bar
 └──────────────────────────────┘
@@ -550,8 +553,9 @@ Each stage has a budget for the interactive targets visible at L0 on an iPad lan
 
 | State | Budget | Example (Animate) |
 |---|---|---|
-| At rest (nothing selected) | ≤ 22 | top bar 8 · Thread 7 (▶, time readout, ruler, Rec, the three-way layer switch) · Animations row 5 · ↶ 1 · puck 1 |
+| At rest (nothing selected) | ≤ 22 | top bar 8 · Thread 7 (▶, time readout, ruler, Rec, ◆ Key, the layer switch's *Keys · Curves*) · Animations row 5 · ↶ 1 · puck 1 |
 | With a selection and its Halo | ≤ 36 | the above, plus breadcrumb 4 · petals 6 · channel chips 3 · Thumb key 1 |
+| Phone (< 700 pt), its own row | ≤ 20 at rest · ≤ 28 with a selection and its verb bar | measured on 390 × 844 (Seed-san, one animation): 20 and 26; ▶ · ● Rec · ◆ Key · the switch on one row, the ruler on the next (ST-KEY-5; asserted in ha-06) |
 
 The rules that keep it there:
 - The status corner appears only for a problem or a budget.
@@ -828,9 +832,9 @@ Petal names are plain words (P8). The **Pro name** is shown in grey in More and 
 | Noun (how you get it) | Drag does | Halo petals, in slot order | Highlights in ⋯ More (the full list is derived, §6.3) |
 |---|---|---|---|
 | **Empty space**: tap nothing (docked in the tray) | Orbit / marquee | Make: *New shape ▾*, *Template ▾*, *Reference ▾*, *Select area*, *Paste*, *Show all*. Paint: *Palette ▾*, *Pick colour*, *Fill part*. Rig: *Rig it for me*, *Add skeleton ▾*, *Checks*, *All joints*, *Bind skin*. Animate: *+ New animation*, *Library*, *Key all*, *All controls*, *Reset pose* | Select all / invert, Pick only… (selection mask), Snap, Selection options, Show ▾ |
-| **Mesh object** (Make) | Move | *Edit shape* (to Faces), *Duplicate*, *Mirror*, *Paint* (go to Paint), *Rig it* (go to Rig), ⋯ — on an imported character mesh the first petal is *Make editable* | Delete, Group, Parent to…, Unparent, Combine (2+ meshes; it moves up to a petal), Separate, Symmetrize, Triangulate, Quadrangulate, Cleanup, Freeze / Reset / Apply transforms, Turn / Move / Scale rings, Pivot ▾, UV ▾, Normals ▾, Export selected…, Hide, Isolate, Numbers |
-| **Faces** | Tweak | *Pull* (Extrude ⌘E), *Inset*, *Bevel* (⌘B), *Colour* (active swatch), *Delete*, ⋯ | Bridge (rises when two border loops exist), Extract, Duplicate face, Fill hole, Select ▾ (Loop · Ring · Shell · Grow · Shrink), Convert ▾, Select by swatch, UV ▾, Flip normals |
-| **Edges** | Tweak | *Loop cut* (Insert Edge Loop), *Bevel*, *Merge ▾*, *Slide*, *Bridge* (two borders), ⋯ | Smooth / Sharp (soften / harden), Normal angle, Offset loop, Connect, Spin, Collapse, Delete edge & vertices, Select ▾ (Loop · Ring · Border) |
+| **Mesh object** (Make) | Move | *Edit shape* (to Faces), *Move*, *Separate*, *Delete*, *Reduce ▾*, *Rig it* (go to Rig), ⋯ — clean-up first (ST-T8-4: imported and generated models); on an imported character mesh the first petal is *Make editable* | Duplicate, Mirror, Paint (go to Paint), Group, Parent to…, Unparent, Combine (2+ meshes; it moves up to a petal), Symmetrize, Triangulate, Quadrangulate, Cleanup, Freeze / Reset / Apply transforms, Turn / Move / Scale rings, Pivot ▾, UV ▾, Normals ▾, Export selected…, Hide, Isolate, Numbers |
+| **Faces** | Tweak | *Pull* (Extrude ⌘E), *Inset*, *Bevel* (⌘B), *Colour* (active swatch), *Delete*, *Separate*, ⋯ | Bridge (rises when two border loops exist), Extract, Duplicate face, Fill hole, Select ▾ (Loop · Ring · Shell · Grow · Shrink), Convert ▾, Select by swatch, UV ▾, Flip normals |
+| **Edges** | Tweak | *Loop cut* (Insert Edge Loop), *Bevel*, *Merge ▾*, *Slide*, *Bridge* (two borders), *Delete*, ⋯ | Smooth / Sharp (soften / harden), Normal angle, Offset loop, Connect, Spin, Collapse, Delete edge & vertices, Select ▾ (Loop · Ring · Border) |
 | **Vertices** | Tweak | *Merge ▾* (merge / to centre / by distance), *Weld to…* (Target Weld), *Slide*, *Connect*, *Delete*, ⋯ | Average, Collapse, Delete edge & vertices, Grow · Shrink, Convert ▾ |
 | **Image plane** | Move | *Opacity*, *Size*, *Lock*, *Hide*, *Delete*, ⋯ | Offset, Replace image… (a T5a wrapper: delete then import, one undo step), Numbers › Image plane |
 | **Character** (the breadcrumb root, or the mesh in Rig › Character) | — | Animate: *Copy pose* (→ *Paste ▾*), *Mirror ▾*, *Reset to rest*, *Key all*, ⋯. Rig: *Checks*, *Bind / Bind again*, *Make a character* (on loose meshes), *Parts & fingers*, *About this character*, ⋯ | Pin / Plant / Unpin feet, Mirror cycle, Update control rig, Add limb IK, Apply pose as rest, T-stance, Straighten to T-pose, Reset test pose, Render thumbnail, Make active (scenes with several characters) |
@@ -845,12 +849,17 @@ Petal names are plain words (P8). The **Pro name** is shown in grey in More and 
 | **Channel row** (Numbers or the Keys layer) | Scrub the value | *Key this channel*, *Lock*, *Reset to default*, *Show only this*, ⋯ | Unlock, Show in Curves, Copy value. With several rows selected (Thumb *Select more*): *Key selected channels* and a group scrub |
 | **Animation chip** (`[Wave ▾]` in the Animations row) | — | *Play*, *Loop it*, *Rename*, *Duplicate ▾* (plain, or + swap sides), *Settings*, ⋯ | Mirror cycle (half-cycle offset), Use as… (OMOBA slot), Make active, Delete |
 | **Library card** (Library drawer) | — | *Preview*, *Speed*, *Trim*, *Swap sides*, *Add*, ⋯ | Stay in place, Arms out, Stop preview, Add starter set, Search, Category |
-| **Swatch** (Paint tray) | Drop onto a part = colour it | *Edit colour*, *Finish ▾* (Matte / Shiny), *Select faces*, *Replace with active*, *Rename*, ⋯ | Remove, New material, Gloss ⟨ ⟩, Specular colour, Recent colours |
+| **Swatch** (Paint tray; its Halo docks above the tray as a verb bar, ST-T8-8) | Drop onto a part = colour it | *Edit colour*, *Finish ▾* (Matte / Shiny), *Select faces*, *Replace with active*, *Rename*, ⋯ | Remove, New material, Gloss ⟨ ⟩, Specular colour, Recent colours |
 | **Health dot** (on the model; in the Health sheet) | — | *Fix*, *Show me*, *Why?*, ⋯ | The rule id and profile (for developers) |
 | **History step** (History ribbon) | — | *Undo to here*, *Compare* (hold), *Revert this*, *Adjust* (the latest adjustable step only), *Show*, ⋯ | Undo all (an AI or recipe group), Redo, Copy as text |
 | **Camera** (puck sheet › Cameras, or the Scene sheet) | — | *Look through*, *Copy view here*, *Lock*, *Lens ⟨FOV⟩*, ⋯ | Focal length, Clip planes, Ortho height |
 | **Manipulator** (long-press it) | Its handle | *Space ▾* (object / world / gimbal), *Size*, *Pivot ▾*, *Drag anywhere* (replaces middle-drag anywhere), ⋯ | Pivot centre / bottom / reset / bake / numeric |
-| **Rig dot** (Rig it, Adjust dots session) | Move it | *Re-guess*, *Mirror to other side*, *Remove*, ⋯ | Snap to centre, Pick from view |
+| **Rig dot** (Rig it, Adjust dots session) | Move it | *Re-guess*, *Mirror to other side*, *Clear dots* (`skel.quickRig.clear` clears every dot, T9), ⋯ | Snap to centre, Pick from view |
+
+As built (T7–T9, recorded at T12): a tap on a manipulator handle over another body part selects that part — a handle is
+for dragging (§6.1 "tap = select"; Animate through Reach's press, the other stages in the grammar, P-T7-7). Paint's
+tray shows at most five swatches; *Fill part* is the Thumb key's lock and *Pick* its one-tap *Pick colour* (ST-T8-9).
+The Checks petals of a mesh and a character open the Checks sheet (T9).
 
 ### 6.3 ⋯ More, disabled reasons and Options
 
@@ -1130,9 +1139,10 @@ the same canvas (§12.2): drag a dot (1 per dot), ✓ Done (1); no other UI open
 
 ### J3 — Pose and key a two-second wave
 
-1. Animate on Seed-san: **+ New** (1) → name it "Wave" (1) → length chip **2 s** (1).
-2. Tap the right upper arm on the mesh (1) → drag the ring (1). Rec is on, so this is a key at 0 s.
-3. Tap 0.5 s on the ruler (1) → tap the forearm (1) → drag (1); tap 1.0 s (1) → drag (1); tap 1.5 s (1) → drag (1).
+1. Animate on Seed-san: **+ New** (1) → name it "Wave" (1) → length chip **60 f** (1): two seconds at 30 fps; the UI
+   counts in frames (ST-T7-UNIT).
+2. Tap the right upper arm on the mesh (1) → drag the ring (1). Rec is on, so this is a key at frame 0.
+3. Tap frame 15 on the ruler (1) → tap the forearm (1) → drag (1); tap 30 (1) → drag (1); tap 45 (1) → drag (1).
 4. Tap the *Wave* chip (1) › **Loop it** (1) → **▶** (1).
 
 **15 touches.** Today in Pro: ≈ 35. With the *wave twice* recipe in search: 3 touches.
@@ -1142,9 +1152,9 @@ the same canvas (§12.2): drag a dot (1 per dot), ✓ Done (1); no other UI open
 1. Tap the L foot control (1) → layer switch **Curves** (1) → channel chips: **Move Y** only (1).
 2. One-finger drag on empty Curves space: marquee over the contact keys (1) → the docked key Halo **Ease ▾ › Flat** (2)
    → ⟨Value⟩ chip: numpad 0, Done (1).
-3. Hold **⇆ Before** to compare (1). Curve Halo **Cycle ▾ › Cycle** for the loop seam, if needed (2).
+3. Hold **⇆ Before** to compare (1). Curve Halo **Cycle ▾ › Repeat** for the loop seam, if needed (2).
 
-**8–10 touches**, the same with fingers or the Pencil. Today in Pro: ≈ 25–30 precise touches. The automatic *Check feet*
+**8–10 touches**, the same with fingers or the Pencil (T10 measured 10 with both, on Seed-san's library Walk). Today in Pro: ≈ 25–30 precise touches. The automatic *Check feet*
 waits for motion-analysis P4.
 
 ### J5 — Mix animations from the library
@@ -1184,7 +1194,9 @@ waits for motion-analysis P4.
 3. The live line reads *"AI is keying R forearm…"*. The result is one History group, *"AI · Wave twice · 5 steps"*,
    with **Undo all** (1), **Compare** (hold) and Steps ▾.
 
-**4–5 touches.** On iPad: an honest card plus the *wave* recipe. Live AI on iPad is OQ-5.
+**4–5 touches** (T10 measured 5 with a fake agent session, *Undo all* included). The Ask sheet keeps the request and
+titles the group with it; the agent itself is asked in its own window (the bridge carries the agent's calls, not the
+user's words). On iPad: an honest card plus the *wave* recipe. Live AI on iPad is OQ-5.
 
 ### J9 — Continue the same project in Studio Pro
 
@@ -1282,7 +1294,14 @@ waits for motion-analysis P4.
   - In-between (breakdown);
   - Key target (this part / body part / whole character).
 
-  The Thread has no separate ◆+ button. With nothing selected, the Animate tray's *Key all* keys the character.
+  With nothing selected, the Animate tray's *Key all* keys the character.
+- **◆ Key in the Thread** (owner, 2026-10-25: "an explicit Key button beside Rec", ST-KEY-1). v0.2 kept the Thread free
+  of a ◆+ button (R63: an unlabelled icon); on the owner's iPhone test the petal was not discoverable and the phone's verb
+  bar could fold it away. The Thread's labelled *◆ Key* sits right after *● Rec* on every size class (§10.3): Rec keys
+  what you change, ◆ Key keys the selection now. A tap runs `key.set {channels: 'all', target: 'selected'}` at the
+  playhead (one undo step, Rec on or off); its long-press offers *All channels* · *Only changed channels*
+  (`channels: 'changed'`, ST-KEY-3) · *Selected channels* (while channels are selected in Numbers or Keys). The petal
+  keeps its own long-press (key target, in-between).
 - OQ-4 asks the owner to confirm the default (the alternative is v0.1's "ask once").
 
 ### 10.3 The Thread (Timeline)
@@ -1295,22 +1314,24 @@ never imports Pro's `TimeSliderView`.
 
 | Element | Behaviour |
 |---|---|
-| At rest (L0) | ▶ · the time readout · the ruler · ● Rec · the layer switch `[Timeline │ Keys │ Curves]` |
-| Scale and units | Seconds by default; Settings › Time: *Seconds · Frames* applies to the Thread, every chip and the Curves axis. Keys always land on whole frames. Beat ticks every 0.25 s snap to the whole frame nearest each beat; when the fps does not divide 0.25 s (30 fps gives 7.5 frames), the ticks are drawn at those whole frames, so Halo and Pro always show the same timing. |
+| At rest (L0) | ▶ · the time readout · the ruler · ● Rec · ◆ Key · the layer switch `[Keys │ Curves]` (*Timeline* joins it while Keys or Curves is open, ST-KEY-5) — seven targets |
+| ● Rec and ◆ Key | Side by side, each with its word on every size class, phones included (ST-KEY-1). **● Rec** is a toggle (Auto Key, §10.2). **◆ Key** (a 44 pt target; its plain name is the manifest's *Key*, as More and search show `key.set`): tap — `key.set` on the selected controls at the playhead, every channel, one undo step, with Rec on or off; a toast names what it keyed (*Keyed R Lower Arm · frame 24*; seconds under Settings › Time *Seconds*). Hold (a right-click with a mouse) — *All channels* (what a tap does) · *Only changed channels* (the channels changed since they were keyed: an unkeyed change on a keyed channel, or an unkeyed channel off its default; ST-KEY-3) · *Selected channels* (only while channels are selected in Numbers or Keys); each one `key.set` run. Nothing selected — greyed; a tap says *Select a body part to key*. The diamond is filled while the playhead sits on a key of the selection, hollow otherwise (ST-KEY-6). The first tap on either shows the coach mark *Rec keys what you change. ◆ Key keys the selection now.* once on the device (ST-KEY-4). |
+| Scale and units | **Frames** by default (owner, 2026-10-24: cycles are usually about 50 frames, at most 100, and animators count in frames; ST-T7-UNIT). Settings › Time: *Frames · Seconds* applies to the Thread's readout and ruler, every chip, an animation's Settings and the Curves axis; it is a per-device Halo preference, and a choice someone already made is kept. **The ruler is a classic animation time slider** (owner, 2026-10-24: "a tick on every frame"; ST-T10-RULER), read the same way as Studio Pro's time slider: a tick on every frame of the visible span — every 2nd, then every 5th frame only when frames would be closer than about 3 pt; taller numbered ticks every 5th or 10th frame by the zoom, and every frame when zoomed in, with a half-height tick between two numbers; the first and last frame of the animation always numbered (the playhead's box shows the frame it covers); numbers never overlap. No beat ticks. Under *Seconds* the ticks stay on frames and the numbers read seconds (0.1, 0.2, 0.5, 1 s … where they fall on whole frames). Keys always land on whole frames. |
 | Expanded transport | Tap the time readout: start, previous key, previous frame, next frame, next key, end (`time.step` ±1 for the frame steps, Pro's Alt+, / Alt+.); Speed: *Realtime · Every frame · Half · Double* (the four `PlaybackSpeed` values; a 0.25× for Perform would be a new kernel value, T16); *Range* shows the range brackets. Tap outside to collapse. |
 | ▶ | Tap: play / pause. Long-press: loop / once / oscillate, and play backwards. |
-| Key dots | Only the selection's keys, plus a faint summary row when nothing is selected. Hollow dots are in-betweens. |
-| Playhead | Tap the ruler to jump; drag the playhead to scrub; with the Thumb key's *Carry pose*, a drag scrubs while carrying the pose. Long-press the playhead for its Halo (§6.2): Paste keys ▾, Insert frame, Remove frame, Delete time…, Set range. |
+| Key marks | Only the selection's keys, as marks on their frames as on Studio Pro's time slider: red keys, white selected keys, green in-betweens, plus a faint summary row when nothing is selected. |
+| Playhead | On a whole frame, its frame number in a small box on the ruler. Tap the ruler to jump; drag the playhead to scrub; with the Thumb key's *Carry pose*, a drag scrubs while carrying the pose. Long-press the playhead for its Halo (§6.2): Paste keys ▾, Insert frame, Remove frame, Delete time…, Set range. |
 | Range | The brackets from *Range* in the expanded transport: drag them for the playback range; long-press a bracket for *Set as animation range*. |
 | Band | A Pencil drag along the ruler, or a finger long-press on the ruler and then a drag. Drag the body to move, drag the ends to stretch, Thumb *Copy* + drag to copy. The band's Halo (§6.2) has Copy and Paste ▾. |
 | Blend | When the playhead sits between two keys of the selection, a ⟨Blend 50 %⟩ chip appears. Scrubbing previews; lifting runs `key.tween` with that value as one undo step (a pre-run form, because `key.tween` is not adjustable). Its long-press picks blend / toward a neighbour / ease / push-pull / to default; scrub past either end to overshoot. |
 | Zoom | Horizontal pinch zooms time; a two-finger drag pans it. |
-| Layers | The labelled switch replaces v0.1's unlabelled grab bar. The sheet's own grab bar only resizes the height. |
+| Layers | The labelled switch replaces v0.1's unlabelled grab bar. The sheet's own grab bar only resizes the height. At rest the Thread is the timeline, so the switch offers *Keys · Curves*; while one of them is open it reads *Timeline · Keys · Curves*, and *Timeline* folds it back — each layer one tap, as before (ST-KEY-5). On a phone whose row would not fit ▶ · ● Rec · ◆ Key and the switch on one line, the switch folds into one chip naming the layer (*Keys ▾*: a tap lists the three); ◆ Key is never the one that gives way. |
 
 ### 10.4 Keys (layer 1, the Dope Sheet)
 
 - Rows go Summary → body part → control → **channel**, each at least 36 pt tall, over Pro's `DopeSheetController`
-  behind a touch adapter (§20.3 item 8).
+  behind a touch adapter (§20.3 item 8). As built (T7): the controller's rows are drawn 1.8× (`attachDopeSheetTouch`'s
+  scale), which gives the 36 pt rows without a second row model; Curves uses the same scale (T10).
 - A finger or the Pencil: a drag on empty space is a marquee, a drag on a key retimes it, a long-press then a drag draws
   a band. Two fingers scroll the rows and pan or pinch time.
 - The header holds a *Select · Move · Scale* segmented control, *Push later keys* (`key.toggleRipple`), *Select area*,
@@ -1319,11 +1340,20 @@ never imports Pro's `TimeSliderView`.
 
 ### 10.5 Curves (layer 2, the Graph Editor)
 
-Pro's `GraphEditorController` behind a touch adapter. Its view state persists through a callback, not dockview panel
-params. The focus registry (`attachGraphEditor` / `focusGraphEditor`) moves into curve-editor (§20.3 item 18), so the
-adapter registers `graph.frame`, `select.curveKeys` and `graph.view.setMode` exactly as Pro's view does.
+Pro's `GraphEditorController` behind a touch adapter (`attachGraphEditorTouch`), drawn at the controller's size and
+shown 1.8× larger, like the Keys layer's rows. Its view state persists through a callback, not dockview panel params.
+The focus registry (`attachGraphEditor` / `focusGraphEditor`) moves into curve-editor (§20.3 item 18), so the layer
+registers `graph.frame`, `select.curveKeys` and `graph.view.setMode` exactly as Pro's view does (as built, T10:
+ST-T10-1 … ST-T10-8).
 
-- **Channels**: chips such as `Move X ● Move Y ● Turn…`, *Only animated* (keyed only), a filter field, and the curves of
+- **Layout** (wireframe D): the header holds the active animation's chip (the Animations row gives way while Curves
+  is open), the listed part, the channel chips and *⇆ Before*; then the tools, the ⟨Axis⟩ chip and the docked key Halo;
+  the curves with their time axis under them (frames by default, seconds under Settings › Time, drawn like the
+  Thread's ruler; tap or drag it to move the playhead); and a foot row with the selected keys' chips and the curve's
+  Halo. The layer takes 44 % of the frame (at least 300 pt), so the canvas keeps the rest. On a phone the rows scroll
+  sideways.
+- **Channels**: chips such as `Move X ● Move Y ● Turn…` (one tap: that channel alone; the Thumb key's *Select more*:
+  one more; `select.channels`), *Only keyed* and a filter field when several parts are listed, and the curves of
   **every control selected in the Keys layer** (several controls at once, v1).
 - **Tools**: a *Select · Move · Insert · Scale* segmented control in the header. Scale is `graph.keys.scale` with a
   region box (Pro's R in the Graph).
@@ -1333,18 +1363,24 @@ adapter registers `graph.frame`, `select.curveKeys` and `graph.view.setMode` exa
   - the axis locks automatically after 8 pt of travel, and the ⟨Axis⟩ chip or Thumb *Axis* switches between time,
     value and free.
 - **Fields**: Echo chips ⟨Time⟩ ⟨Value⟩ ⟨In angle⟩ ⟨Out angle⟩ ⟨In weight⟩ ⟨Out weight⟩ for the selected keys, in the
-  units of Settings › Time.
+  units of Settings › Time. Where the keys differ a chip reads ±: a scrub moves them all by the same amount, a typed
+  number sets them all (Pro's fields do the same).
 - **Ease**: Smooth (auto), Linear, Flat, Step, plus in More: Spline, Clamped, Plateau, Stepped next, Fixed; Break,
   Unify, Weighted, Lock weight (`graph.tangent.*`, `graph.curve.setWeighted`).
 - **Curve tools**: *Fewer keys* (`graph.curves.simplify`, a pre-run form with ⟨tolerance⟩), *Fix flips* (Euler filter),
   *Cycle ▾* (pre/post: constant, linear, cycle, cycle with offset, oscillate), *Key curves here*, *Insert key* (a petal
   on the curve).
-- **Compare**: hold *⇆ Before* to see the buffer snapshot taken automatically when Curves opened. Snapshot, Swap and
-  Clear are in More.
+- **Compare**: hold *⇆ Before* to see the buffer snapshot taken automatically when Curves opened (and when a new curve
+  is shown); the snapshot is session state, drawn only while the button is held, and forgotten when Curves closes.
+  Snapshot, Swap and Clear are in More.
+- **The curve's Halo** (the foot row): *Ease all ▾ · Fewer keys · Fix flips · Cycle ▾ · Insert key · ⋯*, about the
+  tapped curve, else the selected keys' curves, else every shown one. While keys are selected their Halo's *Ease*
+  applies, so *Ease all* moves to More and *Cycle ▾* stays one tap away (J4).
 - **Views**: *Real · Fit · Stacked* (abs / norm / stack) in More. Double-tap frames the selection; double-tap empty space
   frames all.
 - **Numbers beside the curves**: at 1180 pt and wider, Numbers is pinned as a 300 pt column (wireframe D), so an
-  animator sees curves and channels together on an iPad.
+  animator sees curves and channels together on an iPad. *Not built in T10* (ST-T10-20): the frame has one sheet
+  slot; Numbers opens from the breadcrumb.
 - **Paste**: merge / replace / insert from the key, band or playhead Halo.
 - **Open in the Pro layout ▸** opens Pro's Polish preset framed on the same curves (`then: preset`, §16). It is a
   convenience only: everything above works in Halo.
@@ -1353,9 +1389,11 @@ adapter registers `graph.frame`, `select.curveKeys` and `graph.view.setMode` exa
 
 - **Animations row**: animation chips above the Thread.
   - The first tap on a chip makes it active and opens its Halo.
-  - `+ New` asks for a name and a length (1, 2 or 4 s).
-  - The animation Halo (§6.2) holds Settings: fps (keep seconds or frames), range, scene start, loop, root motion,
-    contact frame, tags, provenance and redistribution.
+  - `+ New` asks for a name and a length: **30 · 60 · 100 frames** (60 the default), or *Other…* with the numpad
+    (whole frames). The animation is made at the project's fps with that frame count. With Settings › Time on Seconds
+    the chips read 1 · 2 · 4 s (ST-T7-UNIT).
+  - The animation Halo (§6.2) holds Settings: fps (keep seconds or frames), start, end and length (in frames by
+    default), scene start, loop, root motion, contact frame, tags, provenance and redistribution.
 - **Library drawer**: the 14 CC0 animations, with search and categories.
   - Tap a card to preview it on your character at once; *Stop preview* (`library.stop`) is on the card and in its Halo.
   - Expand a card for Speed (a dial), Trim (on the strip), *Swap sides*, *Stay in place* and *Arms out*, all previewed
@@ -1365,6 +1403,13 @@ adapter registers `graph.frame`, `select.curveKeys` and `graph.view.setMode` exa
 - **Two mirrors, two names**: *Swap sides* is Auto-Rig's left/right swap. *Mirror cycle* is Pro's Mirror Animation with
   its half-cycle offset (`pose.mirrorAnimation`, a pre-run form). Each shows its Pro name in More.
 - **Loop it**: `clip.makeLoop`, through a public wrapper; it is AI-only today (§20.3 item 7).
+- **Layers** (ANIM-LAYERS, [ADR 0026](adr/0026-animation-layers.md); built after GA): *Adjust on a layer* is the sixth
+  petal of an animation's Halo — fixes go on an additive *Fixes* layer above it and the animation stays; once the
+  animation has layers the petal opens the **Layers sheet** (the stack, ⟨Weight⟩, Mute · Solo · Lock, ⋯ Rename ·
+  Duplicate · Up · Down · Merge down · Delete; *Merge ▾* down or all, at the keys or on every frame). ◆ Key's hold
+  says *Keying into: Fixes*. A **layer chip** (*◧ Fixes ▾*) joins the Thread's row only while Keys or Curves is open
+  (they show its keys), so the at-rest budgets of §4.8 hold; its Halo carries ⟨Weight⟩, Mute, Solo, Lock, Merge down,
+  Delete and *All layers ›*.
 
 ### 10.7 Later (designed in, not in GA)
 
@@ -1457,8 +1502,11 @@ adapter registers `graph.frame`, `select.curveKeys` and `graph.view.setMode` exa
 
 ### 12.4 Weights: the break-finder flow
 
-1. **Find it.** Pose segment **Test**, then ▶ *Bend test*: the motion test, or a ⟨Bend <joint>⟩ scrub chip that replaces
-   the E-key ring. In Test, dragging any joint test-rotates it and never writes a key.
+1. **Find it.** Pose segment **Test**, then ▶ *Bend test*: the forearms and shins swing through their bend in the test
+   pose (ST-T9-5: the rig chunk's test-pose gesture — never a key, never the document; not Auto-Rig's motion test),
+   *Pause here* keeps the pose as one *Test Pose* step, *Play again* swings again from rest. A ⟨Bend <joint>⟩ scrub chip
+   that replaces the E-key ring is not built (T9 follow-up). In Test, dragging any joint test-rotates it and never
+   writes a key.
 2. **Name it.** Finger-hold the bad spot: *Who owns this?* shows the top three influences with their values at that
    point. This covers `skin.influence.pickDominant` and `skin.paint.sample`, without I or Shift+I.
 3. **Paint it.** Tap a bone. The brush tray shows:
@@ -1582,9 +1630,16 @@ Share is a sheet over any stage (wireframe F).
 | **Pro** | A deliberate hand-off of a *presentation*. The operators stay runnable from search, marked "Opens in the Pro layout ▸" |
 | **n/a** | Not shipped in any shell yet (planned, hidden or unregistered) |
 
-This map is the committed inventory (T6b adds the matching FEATURES.md row id to each row). Search reaches every operator with a manifest surface by name, in every stage, and is never counted here. Row numbers follow the inventory of
-2026-10-24 (`dev` @ `0512ba88`). The *Pro gap closed* column marks rows that in Pro need a keyboard, hover, right-click,
-middle-click or a modifier.
+This map is the committed inventory. Search reaches every operator with a manifest surface by name, in every stage,
+and is never counted here. Row numbers follow the inventory of 2026-10-24 (`dev` @ `0512ba88`). The *FEATURES.md*
+column lists, by id, the rows of [FEATURES.md](FEATURES.md) that describe the capability. An id is
+`F<section>:<Feature name>`: the number of the row's `## N.` heading and the text of its first cell without emphasis or
+backticks. Where one name occurs twice in a section, both rows take their `### N.M` number instead
+(`F8.1:Animation-only GLB` is the import, `F8.2:Animation-only GLB` the export). Capabilities that only the AI agent
+reaches today point at FEATURES.md §11. A `—` means FEATURES.md has no row for the capability: it gets its first UI
+here, or it is not shipped. `packages/halo/test/features-map.test.ts` checks that every id names exactly one row and
+that the row counts match the headings. The *Pro gap closed* column marks rows that in Pro need a keyboard, hover,
+right-click, middle-click or a modifier.
 
 ### 15.0 Availability by platform
 
@@ -1603,264 +1658,264 @@ needs a row here and a reason.
 
 ### 15.1 Navigate, view, workspace (22)
 
-| # | Capability | Ekza Studio surface | Depth | Pro gap closed / notes |
-|---|---|---|---|---|
-| 1.1 | Orbit / pan / dolly | One-finger orbit on empty space, two-finger pan and pinch, View puck drag; mouse follows the user's profile | L0 | Alt / MMB / wheel → touch (B1) |
-| 1.2 | Frame selection / all | Double-tap (any input) on the thing / on empty space; puck centre tap / double-tap; quick pinch | L0 | — |
-| 1.3 | Look through view preset / shot camera; camera radial | Puck faces (front / side / top / persp); puck long-press › Cameras | L0 / L1 | The Space-hold radial is replaced by the puck |
-| 1.4 | Copy view to shot; camera lock | Camera Halo / puck sheet › Cameras | L2 | — |
-| 1.5 | Camera settings | Camera Halo › Lens chip; Numbers › Camera | L2 | — |
-| 1.6 | Viewport layouts | View sheet › Panes 1 · 2 · 4 (Wide); rig dots: Front · Side, with a `pane-side` inset on Wide (`view.layout rig-side`); Compact: 1 pane + switcher | L2 | Rig-markers layouts are native in *Adjust dots* (§12.2) |
-| 1.7 | Maximize pane / panel | In 2- or 4-pane views: ⤢ in the pane corner (`view.toggleMaximize` for panes, a per-argument entry; its panel use is `PRO_CHROME`); sheets have a full height | L1 | Space-over-panel (K+H) is not needed |
-| 1.8 | Shading | Stage lighting by default; puck sheet › Look segmented control | L1 | — |
-| 1.9 | Display toggles (20) | Puck sheet › Show: essentials (X-ray, Skeleton, Controls, Grid, Joints) at L1, the rest at L2 | L1 / L2 | Joint labels keep Pro's values: none / on hover (Pencil or mouse hover) / all |
-| 1.10 | Hide / show / isolate | Hide and Isolate in ⋯ More on every noun, in every stage; a state chip *"N hidden · Show all"* | L2 / L0 | Rig's K-or-RMB-only path is closed |
-| 1.11 | Manipulator size and space | Size scales with the pointer type at render time (never written to the shared `tools.manipulatorSize`); manipulator long-press › Space, Size | L1 | — |
-| 1.12 | Selection mask | Empty-space tray › Pick only…; Loupe filter | L2 | — |
-| 1.13 | Workspace switch | The Path | L0 | — |
-| 1.14 | Dock panels: show, reset, drag / split / float | Sheets replace docks. `workspace.showPanel` maps each panel id to a Halo sheet with per-argument entries (meshCheck → Health, clipLibrary → Library, paintWeights → brush, …); docking itself goes to Pro | **Pro** | Docking (§15.15 a) |
-| 1.15 | Layout presets | — | **Pro** | §15.15 a |
-| 1.16 | Focus, full screen, chrome toggles | Hide UI (puck sheet, project menu); Full screen in the project menu (Home Screen mode suggested only after a Files backup, §17); chrome toggles go to Pro | L1 / L2 / **Pro** | Chrome toggles: §15.15 a |
-| 1.17 | Command palette | `⌕ Do or find…`, Halo's own touch view over the host palette controller (Pro's palette is not restyled) | L0 | Mod+K only → visible pill |
-| 1.18 | Marking menus | Halo ring (long-press, right-click, flick) from the same MarkingMenuDef data | L1 | RMB / Shift / Ctrl+RMB → long-press |
-| 1.19 | Repeat / adjust last / last tool | ⟳ Again petal; after-run Echo chips (adjustable operators); pre-run forms (the rest); History › Adjust; T focuses the first chip; the tray remembers the last tool | L0 / L1 | G / T / Y in Rig → visible |
-| 1.20 | Help, shortcuts, About, Help Line, HUD, modal readout | Help sheet (gesture card, Pro shortcut sheet, About; also `ui.open {shortcuts, about}`); budget ring; Echo chips | L2 / L0 | — |
-| 1.21 | Mode chooser and hand-off | `/` opens Ekza Studio (a remembered choice wins; `/?chooser=1`); ▤ Pro layout; Home › Rig a model for me → Auto-Rig | L0 / L1 | — |
-| 1.22 | Disabled reasons; menu context | Tap a greyed petal for the reason inline plus a one-tap fix; verbs act on their noun, never on a hovered panel | L1 | Hover tooltips → inline |
+| # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
+|---|---|---|---|---|---|
+| 1.1 | Orbit / pan / dolly | `F2:Navigation profiles` | One-finger orbit on empty space, two-finger pan and pinch, View puck drag; mouse follows the user's profile | L0 | Alt / MMB / wheel → touch (B1) |
+| 1.2 | Frame selection / all | `F2:Framing` | Double-tap (any input) on the thing / on empty space; puck centre tap / double-tap; quick pinch | L0 | — |
+| 1.3 | Look through view preset / shot camera; camera radial | `F2:Camera radial` | Puck faces (front / side / top / persp); puck long-press › Cameras | L0 / L1 | The Space-hold radial is replaced by the puck |
+| 1.4 | Copy view to shot; camera lock | `F2:Display toggles`, `F2:Copy view to shot camera` | Camera Halo / puck sheet › Cameras | L2 | — |
+| 1.5 | Camera settings | — | Camera Halo › Lens chip; Numbers › Camera | L2 | — |
+| 1.6 | Viewport layouts | `F2:Viewport layouts` | View sheet › Panes 1 · 2 · 4 (Wide); rig dots: Front · Side, with a `pane-side` inset on Wide (`view.layout rig-side`); Compact: 1 pane + switcher | L2 | Rig-markers layouts are native in *Adjust dots* (§12.2) |
+| 1.7 | Maximize pane / panel | `F2:Maximize panel` | In 2- or 4-pane views: ⤢ in the pane corner (`view.toggleMaximize` for panes, a per-argument entry; its panel use is `PRO_CHROME`); sheets have a full height | L1 | Space-over-panel (K+H) is not needed |
+| 1.8 | Shading | `F2:Shading modes` | Stage lighting by default; puck sheet › Look segmented control | L1 | — |
+| 1.9 | Display toggles (20) | `F2:Display toggles`, `F3:Normals`, `F4:Joint display` | Puck sheet › Show: essentials (X-ray, Skeleton, Controls, Grid, Joints) at L1, the rest at L2 | L1 / L2 | Joint labels keep Pro's values: none / on hover (Pencil or mouse hover) / all |
+| 1.10 | Hide / show / isolate | `F2:Hide / isolate` | Hide and Isolate in ⋯ More on every noun, in every stage; a state chip *"N hidden · Show all"* | L2 / L0 | Rig's K-or-RMB-only path is closed |
+| 1.11 | Manipulator size and space | `F2:Manipulators` | Size scales with the pointer type at render time (never written to the shared `tools.manipulatorSize`); manipulator long-press › Space, Size | L1 | — |
+| 1.12 | Selection mask | — | Empty-space tray › Pick only…; Loupe filter | L2 | — |
+| 1.13 | Workspace switch | `F2:Animate workspace`, `F2:Model workspace`, `F2:Rig & Skin workspace` | The Path | L0 | — |
+| 1.14 | Dock panels: show, reset, drag / split / float | `F2:Docked panels` | Sheets replace docks. `workspace.showPanel` maps each panel id to a Halo sheet with per-argument entries (meshCheck → Health, clipLibrary → Library, paintWeights → brush, …); docking itself goes to Pro | **Pro** | Docking (§15.15 a) |
+| 1.15 | Layout presets | `F2:Built-in presets`, `F2:User presets` | — | **Pro** | §15.15 a |
+| 1.16 | Focus, full screen, chrome toggles | `F2:Focus mode`, `F2:Chrome toggles`, `F2:Full screen` | Hide UI (puck sheet, project menu); Full screen in the project menu (Home Screen mode suggested only after a Files backup, §17); chrome toggles go to Pro | L1 / L2 / **Pro** | Chrome toggles: §15.15 a |
+| 1.17 | Command palette | `F2:Command palette` | `⌕ Do or find…`, Halo's own touch view over the host palette controller (Pro's palette is not restyled) | L0 | Mod+K only → visible pill |
+| 1.18 | Marking menus | `F2:Marking menus` | Halo ring (long-press, right-click, flick) from the same MarkingMenuDef data | L1 | RMB / Shift / Ctrl+RMB → long-press |
+| 1.19 | Repeat / adjust last / last tool | `F2:Repeat / adjust last`, `F9:Last-op card` | ⟳ Again petal; after-run Echo chips (adjustable operators); pre-run forms (the rest); History › Adjust; T focuses the first chip; the tray remembers the last tool | L0 / L1 | G / T / Y in Rig → visible |
+| 1.20 | Help, shortcuts, About, Help Line, HUD, modal readout | `F2:Industry-standard DCC hotkeys`, `F3:Poly Count HUD` | Help sheet (gesture card, Pro shortcut sheet, About; also `ui.open {shortcuts, about}`); budget ring; Echo chips | L2 / L0 | — |
+| 1.21 | Mode chooser and hand-off | `F1:Start chooser`, `F1:Remembered choice`, `F1:Switch Studio → Auto-Rig`, `F1:Switch Auto-Rig → Studio` | `/` opens Ekza Studio (a remembered choice wins; `/?chooser=1`); ▤ Pro layout; Home › Rig a model for me → Auto-Rig | L0 / L1 | — |
+| 1.22 | Disabled reasons; menu context | — | Tap a greyed petal for the reason inline plus a one-tap fix; verbs act on their noun, never on a hovered panel | L1 | Hover tooltips → inline |
 
 ### 15.2 Select (15)
 
-| # | Capability | Ekza Studio surface | Depth | Pro gap closed / notes |
-|---|---|---|---|---|
-| 2.1 | Click / marquee select | Tap; marquee: Pencil drag on empty space, a finger drag with *Select more* on, or *Select ▾ › Select area* | L0 / L1 | — |
-| 2.2 | Add / toggle / remove | Thumb key tap meaning *Select more* (tap = once, double-tap = lock, hold); the chooser has *Pick or unpick* and *Unselect* | L0 | Shift / Mod → Thumb |
-| 2.3 | Click-cycling; mesh click → control | *Next ›* on the breadcrumb; the Loupe (chips) | L0 / L1 | Tap-again cycling (3 px radius) is not used on touch |
-| 2.4 | All / none / invert / mirror | Tap empty for none (Reselect chip in Animate; an undo step in Make and Rig); tray › Select all; More › Invert; breadcrumb long-press › *Other side* | L1 / L2 | — |
-| 2.5 | Pick-walk | Crumbs (up); long-press the last crumb for ‹ › ▾; with *Select more* on, ‹ › ▾ extend the selection (`select.pickWalk {add: true}`) | L1 / L2 | Arrow / Shift+arrow keys → breadcrumb |
-| 2.6 | Component mode | Make tray pill; Rig segment | L0 | — |
-| 2.7 | Loop / ring / border / shell | *Select ▾* chip on the breadcrumb (Loop · Ring · Border · Shell); the double-click variants are its long-press options | L1 | Mod double-click variants → chip; double-tap always frames |
-| 2.8 | Grow / shrink | *Select ▾* › Grow / Shrink | L1 | — |
-| 2.9 | Convert selection | More › Convert ▾ | L2 | — |
-| 2.10 | Select by swatch; Mesh Check offenders | Swatch Halo › Select faces; health dot › Show me | L1 | — |
-| 2.11 | Soft selection | Tray *Falloff* chip + an on-canvas radius ring (Thumb drag meaning *Falloff size*); falloff curve in the chip's options | L1 / L2 | B + drag → Thumb / ring |
-| 2.12 | Style, camera-based, backfaces, constraints | More › Selection options | L2 | — |
-| 2.13 | Key, curve, channel and time-band selection | Thread, Keys, Curves (finger or Pencil marquee), channel rows in Numbers and Keys; band by a Pencil drag or a finger long-press then drag on the ruler | L0 / L1 | Shift band → Pencil / long-press |
-| 2.14 | Selection undo (Model, Rig) | ↶ / two-finger tap; the toast names the selection step; the History ribbon folds selection steps into the next document step | L0 | Follows `prefs.modeling.undoSelection` (§5.3 C9) |
-| 2.15 | Select hierarchy | Breadcrumb long-press › *Select branch*; Scene row | L1 | RMB-only → long-press |
+| # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
+|---|---|---|---|---|---|
+| 2.1 | Click / marquee select | `F2:Selection` | Tap; marquee: Pencil drag on empty space, a finger drag with *Select more* on, or *Select ▾ › Select area* | L0 / L1 | — |
+| 2.2 | Add / toggle / remove | `F2:Selection` | Thumb key tap meaning *Select more* (tap = once, double-tap = lock, hold); the chooser has *Pick or unpick* and *Unselect* | L0 | Shift / Mod → Thumb |
+| 2.3 | Click-cycling; mesh click → control | `F2:Selection` | *Next ›* on the breadcrumb; the Loupe (chips) | L0 / L1 | Tap-again cycling (3 px radius) is not used on touch |
+| 2.4 | All / none / invert / mirror | `F3:Grow / shrink / invert` | Tap empty for none (Reselect chip in Animate; an undo step in Make and Rig); tray › Select all; More › Invert; breadcrumb long-press › *Other side* | L1 / L2 | — |
+| 2.5 | Pick-walk | `F2:Pick-walk` | Crumbs (up); long-press the last crumb for ‹ › ▾; with *Select more* on, ‹ › ▾ extend the selection (`select.pickWalk {add: true}`) | L1 / L2 | Arrow / Shift+arrow keys → breadcrumb |
+| 2.6 | Component mode | `F3:Component modes` | Make tray pill; Rig segment | L0 | — |
+| 2.7 | Loop / ring / border / shell | `F3:Loops and rings` | *Select ▾* chip on the breadcrumb (Loop · Ring · Border · Shell); the double-click variants are its long-press options | L1 | Mod double-click variants → chip; double-tap always frames |
+| 2.8 | Grow / shrink | `F3:Grow / shrink / invert` | *Select ▾* › Grow / Shrink | L1 | — |
+| 2.9 | Convert selection | `F3:Convert selection` | More › Convert ▾ | L2 | — |
+| 2.10 | Select by swatch; Mesh Check offenders | `F3:Select by swatch`, `F3:Mesh Check` | Swatch Halo › Select faces; health dot › Show me | L1 | — |
+| 2.11 | Soft selection | `F3:Soft selection` | Tray *Falloff* chip + an on-canvas radius ring (Thumb drag meaning *Falloff size*); falloff curve in the chip's options | L1 / L2 | B + drag → Thumb / ring |
+| 2.12 | Style, camera-based, backfaces, constraints | `F3:Backfaces / camera-based / selection style` | More › Selection options | L2 | — |
+| 2.13 | Key, curve, channel and time-band selection | `F6:Time slider`, `F6:Dope Sheet`, `F6:Graph Editor` | Thread, Keys, Curves (finger or Pencil marquee), channel rows in Numbers and Keys; band by a Pencil drag or a finger long-press then drag on the ruler | L0 / L1 | Shift band → Pencil / long-press |
+| 2.14 | Selection undo (Model, Rig) | `F3:Selection undo` | ↶ / two-finger tap; the toast names the selection step; the History ribbon folds selection steps into the next document step | L0 | Follows `prefs.modeling.undoSelection` (§5.3 C9) |
+| 2.15 | Select hierarchy | — | Breadcrumb long-press › *Select branch*; Scene row | L1 | RMB-only → long-press |
 
 ### 15.3 Model (27)
 
-| # | Capability | Ekza Studio surface | Depth | Pro gap closed / notes |
-|---|---|---|---|---|
-| 3.1 | Primitives with live parameters | Make tray › *New shape ▾* → Echo chips; later at any time: Numbers › Shape inputs (`mesh.primitive.set`) | L1 / L2 | — |
-| 3.2 | Templates | Home › Make a character; Add ▾ › Templates | L1 | — |
-| 3.3 | Reference image planes | *Reference ▾* (front / side / top) through the Reference picker (`imagePlaneImport`); the image plane's Halo (Opacity, Size, Lock, Hide, Delete, Replace image…); Numbers › Image plane (name, camera, depth) | L1 / L2 | — |
-| 3.4 | Group, parent, unparent, duplicate, rename, delete | Duplicate and Delete petals; More › Group, *Parent to…* (verb → target), Unparent; rename via the crumb; Scene sheet: reparent by lift and drop (no sibling reorder, as in Pro) | L1 / L2 | Unreliable HTML5 drag-and-drop → recognizer / verb → target |
-| 3.5 | Object transform; numeric TRS | Drag = move (once selected); Turn / Move / Scale rings in More; Echo TRS chips; Numbers › Transform (`scene.object.transform`) | L0 / L1 / L2 | — |
-| 3.6 | Component transform, tweak, MMB along last handle | Drag components; manipulator handles; manipulator long-press › *Drag anywhere* | L0 / L1 | MMB → Drag anywhere |
-| 3.7 | Fine / coarse drag; typed values while dragging | Thumb *Fine* / *Coarse*; distance scrub; tap the readout for the numpad | L0 / L1 | Shift / Mod / digits → Thumb / numpad |
-| 3.8 | Virtual slider | Echo chips | L0 | MMB → chips |
-| 3.9 | Extrude session (caps, divisions, smart) | *Pull* petal → cap handle, ⟨Segments⟩; Thumb drag meaning *Smart*; reduced Halo *Pull again · Bevel · Inset* | L1 | Shift + drag → Thumb |
-| 3.10 | Inset / Bevel | Face and edge petals, handle + chips | L1 | — |
-| 3.11 | Bridge / Connect / Fill hole / Average | Bridge petal (two borders); More (Connect, Fill hole, Average) | L1 / L2 | — |
-| 3.12 | Insert / offset edge loop | *Loop cut* petal (Pencil hover or press-and-slide preview); More › Offset loop | L1 / L2 | Hover preview → press preview |
-| 3.13 | Multi-Cut | Tray Cut ▾ › Multi-Cut; session bar ✓ / ✕ / ⌫; Snap / Loop / Centred chips | L1 | RMB / Enter finish, Backspace, Shift / Ctrl-click → bar |
-| 3.14 | Slide edge / vertex | Edge and vertex petal *Slide* | L1 | — |
-| 3.15 | Merge family; Target Weld | *Merge ▾* petal; *Weld to…* (verb → target) with ⟨At midpoint⟩ | L1 / L2 | MMB / Alt + Shift → chip |
-| 3.16 | Delete components / edge & vertex | *Delete* petal; long-press › Delete edge & vertices | L1 | — |
-| 3.17 | Extract, Duplicate face, Flip / Spin edge | More › Edit | L2 | — |
-| 3.18 | Combine, Separate, Mirror, Symmetrize, Triangulate, Quadrangulate, Cleanup | *Mirror* petal; *Combine* rises with 2+ meshes; More › Mesh; Cleanup also as a Health fix | L1 / L2 | — |
-| 3.19 | Per-mesh symmetry | Tray *Mirror edits* chip; axis and tolerance in its options | L0 | — |
-| 3.20 | Snapping | Thumb drag meaning *Snap ▾*; locking it is the tray Snap chip (one state) | L1 | Held X / V / J → Thumb |
-| 3.21 | Pivots | Manipulator long-press › Pivot ▾; Thumb *Pivot edit* (= `model.pivotEdit`); Numbers › Pivot (`mesh.pivot.set`) | L2 | Held D / Insert / Home → Pivot ▾ |
-| 3.22 | Freeze / reset / apply transforms | More › Transforms | L2 | — |
-| 3.23 | Make Editable (+ report) | First petal on an imported character mesh; Paint empty state | L1 | — |
-| 3.24 | Static GLB import | Home › Bring a model; project menu › Import | L1 | Was Auto-Rig-only |
-| 3.25 | Mesh attributes | Numbers › Mesh (name, faceted, material preset, triangle target, budget, grip, colour output) and › Character (format, file, height, licence, credits); rename via the crumb | L2 | — |
-| 3.26 | Mesh Check + poly-count HUD | Health dots + budget ring (L0); Health sheet with Fix / Show me | L0 / L1 | — |
-| 3.27 | Option boxes; modal keys | Long-press a petal › Options; ⚙ on More rows; session bar − n + / ✓ / ✕ | L1 / L0 | PgUp / PgDn / Esc / Enter → bar |
+| # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
+|---|---|---|---|---|---|
+| 3.1 | Primitives with live parameters | `F3:Polygon primitives` | Make tray › *New shape ▾* → Echo chips; later at any time: Numbers › Shape inputs (`mesh.primitive.set`) | L1 / L2 | — |
+| 3.2 | Templates | `F3:Templates` | Home › Make a character; Add ▾ › Templates | L1 | — |
+| 3.3 | Reference image planes | `F3:Reference images` | *Reference ▾* (front / side / top) through the Reference picker (`imagePlaneImport`); the image plane's Halo (Opacity, Size, Lock, Hide, Delete, Replace image…); Numbers › Image plane (name, camera, depth) | L1 / L2 | — |
+| 3.4 | Group, parent, unparent, duplicate, rename, delete | `F3:Groups and hierarchy` | Duplicate and Delete petals; More › Group, *Parent to…* (verb → target), Unparent; rename via the crumb; Scene sheet: reparent by lift and drop (no sibling reorder, as in Pro) | L1 / L2 | Unreliable HTML5 drag-and-drop → recognizer / verb → target |
+| 3.5 | Object transform; numeric TRS | `F2:Channels`, `F2:Manipulators` | Drag = move (once selected); Turn / Move / Scale rings in More; Echo TRS chips; Numbers › Transform (`scene.object.transform`) | L0 / L1 / L2 | — |
+| 3.6 | Component transform, tweak, MMB along last handle | `F2:Manipulators` | Drag components; manipulator handles; manipulator long-press › *Drag anywhere* | L0 / L1 | MMB → Drag anywhere |
+| 3.7 | Fine / coarse drag; typed values while dragging | — | Thumb *Fine* / *Coarse*; distance scrub; tap the readout for the numpad | L0 / L1 | Shift / Mod / digits → Thumb / numpad |
+| 3.8 | Virtual slider | `F2:MMB virtual slider` | Echo chips | L0 | MMB → chips |
+| 3.9 | Extrude session (caps, divisions, smart) | `F3:Extrude session` | *Pull* petal → cap handle, ⟨Segments⟩; Thumb drag meaning *Smart*; reduced Halo *Pull again · Bevel · Inset* | L1 | Shift + drag → Thumb |
+| 3.10 | Inset / Bevel | `F3:Inset, Bevel, Bridge, Connect` | Face and edge petals, handle + chips | L1 | — |
+| 3.11 | Bridge / Connect / Fill hole / Average | `F3:Inset, Bevel, Bridge, Connect`, `F3:Slide Edge, Average Vertices`, `F3:Mesh ops` | Bridge petal (two borders); More (Connect, Fill hole, Average) | L1 / L2 | — |
+| 3.12 | Insert / offset edge loop | `F3:Insert / Offset Edge Loop` | *Loop cut* petal (Pencil hover or press-and-slide preview); More › Offset loop | L1 / L2 | Hover preview → press preview |
+| 3.13 | Multi-Cut | `F3:Multi-Cut` | Tray Cut ▾ › Multi-Cut; session bar ✓ / ✕ / ⌫; Snap / Loop / Centred chips | L1 | RMB / Enter finish, Backspace, Shift / Ctrl-click → bar |
+| 3.14 | Slide edge / vertex | `F3:Slide Edge, Average Vertices` | Edge and vertex petal *Slide* | L1 | — |
+| 3.15 | Merge family; Target Weld | `F3:Merge family` | *Merge ▾* petal; *Weld to…* (verb → target) with ⟨At midpoint⟩ | L1 / L2 | MMB / Alt + Shift → chip |
+| 3.16 | Delete components / edge & vertex | `F3:Face ops` | *Delete* petal; long-press › Delete edge & vertices | L1 | — |
+| 3.17 | Extract, Duplicate face, Flip / Spin edge | `F3:Face ops` | More › Edit | L2 | — |
+| 3.18 | Combine, Separate, Mirror, Symmetrize, Triangulate, Quadrangulate, Cleanup | `F3:Mesh ops` | *Mirror* petal; *Combine* rises with 2+ meshes; More › Mesh; Cleanup also as a Health fix | L1 / L2 | — |
+| 3.19 | Per-mesh symmetry | `F3:Symmetry per mesh` | Tray *Mirror edits* chip; axis and tolerance in its options | L0 | — |
+| 3.20 | Snapping | `F3:Snapping` | Thumb drag meaning *Snap ▾*; locking it is the tray Snap chip (one state) | L1 | Held X / V / J → Thumb |
+| 3.21 | Pivots | `F3:Pivots` | Manipulator long-press › Pivot ▾; Thumb *Pivot edit* (= `model.pivotEdit`); Numbers › Pivot (`mesh.pivot.set`) | L2 | Held D / Insert / Home → Pivot ▾ |
+| 3.22 | Freeze / reset / apply transforms | `F3:Transforms` | More › Transforms | L2 | — |
+| 3.23 | Make Editable (+ report) | `F3:Make editable` | First petal on an imported character mesh; Paint empty state | L1 | — |
+| 3.24 | Static GLB import | `F3:Static model import`, `F8:Static GLB meshes` | Home › Bring a model; project menu › Import | L1 | Was Auto-Rig-only |
+| 3.25 | Mesh attributes | — | Numbers › Mesh (name, faceted, material preset, triangle target, budget, grip, colour output) and › Character (format, file, height, licence, credits); rename via the crumb | L2 | — |
+| 3.26 | Mesh Check + poly-count HUD | `F3:Poly Count HUD`, `F3:Mesh Check` | Health dots + budget ring (L0); Health sheet with Fix / Show me | L0 / L1 | — |
+| 3.27 | Option boxes; modal keys | `F3:Modeling Tools` | Long-press a petal › Options; ⚙ on More rows; session bar − n + / ✓ / ✕ | L1 / L0 | PgUp / PgDn / Esc / Enter → bar |
 
 ### 15.4 UV, shade, colour (11)
 
-| # | Capability | Ekza Studio surface | Depth | Pro gap closed / notes |
-|---|---|---|---|---|
-| 4.1 | UV projections | More › UV ▾ | L2 | No UV editor anywhere |
-| 4.2 | Normals | Edge petals Smooth / Sharp; More › Normals (angle, reverse, conform) | L1 / L2 | — |
-| 4.3 | Palettes | Paint palette chip › New / Duplicate as variant / Rename / Assign | L1 / L2 | — |
-| 4.4 | Swatches: add, edit, remove, replace, remap | `+` (L0); swatch Halo (first tap): Edit colour (picker, hex, name), Replace with active, Rename, Remove | L1 | RMB-only Remove / Replace → Halo |
-| 4.5 | Active swatch, recents, eyedropper | Swatch row (first tap); the Recent row in Edit colour; Pick chip; first petal of a long-press on the mesh in Paint | L0 / L1 | I key → Pick |
-| 4.6 | Assign colour to a selection | Face petal *Colour*; tray *Fill part* on a selection | L1 | — |
-| 4.7 | Paint brush / Fill shell | Strokes (finger strokes start after slop); *Fill part* toggle, or the Thumb tap meaning *Fill part* + a tap (one state) | L0 / L1 | Shift-click → Fill part |
-| 4.8 | Swatch shader (Lambert / Blinn, gloss, specular) | Swatch Halo › Finish ▾ + ⟨Gloss⟩ and a Specular colour | L1 / L2 | — |
-| 4.9 | Assign new material | Swatch Halo › More › New material | L2 | — |
-| 4.10 | Colour export mode | Share › Advanced › Colours as; palette menu | L2 | — |
-| 4.11 | Flat / smooth / Blinn preview | Paint lit by default; puck sheet › Look | L1 | — |
+| # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
+|---|---|---|---|---|---|
+| 4.1 | UV projections | `F3:UV projections` | More › UV ▾ | L2 | No UV editor anywhere |
+| 4.2 | Normals | `F3:Normals` | Edge petals Smooth / Sharp; More › Normals (angle, reverse, conform) | L1 / L2 | — |
+| 4.3 | Palettes | `F3:Palette colour` | Paint palette chip › New / Duplicate as variant / Rename / Assign | L1 / L2 | — |
+| 4.4 | Swatches: add, edit, remove, replace, remap | `F3:Palette colour` | `+` (L0); swatch Halo (first tap): Edit colour (picker, hex, name), Replace with active, Rename, Remove | L1 | RMB-only Remove / Replace → Halo |
+| 4.5 | Active swatch, recents, eyedropper | `F3:Palette colour` | Swatch row (first tap); the Recent row in Edit colour; Pick chip; first petal of a long-press on the mesh in Paint | L0 / L1 | I key → Pick |
+| 4.6 | Assign colour to a selection | `F3:Palette colour` | Face petal *Colour*; tray *Fill part* on a selection | L1 | — |
+| 4.7 | Paint brush / Fill shell | `F3:Paint Colour, Fill Shell` | Strokes (finger strokes start after slop); *Fill part* toggle, or the Thumb tap meaning *Fill part* + a tap (one state) | L0 / L1 | Shift-click → Fill part |
+| 4.8 | Swatch shader (Lambert / Blinn, gloss, specular) | `F7:Swatch shaders` | Swatch Halo › Finish ▾ + ⟨Gloss⟩ and a Specular colour | L1 / L2 | — |
+| 4.9 | Assign new material | `F7:Assign New Material` | Swatch Halo › More › New material | L2 | — |
+| 4.10 | Colour export mode | `F3:Static GLB export` | Share › Advanced › Colours as; palette menu | L2 | — |
+| 4.11 | Flat / smooth / Blinn preview | `F7:Flat / smooth`, `F7:Viewport preview` | Paint lit by default; puck sheet › Look | L1 | — |
 
 ### 15.5 Rig (17)
 
-| # | Capability | Ekza Studio surface | Depth | Pro gap closed / notes |
-|---|---|---|---|---|
-| 5.1 | Rig modes | Segment, and mode-follows-touch | L0 | — |
-| 5.2 | Character from selection; adopt | Mesh petal *Make a character* in Rig; Rig empty state | L0 / L1 | — |
-| 5.3 | Model checks and fixes (incl. stand up, set height, freeze) | Health dots, Checks ⚠n, Fix chips (`autorig.fix`, in Auto-Rig's fix order from `autorigFlow`) | L0 / L1 | Was Auto-Rig / MCP only |
-| 5.4 | Quick Rig markers | *Rig it for me* (guess, dots); the *Adjust dots* session: drag (`skel.quickRig.setMarker`), Re-guess, Mirror, Remove (`clear`), Pick from view (`pick`), Front · Side, ✕ (`cancel`) | L1 / L2 | Native in v1 (v0.1 handed off to Auto-Rig ②) |
-| 5.5 | Skeleton templates; add missing bones | Rig tray › Add skeleton ▾; Fix chip | L2 / L1 | — |
-| 5.6 | Create skeleton / one-click auto-rig | *Rig it*; *Skeleton only* (`skel.quickRig.commit`) in the card's ⋯ | L1 / L2 | Mod + Enter → button |
-| 5.7 | Joint edits (move with children / alone, rotate rest, re-orient, numeric rest) | Drag (once selected); Thumb drag meanings *Alone* / *Orient only*; *Turn* petal; Numbers › Joint | L0 / L1 / L2 | Held D → Thumb |
-| 5.8 | Orient, Mirror, Symmetry X, restore flexion, snap to centre | Joint petals (Orient, Mirror); More (Symmetry X, Restore bend, Snap to centre = `rig.snap.projectedCenter`, Joint size) | L1 / L2 | — |
-| 5.9 | Rename joint; map humanoid bone | Crumb name; More › Humanoid bone ▾ | L1 / L2 | — |
-| 5.10 | A-pose path | Fix chip *Straighten to T-pose*; More › Apply pose as rest (inline confirm card, `applyPoseAsRest`), T-stance | L1 / L2 | — |
-| 5.11 | Update control rig; add limb IK | Character Halo (Rig) › More | L2 | — |
-| 5.12 | Controls: secondary visibility, size, rotate order | Puck sheet › Show › Secondary; control More › Control size (`rig.setControlSize`), Rotate order (`rig.setRotateOrder`) | L2 | — |
-| 5.13 | Joint display | Puck sheet › Show › Joints (size, x-ray, axes, labels: none / on hover / all) | L2 | — |
-| 5.14 | Validation and the rig checklist | Path glyphs, health dots, Checks sheet with profile switch, Share readiness — one list (§7.2); *Edit VRM Meta…* opens About this character | L0 / L1 | — |
-| 5.15 | Joint selection | Tap + Thumb; Rig tray › All joints | L0 / L1 | Mod → Thumb |
-| 5.16 | Multi-part characters, rigid parts, finger detail | *Rig it for me* chips; character Halo › Parts & fingers | L1 / L2 | Was Auto-Rig only |
-| 5.17 | Hide controls while rigging | Rig stage lighting default; puck sheet › Show | L1 | Was Auto-Rig only |
+| # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
+|---|---|---|---|---|---|
+| 5.1 | Rig modes | `F4:Rig modes` | Segment, and mode-follows-touch | L0 | — |
+| 5.2 | Character from selection; adopt | `F4:Character from selection` | Mesh petal *Make a character* in Rig; Rig empty state | L0 / L1 | — |
+| 5.3 | Model checks and fixes (incl. stand up, set height, freeze) | `F4:Model checks`, `F5:Model checks + fixes` | Health dots, Checks ⚠n, Fix chips (`autorig.fix`, in Auto-Rig's fix order from `autorigFlow`) | L0 / L1 | Was Auto-Rig / MCP only |
+| 5.4 | Quick Rig markers | `F4:Quick Rig markers`, `F5:② Markers` | *Rig it for me* (guess, dots); the *Adjust dots* session: drag (`skel.quickRig.setMarker`), Re-guess, Mirror, Remove (`clear`), Pick from view (`pick`), Front · Side, ✕ (`cancel`) | L1 / L2 | Native in v1 (v0.1 handed off to Auto-Rig ②) |
+| 5.5 | Skeleton templates; add missing bones | `F4:VRM skeleton templates` | Rig tray › Add skeleton ▾; Fix chip | L2 / L1 | — |
+| 5.6 | Create skeleton / one-click auto-rig | `F4:Create Skeleton`, `F5:Arms gate`, `F5:Size gate`, `F5:③ Rig — Auto-rig` | *Rig it*; *Skeleton only* (`skel.quickRig.commit`) in the card's ⋯ | L1 / L2 | Mod + Enter → button |
+| 5.7 | Joint edits (move with children / alone, rotate rest, re-orient, numeric rest) | `F4:Joint editing`, `F5:Adjust joints` | Drag (once selected); Thumb drag meanings *Alone* / *Orient only*; *Turn* petal; Numbers › Joint | L0 / L1 / L2 | Held D → Thumb |
+| 5.8 | Orient, Mirror, Symmetry X, restore flexion, snap to centre | `F4:Joint editing`, `F4:Orient / Mirror Joints` | Joint petals (Orient, Mirror); More (Symmetry X, Restore bend, Snap to centre = `rig.snap.projectedCenter`, Joint size) | L1 / L2 | — |
+| 5.9 | Rename joint; map humanoid bone | `F4:Map Humanoid Bone` | Crumb name; More › Humanoid bone ▾ | L1 / L2 | — |
+| 5.10 | A-pose path | `F4:A-pose path` | Fix chip *Straighten to T-pose*; More › Apply pose as rest (inline confirm card, `applyPoseAsRest`), T-stance | L1 / L2 | — |
+| 5.11 | Update control rig; add limb IK | `F4:Update Control Rig`, `F6:Add Limb IK` | Character Halo (Rig) › More | L2 | — |
+| 5.12 | Controls: secondary visibility, size, rotate order | `F6:Secondary controls` | Puck sheet › Show › Secondary; control More › Control size (`rig.setControlSize`), Rotate order (`rig.setRotateOrder`) | L2 | — |
+| 5.13 | Joint display | `F4:Joint display` | Puck sheet › Show › Joints (size, x-ray, axes, labels: none / on hover / all) | L2 | — |
+| 5.14 | Validation and the rig checklist | `F4:Rig checklist`, `F4:Validation`, `F4:Size check`, `F5:Rig checks + fixes` | Path glyphs, health dots, Checks sheet with profile switch, Share readiness — one list (§7.2); *Edit VRM Meta…* opens About this character | L0 / L1 | — |
+| 5.15 | Joint selection | `F2:Selection` | Tap + Thumb; Rig tray › All joints | L0 / L1 | Mod → Thumb |
+| 5.16 | Multi-part characters, rigid parts, finger detail | `F5:Multi-part characters`, `F5:Finger detail`, `F5:Rigid separate parts` | *Rig it for me* chips; character Halo › Parts & fingers | L1 / L2 | Was Auto-Rig only |
+| 5.17 | Hide controls while rigging | `F2:Display toggles` | Rig stage lighting default; puck sheet › Show | L1 | Was Auto-Rig only |
 
 ### 15.6 Skin and weights (12)
 
-| # | Capability | Ekza Studio surface | Depth | Pro gap closed / notes |
-|---|---|---|---|---|
-| 6.1 | Bind skin (+ options) / Rebind | Skin empty state *Bind skin*; character petal *Bind again* with its inline confirm card (`rebindSkin`); options on long-press | L0 / L1 / L2 | — |
-| 6.2 | Unbind; go to bind pose | Pose segment `[Bind│Test│Clip]`; More › Unbind with its inline confirm card (`unbindSkin`) | L0 / L2 | — |
-| 6.3 | Paint skin weights (modes, value, opacity, radius, falloff, surface / volume, front only, paint / select) | Joint petal *Paint its weights* → brush tray chips (L0 in the tool); the rest in brush ⋯ | L1 / L2 | B / M / N + drag → chips; Pencil pressure |
-| 6.4 | Flood | Brush tray | L0 (in tool) | — |
-| 6.5 | X-mirror stroke | Brush tray Mirror chip, on by default | L0 | Alt + R → chip |
-| 6.6 | Active influence: list, walk, pick dominant, sample | Two-way card + ‹ ›; *Who owns this?* finger-hold; Thumb tap meanings *Sample value* / *Pick bone*; All bones list (filter, sort) | L0 / L1 | Arrows, I, Shift + I → card / hold / Thumb |
-| 6.7 | Hold / hold all / release all | All bones list locks | L2 | — |
-| 6.8 | Mirror / Smooth / Prune / Normalize / Remove unused | Brush ⋯ › Fix weights, each with ⚙ Options; Health fixes | L2 | — |
-| 6.9 | Weight display | Brush tray Show ▾ | L1 | Alt + C → chip |
-| 6.10 | Test pose view; reset | Pose segment; character petal Reset test pose | L0 / L1 | — |
-| 6.11 | Test-rotate a joint | In Test: drag a joint; ⟨Bend <joint>⟩ chip | L0 | E key → drag / chip |
-| 6.12 | Numeric weight (`skin.weights.set`) | Vertex selection › *Set weight…* numpad | L2 | **New UI**: no Pro UI exists |
+| # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
+|---|---|---|---|---|---|
+| 6.1 | Bind skin (+ options) / Rebind | `F4:Bind Skin` | Skin empty state *Bind skin*; character petal *Bind again* with its inline confirm card (`rebindSkin`); options on long-press | L0 / L1 / L2 | — |
+| 6.2 | Unbind; go to bind pose | `F4:Unbind / bind pose` | Pose segment `[Bind│Test│Clip]`; More › Unbind with its inline confirm card (`unbindSkin`) | L0 / L2 | — |
+| 6.3 | Paint skin weights (modes, value, opacity, radius, falloff, surface / volume, front only, paint / select) | `F4:Paint Skin Weights`, `F5:Paint weights` | Joint petal *Paint its weights* → brush tray chips (L0 in the tool); the rest in brush ⋯ | L1 / L2 | B / M / N + drag → chips; Pencil pressure |
+| 6.4 | Flood | `F4:Paint Skin Weights` | Brush tray | L0 (in tool) | — |
+| 6.5 | X-mirror stroke | `F4:Paint Skin Weights` | Brush tray Mirror chip, on by default | L0 | Alt + R → chip |
+| 6.6 | Active influence: list, walk, pick dominant, sample | `F4:Paint Skin Weights` | Two-way card + ‹ ›; *Who owns this?* finger-hold; Thumb tap meanings *Sample value* / *Pick bone*; All bones list (filter, sort) | L0 / L1 | Arrows, I, Shift + I → card / hold / Thumb |
+| 6.7 | Hold / hold all / release all | `F4:Paint Skin Weights` | All bones list locks | L2 | — |
+| 6.8 | Mirror / Smooth / Prune / Normalize / Remove unused | `F4:Weight utilities` | Brush ⋯ › Fix weights, each with ⚙ Options; Health fixes | L2 | — |
+| 6.9 | Weight display | `F4:Weight display` | Brush tray Show ▾ | L1 | Alt + C → chip |
+| 6.10 | Test pose view; reset | `F4:Test poses` | Pose segment; character petal Reset test pose | L0 / L1 | — |
+| 6.11 | Test-rotate a joint | `F4:Test poses` | In Test: drag a joint; ⟨Bend <joint>⟩ chip | L0 | E key → drag / chip |
+| 6.12 | Numeric weight (`skin.weights.set`) | — | Vertex selection › *Set weight…* numpad | L2 | **New UI**: no Pro UI exists |
 
 ### 15.7 Pose (12)
 
-| # | Capability | Ekza Studio surface | Depth | Pro gap closed / notes |
-|---|---|---|---|---|
-| 7.1 | Manipulate controls (object / world / gimbal) | Drag the ring or the selected limb; Reach on hands, feet, head and hips; manipulator long-press › Space | L0 / L1 | — |
-| 7.2 | Channel numbers, expressions, nudges | Echo channel chips (Pro's numbers and signs); Numbers › Channels with numpad expressions, − / + steppers, several rows at once | L0 / L2 | Arrow nudges → steppers |
-| 7.3 | Virtual slider | Chips | L0 | MMB → chips |
-| 7.4 | Lock / unlock channels | Channel row long-press | L2 | — |
-| 7.5 | Reset a channel to default | Channel row long-press; channel chip Halo | L2 | RMB-only → long-press |
-| 7.6 | Reset pose to rest | *Reset* petal; character Halo | L1 | — |
-| 7.7 | Copy / paste / paste mirrored | *Copy pose* petal, which then becomes *Paste ▾* (paste, paste mirrored, copy again) | L1 | — |
-| 7.8 | Flip / mirror L→R / R→L | *Mirror ▾* petal | L1 | — |
-| 7.9 | Pin / plant / unpin feet | Foot petals; character More | L1 / L2 | — |
-| 7.10 | Unkeyed tweaks | Rec on (default): every change is a key, undo discards; Rec off: the Key petal's *changed* dot and tinted chips | L0 | — |
-| 7.11 | Pose at a frame, aim, IK goals, transfer | Band petal *Hold pose* (`pose.transfer`); *Paste pose at…* (verb → target, `pose.setAt`); *Look at…* and *Place goal* (verb → target, wrappers over `pose.goals`); Reach drags | L0 / L1 / L2 | **New UI**: AI-only today |
-| 7.12 | Pose recipes (wave, nod…), plant contacts | Recipes (T13) once `pose.recipe` / `pose.plantContacts` are registered | n/a | Not registered in the kernel yet |
+| # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
+|---|---|---|---|---|---|
+| 7.1 | Manipulate controls (object / world / gimbal) | `F2:Manipulators` | Drag the ring or the selected limb; Reach on hands, feet, head and hips; manipulator long-press › Space | L0 / L1 | — |
+| 7.2 | Channel numbers, expressions, nudges | `F2:Channels` | Echo channel chips (Pro's numbers and signs); Numbers › Channels with numpad expressions, − / + steppers, several rows at once | L0 / L2 | Arrow nudges → steppers |
+| 7.3 | Virtual slider | `F2:MMB virtual slider` | Chips | L0 | MMB → chips |
+| 7.4 | Lock / unlock channels | `F2:Channels` | Channel row long-press | L2 | — |
+| 7.5 | Reset a channel to default | — | Channel row long-press; channel chip Halo | L2 | RMB-only → long-press |
+| 7.6 | Reset pose to rest | `F6:Pose clipboard` | *Reset* petal; character Halo | L1 | — |
+| 7.7 | Copy / paste / paste mirrored | `F6:Pose clipboard` | *Copy pose* petal, which then becomes *Paste ▾* (paste, paste mirrored, copy again) | L1 | — |
+| 7.8 | Flip / mirror L→R / R→L | `F6:Pose clipboard` | *Mirror ▾* petal | L1 | — |
+| 7.9 | Pin / plant / unpin feet | `F6:Pin / Plant Feet` | Foot petals; character More | L1 / L2 | — |
+| 7.10 | Unkeyed tweaks | `F6:Unkeyed tweaks` | Rec on (default): every change is a key, undo discards; Rec off: the Key petal's *changed* dot and tinted chips | L0 | — |
+| 7.11 | Pose at a frame, aim, IK goals, transfer | `F11:Animation tools` | Band petal *Hold pose* (`pose.transfer`); *Paste pose at…* (verb → target, `pose.setAt`); *Look at…* and *Place goal* (verb → target, wrappers over `pose.goals`); Reach drags | L0 / L1 / L2 | **New UI**: AI-only today |
+| 7.12 | Pose recipes (wave, nod…), plant contacts | — | Recipes (T13) once `pose.recipe` / `pose.plantContacts` are registered | n/a | Not registered in the kernel yet |
 
 ### 15.8 Keys, curves, timing (25)
 
-| # | Capability | Ekza Studio surface | Depth | Pro gap closed / notes |
-|---|---|---|---|---|
-| 8.1 | Set key (all / T / R / S / attributes; selected channels) | *Key ◆* petal (L1); its long-press (L2); channel Halo › Key this channel; *Key selected channels* on selected rows | L1 / L2 | RMB "Key Selected" → channel rows |
-| 8.2 | Auto key and its mode | `● Rec` (Halo's own setting, default on, applied as a removable override); Pro's Auto Key mode in Settings › Animation | L0 / L2 | — |
-| 8.3 | Key target | Long-press *Key ◆* › Key target | L2 | — |
-| 8.4 | Delete key at frame / selected keys | Key dot and band petal *Delete* | L1 | — |
-| 8.5 | Breakdowns: set, convert | Long-press *Key ◆* › In-between; key dot *In-between ⇄* | L1 / L2 | — |
-| 8.6 | Tween family, overshoot | *Blend* chip (L0 between keys; lifting runs `key.tween`); its long-press for the mode; scrub past the ends | L0 / L1 | — |
-| 8.7 | Mirror animation (half-cycle) | Animation Halo › More › *Mirror cycle* (a pre-run form) | L2 | Distinct name from *Swap sides* |
-| 8.8 | Set frame / scrub / carry the pose | Thread tap and drag; Thumb drag meaning *Carry pose* | L0 / L1 | MMB scrub → Thumb |
-| 8.9 | Step, prev / next key, start / end | Expanded transport (tap the time readout): start, previous key, previous frame, next frame, next key, end | L1 | Alt+, / Alt+. → buttons |
-| 8.10 | Play / stop / backwards / loop modes / speed | ▶ (L0); its long-press: loop / once / oscillate, backwards; Speed in the expanded transport: Realtime · Every frame · Half · Double | L0 / L1 | — |
-| 8.11 | Playback range and clip range | Range brackets (expanded transport › Range); animation Settings | L1 / L2 | — |
-| 8.12 | Band: select / move / scale / copy / context menu | A Pencil drag, or a finger long-press then drag, on the ruler; drag body or ends; Thumb drag meaning *Copy*; band Halo (Copy, Paste ▾) | L0 / L1 | Shift / Mod + drag, RMB → long-press / Thumb / Halo |
-| 8.13 | Insert / remove / delete time | Playhead Halo (long-press the playhead): Insert frame, Remove frame, Delete time… (forms); band More › Insert / Remove time | L1 / L2 | — |
-| 8.14 | Ripple edit | Keys header chip *Push later keys* | L1 | — |
-| 8.15 | Dope Sheet | Keys layer (rows down to channels, Select · Move · Scale, region, frame, ‹ › nudge, the key Halo docked in the header) | L1 | Arrow nudge → chips |
-| 8.16 | Graph key and handle edits, insert key, numeric fields | Curves layer: finger or Pencil drags, Select · Move · Insert · Scale tools, *Insert key* petal, ⟨Time⟩ ⟨Value⟩ ⟨In / Out angle⟩ ⟨In / Out weight⟩, Axis chip | L1 / L2 | MMB move, Shift axis, R scale → drags / chips / tools |
-| 8.17 | Tangents (all 9, break / unify, weighted, lock weight) | Key dot *Ease ▾* (4 at L1, the rest at L2); Curves chips | L1 / L2 | 1–7, B, U keys → chips |
-| 8.18 | Pre / post infinity | Curve petal *Cycle ▾* | L2 | — |
-| 8.19 | Euler filter, Simplify, Key curves | Curve petals *Fix flips*, *Fewer keys* (a pre-run form); More › Key curves here | L2 | — |
-| 8.20 | Buffer curves | Hold *⇆ Before*; More › Snapshot / Swap / Clear | L2 | — |
-| 8.21 | Views (abs / norm / stack); framing | Curves More › View: Real · Fit · Stacked; double-tap | L2 | N / Shift + N → More |
-| 8.22 | Copy / paste keys (merge / replace / insert) | Key, band or playhead petals: *Copy* → *Paste ▾* in the same slot | L1 | Hover-scoped Mod + C / V → petals |
-| 8.23 | Graph / Dope pan and zoom | Two fingers in the sheet | L0 | Wheel / Alt + MMB → touch |
-| 8.24 | Channel list filter; keyed only | Curves header chip *Only animated* and the filter | L2 | — |
-| 8.25 | Value scale / offset; offset with wrap | Band More › Scale values…, Offset values…, Offset in loop (wrappers over `key.adjust` / `key.retime {wrap}`) | L2 | **New UI**: AI-only today |
+| # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
+|---|---|---|---|---|---|
+| 8.1 | Set key (all / T / R / S / attributes; selected channels) | `F6:Set key` | The Thread's *◆ Key* (L0, ST-KEY-1) and its long-press (all · only changed · selected channels); *Key ◆* petal (L1); its long-press (L2); channel Halo › Key this channel; *Key selected channels* on selected rows | L0 / L1 / L2 | RMB "Key Selected" → channel rows |
+| 8.2 | Auto key and its mode | `F6:Auto key` | `● Rec` (Halo's own setting, default on, applied as a removable override); Pro's Auto Key mode in Settings › Animation | L0 / L2 | — |
+| 8.3 | Key target | `F6:Key target` | Long-press *Key ◆* › Key target | L2 | — |
+| 8.4 | Delete key at frame / selected keys | `F6:Time slider` | Key dot and band petal *Delete* | L1 | — |
+| 8.5 | Breakdowns: set, convert | `F6:Breakdowns` | Long-press *Key ◆* › In-between; key dot *In-between ⇄* | L1 / L2 | — |
+| 8.6 | Tween family, overshoot | `F6:Tween family` | *Blend* chip (L0 between keys; lifting runs `key.tween`); its long-press for the mode; scrub past the ends | L0 / L1 | — |
+| 8.7 | Mirror animation (half-cycle) | `F6:Mirror animation` | Animation Halo › More › *Mirror cycle* (a pre-run form) | L2 | Distinct name from *Swap sides* |
+| 8.8 | Set frame / scrub / carry the pose | `F6:Time slider`, `F6:Retiming` | Thread tap and drag; Thumb drag meaning *Carry pose* | L0 / L1 | MMB scrub → Thumb |
+| 8.9 | Step, prev / next key, start / end | `F6:Playback` | Expanded transport (tap the time readout): start, previous key, previous frame, next frame, next key, end | L1 | Alt+, / Alt+. → buttons |
+| 8.10 | Play / stop / backwards / loop modes / speed | `F6:Playback` | ▶ (L0); its long-press: loop / once / oscillate, backwards; Speed in the expanded transport: Realtime · Every frame · Half · Double | L0 / L1 | — |
+| 8.11 | Playback range and clip range | `F6:Time slider` | Range brackets (expanded transport › Range); animation Settings | L1 / L2 | — |
+| 8.12 | Band: select / move / scale / copy / context menu | `F6:Time slider` | A Pencil drag, or a finger long-press then drag, on the ruler; drag body or ends; Thumb drag meaning *Copy*; band Halo (Copy, Paste ▾) | L0 / L1 | Shift / Mod + drag, RMB → long-press / Thumb / Halo |
+| 8.13 | Insert / remove / delete time | `F6:Retiming` | Playhead Halo (long-press the playhead): Insert frame, Remove frame, Delete time… (forms); band More › Insert / Remove time | L1 / L2 | — |
+| 8.14 | Ripple edit | `F6:Retiming` | Keys header chip *Push later keys* | L1 | — |
+| 8.15 | Dope Sheet | `F6:Dope Sheet`, `F6:Retiming` | Keys layer (rows down to channels, Select · Move · Scale, region, frame, ‹ › nudge, the key Halo docked in the header) | L1 | Arrow nudge → chips |
+| 8.16 | Graph key and handle edits, insert key, numeric fields | `F6:Graph Editor`, `F6:Views and Scale tool` | Curves layer: finger or Pencil drags, Select · Move · Insert · Scale tools, *Insert key* petal, ⟨Time⟩ ⟨Value⟩ ⟨In / Out angle⟩ ⟨In / Out weight⟩, Axis chip | L1 / L2 | MMB move, Shift axis, R scale → drags / chips / tools |
+| 8.17 | Tangents (all 9, break / unify, weighted, lock weight) | `F6:Tangents` | Key dot *Ease ▾* (4 at L1, the rest at L2); Curves chips | L1 / L2 | 1–7, B, U keys → chips |
+| 8.18 | Pre / post infinity | `F6:Curve tools` | Curve petal *Cycle ▾* | L2 | — |
+| 8.19 | Euler filter, Simplify, Key curves | `F6:Curve tools` | Curve petals *Fix flips*, *Fewer keys* (a pre-run form); More › Key curves here | L2 | — |
+| 8.20 | Buffer curves | `F6:Buffer curves` | Hold *⇆ Before*; More › Snapshot / Swap / Clear | L2 | — |
+| 8.21 | Views (abs / norm / stack); framing | `F6:Views and Scale tool` | Curves More › View: Real · Fit · Stacked; double-tap | L2 | N / Shift + N → More |
+| 8.22 | Copy / paste keys (merge / replace / insert) | `F6:Time slider` | Key, band or playhead petals: *Copy* → *Paste ▾* in the same slot | L1 | Hover-scoped Mod + C / V → petals |
+| 8.23 | Graph / Dope pan and zoom | — | Two fingers in the sheet | L0 | Wheel / Alt + MMB → touch |
+| 8.24 | Channel list filter; keyed only | — | Curves header chip *Only animated* and the filter | L2 | — |
+| 8.25 | Value scale / offset; offset with wrap | `F11:Animation tools` | Band More › Scale values…, Offset values…, Offset in loop (wrappers over `key.adjust` / `key.retime {wrap}`) | L2 | **New UI**: AI-only today |
 
 ### 15.9 Clips and library (7)
 
-| # | Capability | Ekza Studio surface | Depth | Pro gap closed / notes |
-|---|---|---|---|---|
-| 9.1 | New, duplicate, rename, delete, set active | Animations row (`+ New`); animation Halo on the first tap | L0 / L1 | RMB → Halo |
-| 9.2 | Clip settings | Animation Halo › Settings | L2 | — |
-| 9.3 | Library: browse, preview, stop, use | Library drawer (preview on tap, *Stop preview*, Add) | L1 | — |
-| 9.4 | Library parameters, search, categories, edit, remove, add many | Expanded card; *Add starter set*; animation Halo › Edit | L1 / L2 | **Was Auto-Rig only** |
-| 9.5 | Import VRMA / animation GLB / embedded clips (options) | Bring a model; Library › From file; options sheet | L1 / L2 | — |
-| 9.6 | Make loop | Animation petal *Loop it*; the *loop it* search phrase | L1 | **New UI**: AI-only today |
-| 9.7 | OMOBA slot | Animation Halo › Use as…; Share readiness | L2 | — |
+| # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
+|---|---|---|---|---|---|
+| 9.1 | New, duplicate, rename, delete, set active | `F6:Clips per character` | Animations row (`+ New`); animation Halo on the first tap | L0 / L1 | RMB → Halo |
+| 9.2 | Clip settings | `F6:Clips per character` | Animation Halo › Settings | L2 | — |
+| 9.3 | Library: browse, preview, stop, use | `F4:Clip Library`, `F5:④ Animations`, `F6:Clip Library` | Library drawer (preview on tap, *Stop preview*, Add) | L1 | — |
+| 9.4 | Library parameters, search, categories, edit, remove, add many | `F5:④ Animations` | Expanded card; *Add starter set*; animation Halo › Edit | L1 / L2 | **Was Auto-Rig only** |
+| 9.5 | Import VRMA / animation GLB / embedded clips (options) | `F5:Own VRMA`, `F6:Embedded clip import`, `F8:VRMA clips`, `F8.1:Animation-only GLB` | Bring a model; Library › From file; options sheet | L1 / L2 | — |
+| 9.6 | Make loop | `F11:Animation tools` | Animation petal *Loop it*; the *loop it* search phrase | L1 | **New UI**: AI-only today |
+| 9.7 | OMOBA slot | `F5:OMOBA slots`, `F6:Clips per character` | Animation Halo › Use as…; Share readiness | L2 | — |
 
 ### 15.10 IK / FK (7)
 
-| # | Capability | Ekza Studio surface | Depth | Pro gap closed / notes |
-|---|---|---|---|---|
-| 10.1 | Limb attributes (poles, soft IK, twist, blend) | Numbers › Limb | L2 | — |
-| 10.2 | Switch IK ↔ FK (+ key mode) | *Hand leads* / *Foot leads* petal; key mode on its long-press | L1 / L2 | — |
-| 10.3 | Match at the current frame | *Hand leads* long-press › Match now | L2 | — |
-| 10.4 | Match a range | Band More › Match IK/FK; limb More | L2 | — |
-| 10.5 | Foot roll; foot pivots | Foot Echo chips (L1); Numbers › Foot (L2) | L1 / L2 | — |
-| 10.6 | Add limb IK; IK defaults | Character Halo (Rig) › More; Settings | L2 | — |
-| 10.7 | AI IK-goal placement | Reach drags on hands, feet, head and hips (L0 once selected); More › Place goal (verb → target) | L0 / L2 | **New UI** |
+| # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
+|---|---|---|---|---|---|
+| 10.1 | Limb attributes (poles, soft IK, twist, blend) | `F6:Leg and arm IK` | Numbers › Limb | L2 | — |
+| 10.2 | Switch IK ↔ FK (+ key mode) | `F6:IK/FK switch and match` | *Hand leads* / *Foot leads* petal; key mode on its long-press | L1 / L2 | — |
+| 10.3 | Match at the current frame | `F6:IK/FK switch and match` | *Hand leads* long-press › Match now | L2 | — |
+| 10.4 | Match a range | `F6:IK/FK switch and match` | Band More › Match IK/FK; limb More | L2 | — |
+| 10.5 | Foot roll; foot pivots | `F6:Foot roll` | Foot Echo chips (L1); Numbers › Foot (L2) | L1 / L2 | — |
+| 10.6 | Add limb IK; IK defaults | `F6:Leg and arm IK`, `F6:Add Limb IK` | Character Halo (Rig) › More; Settings | L2 | — |
+| 10.7 | AI IK-goal placement | `F11:Animation tools` | Reach drags on hands, feet, head and hips (L0 once selected); More › Place goal (verb → target) | L0 / L2 | **New UI** |
 
 ### 15.11 Import, export, publish (11)
 
-| # | Capability | Ekza Studio surface | Depth | Pro gap closed / notes |
-|---|---|---|---|---|
-| 11.1 | Open / import GLB, VRM (Draco, meshopt, KTX2) with options | Home › Bring a model (byte-sniffed); project menu › Open / Import; Advanced options | L1 / L2 | iOS `accept` problem → sniffing |
-| 11.2 | Samples | Home › Try a sample; project menu › Samples (incl. Cube Lad, Polybot T / A) | L1 / L2 | — |
-| 11.3 | Intake gates (heavy mesh, already rigged) | Automatic sheet at intake (routing from `autorigFlow`); on iPad the memory profile refuses models above 200k triangles (§15.0) | L0 | — |
-| 11.4 | Export animation (bake / VRMA / anim GLB + options) | Share › Just the animations / Game engine / Into the original file; Advanced | L1 / L2 | — |
-| 11.5 | Static model GLB | Share › Prop for OMOBA; Share › More formats › *Static model (GLB)* (whole model, colour output, lit / unlit, `local/generic`); object More › Export selected… | L1 / L2 | RMB "Export Selected" → More |
-| 11.6 | Character VRM 1.0 / GLB behind the gate | Share › OMOBA & Ekza Space | L1 | — |
-| 11.7 | VRM meta; thumbnail | Share fields (name, author, licence as an explicit choice); About this character (every `CharacterVrmMeta` field, Render thumbnail), also opened by `ui.open {vrmMeta}` and Validation's *Edit VRM Meta…* | L1 / L2 | — |
-| 11.8 | Auto-Rig export targets (OMOBA kit, VRM 0.x kept, rigged GLB) | Share › More formats | L2 | Was Auto-Rig only |
-| 11.9 | Export profiles and lints | Destination → profile; card Details (rule ids, profile switch) | L2 | — |
-| 11.10 | Validation gate and read-back | Automatic, with *Go fix ▸* | L0 | — |
-| 11.11 | Publish to Ekza Hub | Hidden until M4a, as in Pro | n/a | — |
+| # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
+|---|---|---|---|---|---|
+| 11.1 | Open / import GLB, VRM (Draco, meshopt, KTX2) with options | `F5:① Model intake`, `F8:glTF / VRM models` | Home › Bring a model (byte-sniffed); project menu › Open / Import; Advanced options | L1 / L2 | iOS `accept` problem → sniffing |
+| 11.2 | Samples | `F5:Samples`, `F8:Samples` | Home › Try a sample; project menu › Samples (incl. Cube Lad, Polybot T / A) | L1 / L2 | — |
+| 11.3 | Intake gates (heavy mesh, already rigged) | `F5:① Model intake`, `F5:Heavy meshes`, `F12:Model limits` | Automatic sheet at intake (routing from `autorigFlow`); on iPad the memory profile refuses models above 200k triangles (§15.0) | L0 | — |
+| 11.4 | Export animation (bake / VRMA / anim GLB + options) | `F8:Bake into original`, `F8:VRMA`, `F8.2:Animation-only GLB`, `F8:Key reduction`, `F8:Root motion "In place"`, `F8:IK bake` | Share › Just the animations / Game engine / Into the original file; Advanced | L1 / L2 | — |
+| 11.5 | Static model GLB | `F3:Static GLB export`, `F8:Static model GLB`, `F10:OMOBA handheld props` | Share › Prop for OMOBA; Share › More formats › *Static model (GLB)* (whole model, colour output, lit / unlit, `local/generic`); object More › Export selected… | L1 / L2 | RMB "Export Selected" → More |
+| 11.6 | Character VRM 1.0 / GLB behind the gate | `F4:Export Character`, `F8:VRM 1.0 character` | Share › OMOBA & Ekza Space | L1 | — |
+| 11.7 | VRM meta; thumbnail | `F4:VRM meta and thumbnail`, `F5:Metadata` | Share fields (name, author, licence as an explicit choice); About this character (every `CharacterVrmMeta` field, Render thumbnail), also opened by `ui.open {vrmMeta}` and Validation's *Edit VRM Meta…* | L1 / L2 | — |
+| 11.8 | Auto-Rig export targets (OMOBA kit, VRM 0.x kept, rigged GLB) | `F5:⑤ Export targets`, `F8:VRM 0.x kept`, `F8:OMOBA local test kit` | Share › More formats | L2 | Was Auto-Rig only |
+| 11.9 | Export profiles and lints | `F8:ekza/space-avatar-v1`, `F8:ekza/omoba-humanoid-v1`, `F8:ekza/vrma-humanoid-v1`, `F8:ekza/omoba-handheld-v1`, `F8:local/generic`, `F10:Tier 0 exports` | Destination → profile; card Details (rule ids, profile switch) | L2 | — |
+| 11.10 | Validation gate and read-back | `F4:Validation`, `F5:Export checklist`, `F8:Read-back check` | Automatic, with *Go fix ▸* | L0 | — |
+| 11.11 | Publish to Ekza Hub | `F10:Publish to Hub` | Hidden until M4a, as in Pro | n/a | — |
 
 ### 15.12 Project, files, history (9)
 
-| # | Capability | Ekza Studio surface | Depth | Pro gap closed / notes |
-|---|---|---|---|---|
-| 12.1 | New project | Home; project menu | L1 | — |
-| 12.2 | Open `.ekzanim` | Bring a model (sniffed); project menu › Open | L1 | — |
-| 12.3 | Save, Save As, Save Debug JSON | Project menu › *Save project to Files* (two-step on iOS), Save as; Share footer › Save project; Advanced › Debug JSON. Exports are separate (*Export … to Files*) | L1 / L2 | — |
-| 12.4 | Autosave, recover, recovery point, discard | Silent restore / Continue (L0 / L1); project menu › Recover, Recovery point, Discard | L0–L2 | — |
-| 12.5 | Undo / redo | ↶; two-finger tap; Redo in the toast and in the History ribbon (long-press ↶) | L0 / L1 | — |
-| 12.6 | Edit copy / paste / delete; Escape | Per-noun petals; ✕ in the session bar; tap empty space | L1 | Hover-dispatched → noun verbs |
-| 12.7 | Revert chosen steps; restore document | History ribbon › Revert this / Undo all | L1 / L2 | — |
-| 12.8 | Unsaved guard and dirty state | Dirty dot, cleared only by a project save; *"saved on this iPad, not in Files"*; iPad Safari never shows a leave prompt, so the autosave flushes on `pagehide` / `visibilitychange` and its snapshot is kept on iOS | L0 | — |
-| 12.9 | History panel (planned M2c) | History ribbon (long-press ↶): labelled steps, selection steps folded, AI groups, Compare, Adjust, Redo | L1 | **Arrives in Halo first** |
+| # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
+|---|---|---|---|---|---|
+| 12.1 | New project | `F9:.ekzanim projects` | Home; project menu | L1 | — |
+| 12.2 | Open `.ekzanim` | `F9:.ekzanim projects`, `F9:Schema migration` | Bring a model (sniffed); project menu › Open | L1 | — |
+| 12.3 | Save, Save As, Save Debug JSON | `F9:.ekzanim projects` | Project menu › *Save project to Files* (two-step on iOS), Save as; Share footer › Save project; Advanced › Debug JSON. Exports are separate (*Export … to Files*) | L1 / L2 | — |
+| 12.4 | Autosave, recover, recovery point, discard | `F5:Session restore`, `F9:Autosave + recovery` | Silent restore / Continue (L0 / L1); project menu › Recover, Recovery point, Discard | L0–L2 | — |
+| 12.5 | Undo / redo | `F9:Undo / redo` | ↶; two-finger tap; Redo in the toast and in the History ribbon (long-press ↶) | L0 / L1 | — |
+| 12.6 | Edit copy / paste / delete; Escape | — | Per-noun petals; ✕ in the session bar; tap empty space | L1 | Hover-dispatched → noun verbs |
+| 12.7 | Revert chosen steps; restore document | — | History ribbon › Revert this / Undo all | L1 / L2 | — |
+| 12.8 | Unsaved guard and dirty state | — | Dirty dot, cleared only by a project save; *"saved on this iPad, not in Files"*; iPad Safari never shows a leave prompt, so the autosave flushes on `pagehide` / `visibilitychange` and its snapshot is kept on iOS | L0 | — |
+| 12.9 | History panel (planned M2c) | `F9:History panel` | History ribbon (long-press ↶): labelled steps, selection steps folded, AI groups, Compare, Adjust, Redo | L1 | **Arrives in Halo first** |
 
 ### 15.13 AI agent (7)
 
-| # | Capability | Ekza Studio surface | Depth | Pro gap closed / notes |
-|---|---|---|---|---|
-| 13.1 | Connect, discovery, pairing | Ask sheet › Connect (desktop Chrome / Edge) | L1 | iPad and Safari: §15.0, OQ-5 |
-| 13.2 | Grants | Plain toggles in the pairing card: *change my animation*, *save files* and under it *use my agent's workspace folder*, *change what I see* | L1 | — |
-| 13.3 | Pause, resume, disconnect | Ask sheet | L2 | — |
-| 13.4 | Audit log, undo per step, revert all | History ribbon AI groups | L1 | — |
-| 13.5 | Confirm cards | Inline cards | L0 (when raised) | — |
-| 13.6 | Live status, toasts | Activity line under the search pill | L0 | — |
-| 13.7 | What the agent can do (37 tools, prompts, headless) | Unchanged; prompts shared with recipes | n/a | — |
+| # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
+|---|---|---|---|---|---|
+| 13.1 | Connect, discovery, pairing | `F11:Live bridge`, `F11:Agent panel` | Ask sheet › Connect (desktop Chrome / Edge) | L1 | iPad and Safari: §15.0, OQ-5 |
+| 13.2 | Grants | `F11:Live bridge`, `F11:Agent panel` | Plain toggles in the pairing card: *change my animation*, *save files* and under it *use my agent's workspace folder*, *change what I see* | L1 | — |
+| 13.3 | Pause, resume, disconnect | `F11:Agent panel` | Ask sheet | L2 | — |
+| 13.4 | Audit log, undo per step, revert all | `F11:Undoable AI steps`, `F11:Agent panel` | History ribbon AI groups | L1 | — |
+| 13.5 | Confirm cards | — | Inline cards | L0 (when raised) | — |
+| 13.6 | Live status, toasts | `F11:Agent panel` | Activity line under the search pill | L0 | — |
+| 13.7 | What the agent can do (37 tools, prompts, headless) | `F11:ekza-studio-mcp server`, `F11:Headless projects`, `F11:Animation tools`, `F11:view_capture`, `F11:Character setup tools`, `F11:Prompts` | Unchanged; prompts shared with recipes | n/a | — |
 
 ### 15.14 Preferences (9)
 
-| # | Capability | Ekza Studio surface | Depth | Pro gap closed / notes |
-|---|---|---|---|---|
-| 14.1 | Start in | Settings › Start in: Ekza Studio / Studio Pro / Auto-Rig / Ask; the layout switch updates it | L2 | — |
-| 14.2 | Navigation profile | Settings › Input: the touch / Pencil routing table; mouse profile (Alt-drag / trackpad / one-button) | L2 | — |
-| 14.3 | Space key behaviour | Settings › Keyboard › "In Studio Pro, Space…" (Halo always plays) | L2 | Edits Pro's pref explicitly |
-| 14.4 | Auto-key mode | Settings › Animation (Pro's Auto Key mode); Halo's Rec is its own setting (`halo.rec`) | L2 | — |
-| 14.5 | Reduce keys on import | Settings › Import | L2 | — |
-| 14.6 | Graph handles | Settings › Animation; Curves ⋯ | L2 | — |
-| 14.7 | Prefs with no UI; uiScale | Settings › Advanced, generated from a prefs descriptor table (label, unit, range, section; T6b, with a test that every `Prefs` key has one); *Text & touch size* (uiScale, now read) | L2 | **New UI** |
-| 14.8 | First-run dialog | Replaced by Home, the gesture line and one-time coach marks; Pro keeps its dialog | L0 | — |
-| 14.9 | Keymap overrides | — | **Pro** | §15.15 c; no UI in either shell yet |
+| # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
+|---|---|---|---|---|---|
+| 14.1 | Start in | `F1:Remembered choice`, `F2:Preferences` | Settings › Start in: Ekza Studio / Studio Pro / Auto-Rig / Ask; the layout switch updates it | L2 | — |
+| 14.2 | Navigation profile | `F2:Navigation profiles`, `F2:Preferences` | Settings › Input: the touch / Pencil routing table; mouse profile (Alt-drag / trackpad / one-button) | L2 | — |
+| 14.3 | Space key behaviour | `F2:Maximize panel`, `F2:Preferences` | Settings › Keyboard › "In Studio Pro, Space…" (Halo always plays) | L2 | Edits Pro's pref explicitly |
+| 14.4 | Auto-key mode | `F2:Preferences`, `F6:Auto key` | Settings › Animation (Pro's Auto Key mode); Halo's Rec is its own setting (`halo.rec`) | L2 | — |
+| 14.5 | Reduce keys on import | `F2:Preferences`, `F6:Embedded clip import` | Settings › Import | L2 | — |
+| 14.6 | Graph handles | `F2:Preferences` | Settings › Animation; Curves ⋯ | L2 | — |
+| 14.7 | Prefs with no UI; uiScale | — | Settings › Advanced, generated from a prefs descriptor table (label, unit, range, section; T6b, with a test that every `Prefs` key has one); *Text & touch size* (uiScale, now read) | L2 | **New UI** |
+| 14.8 | First-run dialog | `F1:Getting Started` | Replaced by Home, the gesture line and one-time coach marks; Pro keeps its dialog | L0 | — |
+| 14.9 | Keymap overrides | — | — | **Pro** | §15.15 c; no UI in either shell yet |
 
 ### 15.15 Deliberate Studio Pro hand-offs, and why
 
@@ -2118,37 +2173,66 @@ Halo follows the Auto-Rig pattern (ADR 0021).
 
 ### 20.2 Package layout
 
+As built at T12 (the plan of v0.2 was the same parts; the WPs recorded each change in their wp-notes, P-T6A-7, P-T7-6,
+P-T8-5, P-T9-4, P-T10-1, P-T11-7). The stage packages plug into the frame through one seam (`shell/stageParts.ts`,
+ST-T8-3: per stage `{Tray, Layer, install}`, its sheets and its test-API slice, all lazy) instead of a `StageDef` per
+stage; Home's intake is `intake/`, not `home/intake/`.
+
 ```
 packages/halo/src/
-  index.ts              HaloShell + marker
-  shell/                controller.ts (arrival: takeWorkspace / takeSubject / ?stage; host.mount({kind:'halo', leave,
-                        handoffState}); session mirror; touch-action / overscroll policy with a disposer; recovery
-                        hook), Frame.tsx (container-query layout), TopBar, ProjectMenu, prefetch.ts (idle chunk prefetch)
-  canvas/               HaloPane.tsx (WizardPane-style: paneSetup → registerPane; ids pane-single / pane-side),
-                        overlay.ts (stage display overlay through vm.setDisplayOverlay)
-  input/                arbiter.ts (ArbiterConfig + handlers), routing.ts (Shared / Pencil edits / Pencil only),
-                        modifierMap.ts, thumb/, loupe/
-  path/                 Path.tsx, readiness.ts (pure, one list), destinations.ts, nextChip.ts
-  stages/{make,paint,rig,animate}/   stage.ts (StageDef), Tray.tsx — non-initial stages are lazy
+  index.ts              HaloShell + marker, setGenerationGateway
+  shell/                HaloShell.tsx, Frame.tsx (container-query layout), TopBar.tsx (+ the live AI line, T12),
+                        ProjectMenu.tsx, Sheets.tsx (the sheet host), Tray.tsx (the stand-in tray under the stage
+                        trays), StageLayer.tsx, PathParts.tsx (Path, status corner, Next chip, Next actions),
+                        controller.ts (arrival, host.mount, test-API slices), store.ts, context.ts, hooks.ts, stage.ts,
+                        stageParts.ts (the stage seam), mirror.ts (sessionStorage mirror), keys.ts (the halo key
+                        scope), entry.ts (the remembered front door, `HALO_ENTRY`), coach.ts, targets.ts (the
+                        visible-target counter), readiness.ts, prefetch.ts (idle chunk prefetch)
+  canvas/               HaloPane.tsx (pane-single / pane-side), ViewPuck.tsx, overlay.ts (stage display overlay)
+  input/                arbiter.ts (ArbiterConfig + handlers), install.ts, claims.ts (whose a drag is; stage claims,
+                        tap hooks), situation.ts, modifierMap.ts, thumb.ts, ThumbKeyView.tsx, manipScale.ts,
+                        InputSettings.tsx (Settings › Input, lazy)
+  path/                 Path.tsx, StatusCorner.tsx, readiness.ts (pure, one list), destinations.ts, nextChip.ts
+  stages/animate/       AnimateDock.tsx, AnimationsRow.tsx, ClipSettings.tsx, DockedHalo.tsx, TimeChip.tsx, icons.tsx,
+                        start.ts, rec.ts (Rec as the shell override), model.ts, reach.ts, ui.ts, slice.ts,
+                        sheetContext.ts
+  stages/make/          index.ts, install.ts, Tray.tsx, Layer.tsx, CapHandle.tsx, ValueHandle.tsx, kit.tsx,
+                        cleanup.ts (G-a's intake calls), geometry.ts, state.ts, useProjected.ts;
+                        ai/ (CreateWithAiSheet.tsx, availability.ts, open.ts), report/ (ReportSheet.tsx)
+  stages/paint/         index.ts, install.ts, Tray.tsx, model.ts
+  stages/rig/           index.ts, Tray.tsx, Layer.tsx, RigTray.tsx, RigCard.tsx, RigOverlay.tsx, DotsPanes.tsx,
+                        SkinCards.tsx, start.ts, model.ts, ui.ts, slice.ts, cardOpen.ts, dock.ts, dotLabels.ts,
+                        openers.ts, poll.ts
   verbs/                nouns.ts (resolveNoun), table.ts (curated petals), derive.ts (More from manifest + poll)
-  halo/                 HaloBar, HaloRing (./overlays geometry), Breadcrumb, TargetMode (verb → target)
-  chips/                EchoChips, forms.ts (pre-run forms), scrub.ts (distance scrub), bind.ts (edit.adjustLast,
-                        NumericTarget)
-  session/              SessionBar (leave = Done)
-  dialogs/              watcher.ts (session.dialog → Halo surfaces, §6.7)
-  thread/strip/         layer 0 (eager, own Canvas2D over editor-core queries)
-  thread/band/          band + key-drag models from curve-editor (lazy), the focused band source
-  thread/keys/          layer 1 (lazy; curve-editor DopeSheet adapter)
-  thread/curves/        layer 2 (lazy; curve-editor Graph adapter)
-  sheets/               more, numbers, scene, library, health, share, about, history, settings (from the prefs
-                        descriptor table), view, help, ask — all lazy
-  palette/              Halo's touch palette view over the host palette controller
-  recipes/              rigIt (over editor-core autorigFlow), addAnimations, loopIt, wave, fixForOmoba, fixBend
-  home/                 Home, Continue, intake/ (byte sniffing → autorigFlow routing)
-  manifest/             disclosure.ts, proOnly.ts, plumbing.ts, searchOnly.baseline.json, labels.ts
-  i18n/en.ts, i18n/channels.ts
-packages/halo/test/     parity helpers, manifest lints, vocabulary lint, modifierMap (real tools), nouns/verbs on
-                        fixture apps, readiness, dialogs map, channel values, recipes, layout
+  halo/                 HaloLayer.tsx, Breadcrumb.tsx, ChoiceRow.tsx (▾ choices), TargetMode.tsx (verb → target),
+                        grammar.ts, run.ts, verbSource.ts, geometry.ts, icons.tsx
+  chips/                EchoChips.tsx, FormChips.tsx (pre-run forms), NumpadPanel.tsx
+  session/              SessionBar.tsx, sessions.ts (leave = Done)
+  dialogs/              watcher.ts (session.dialog → Halo surfaces, §6.7), map.ts, answers.ts, ConfirmCard.tsx
+  thread/               TimeSettings.tsx, units.ts; strip/ (Thread.tsx, ThreadStrip.tsx, model.ts: layer 0 and the
+                        ruler), band/source.ts (the focused band source), keys/KeysLayer.tsx (layer 1, lazy),
+                        curves/ (CurvesLayer.tsx, CurveHalo.tsx, KeyChips.tsx, model.ts, probe.ts: layer 2, lazy)
+  history/              probe.ts, undoPress.ts (↶'s long-press), activity.ts (the live AI line's slot, T12)
+  generate/             binding.ts (Create with AI over the Generate flow, M7 G-d)
+  sheets/               more, numbers, scene, view, settings, health, help, about (T6b); library (T7); palette (T8);
+                        checks, bones, weights (T9); history, ask (T10; ask/activity.ts follows the agent, T12);
+                        share (T11: ShareSheet.tsx, GameTarget.tsx, model.ts, bake.ts) — all lazy
+  palette/              Palette.tsx (search, recipes, Ask AI)
+  recipes/              recipe.ts, index.ts, rigIt.ts, rigOffers.ts, fixBend.ts, addAnimations.ts, loopIt.ts, wave.ts,
+                        fixForOmoba.ts
+  home/                 Home.tsx, model.ts, start.ts (recovery hook, storage card), resume.ts (J10, with the view
+                        camera since T12), save.ts, slice.ts
+  intake/               intake.ts (byte sniffing → autorigFlow routing), flowHost.ts (one flow state per app)
+  manifest/             disclosure.ts, labels.ts, paramSurfaces.ts, proOnly.ts, plumbing.ts, dialogs.ts, census.ts,
+                        check.ts, probe.ts, sheets.ts, sheetLoaders.ts, types.ts, searchOnly.baseline.json
+  i18n/                 en.ts (the shell), animate.ts, make.ts (Make and Paint), rig.ts, channels.ts
+packages/halo/test/     rules (operator-only writes, preferences, lazy modules, the one vocabulary lint over every
+                        catalogue, the visible-target counter), contracts, grammar, keys-and-mirror, modifier-map,
+                        manip-scale, dialogs, manifest/, verbs/, path/, sheets/, features-map, animate-*, curves-journey,
+                        t10-curves-history, make-paint, rig-stage, rig-journeys, share-bytes, t11-share-home,
+                        generate-binding, t12-integration
+apps/web/e2e/           ha-00 … ha-15, ha-J1 … ha-J10 (J4f and J6f inside J4 and J6), ha-J1-generated, ha-parity,
+                        ha-gen-create-with-ai, ha-t3-pro-switch, ha-t12-release
 ```
 
 ### 20.3 Shared extractions and kernel changes (additive)
@@ -2166,7 +2250,7 @@ packages/halo/test/     parity helpers, manifest lints, vocabulary lint, modifie
 | 9 | **`@ekza-studio/editor/models`**, a subpath that re-exports the React-free view models: outliner (`model`, `modelTree`, `sceneSelection`), the Channels panel (`readout`, `states`, `nudge`, `kit/kernel`), graph `model`, clips `settings`, palette `model`, toolkit `slider`, the VRM Meta dialog model. Not `timeline/state.ts` or `placement.ts`, which are React hooks. Measured against `/editor` after each; the T1a spike decides between re-export and a React-free package (§20.6). | editor | Halo | T5c |
 | 10 | **Auto-Rig's orchestration and progress into `editor-core`.** `editor-core/src/autorigFlow`: intake routing and the first-fix order (stand up → scale → freeze → centre → face), the `runAutoRig` argument rules (straighten from the recorded start pose, rigid parts, the rebind confirm, busy and progress), the motion-test driver, and export target naming (from `autorig/src/steps/{model,rig,motion,export}`). `autorig/src/progress` moves to `editor-core/src/progress`. Auto-Rig re-imports both (AS-ST-15). | editor-core, autorig | Halo readiness, recipes, Auto-Rig | T5b (flow), T5c (progress) |
 | 11 | **Route unions and navigation** (§20.4): `ShellRoute` + `'halo'`; `NavigationRequest.from`, `then?`; `HandoffInfo.halo`; `MountedShell.kind`. `routeHref` maps every route explicitly (today any non-`studio` route goes to `/autorig`). `handoff.ts`, test-api params, `DialogHost`, the `EditorShell` first-run suppression, the entry-choice unions, `entry-contract.test`. A host-level `shell.navigate` operator, agent-denied; `autorig.navigate` stays with its agent schema unchanged. | editor-core, editor, apps/web | all shells | T2 |
-| 12 | **Host re-homing** of shell-neutral registrations that only Pro makes today: the marking-menu definitions; rig menu items and `rig.snap.projectedCenter` / `rig.jointSize.set`; the data parts of `registerModelSelectUi` / `registerModelTransformUi`; agent UI hooks; `view.selectionMask`, `view.toggleFullscreen`. `promptRecovery` moves to the host with a hook each shell provides (Pro: its Recovery dialog; Halo: Home › Continue; Auto-Rig: as today). `watchRigViewOnly` stays Pro-only. They become idempotent, lazy, host-level registrations. | editor | Halo, Auto-Rig | T3 |
+| 12 | **Host re-homing** of shell-neutral registrations that only Pro makes today: the marking-menu definitions; rig menu items and `rig.snap.projectedCenter` / `rig.jointSize.set`; the data parts of `registerModelSelectUi` / `registerModelTransformUi`; agent UI hooks; `view.selectionMask`, `view.toggleFullscreen`. `promptRecovery` moves to the host with a hook each shell provides (Pro: its Recovery dialog; Halo: Home › Continue; Auto-Rig: as today). `watchRigViewOnly` stays Pro-only. They become idempotent, lazy, host-level registrations — as built (T3, P-T3-5): lazy, once per app, the view operators at once, Model's marking menus and Rig & Skin's menus and settings on their workspace's first entry; the recovery hook is `provideRecoveryHook(app, {firstRun, offer})`. | editor | Halo, Auto-Rig | T3 |
 | 13 | **Key scope from `lastPanel`** for non-mouse pointers (`createHost.ts:233`, `useWindowInput.ts`). | editor host | every shell | T2 |
 | 14 | **UI touch kit**: `[data-density=touch]` tokens (rows and hits 44, input text 16); primitives Sheet, Segmented, ScrubChip, Numpad, LongPress, Loupe (chips) and a generic radial arc in `@ekza-studio/ui/touch` (so `/editor` pays nothing); the shell `touch-action` / `overscroll-behavior` policy class; `uiScale` actually read. | ui | Halo, Auto-Rig later | T4 |
 | 15 | **Platform services**: `FileService.save() → SaveTicket` and a host-level `SavePrompt` (§20.4); `sniffFileKind(bytes)`; a `storage.persist()` request; `host/memoryProfile.ts`, read by `StudioHost` before `GLHost` mounts, on every route (DPR cap, `antialias`); the texture cap at GPU upload (`viewport/src/gl/textureCap.ts`, new); the web manifest scoped to `/app`. | editor, viewport, apps/web | every shell on iPad | T0 |
@@ -2177,6 +2261,14 @@ packages/halo/test/     parity helpers, manifest lints, vocabulary lint, modifie
 | 20 | **Tool-modifier rows**: `keymap/toolModifiers.ts` gains the rows it lacks (joint D, skin B/M/N/I, Quick Rig X, Graph Shift axis, time-slider Shift band and Mod copy); the conformance test covers every `TOOL_HOLD_CODES` entry. | editor-core keymap | modifierMap tests, docs | T1 (first day) |
 
 ### 20.4 Contracts (sketch; normative after T1a and T2)
+
+As built (T2's P7, recorded at T12): `then` is **`arrival`** (`NavigationRequest.arrival`, `HostNavigation.takeArrival`);
+the code adds `ShellKind` (`ShellRoute` without `'chooser'`), `HaloStage`, `MountedShell.haloState`,
+`HostNavigation.takeHalo` and, at T12, `takeFrom` (the shell a same-page switch left: Pro's arrival toast, P-T11-4),
+`HostShell.notePointer`; `PrefsStore.override?` and `FileService.save?` are optional. The sketch below keeps v0.2's
+names where the code renamed them; the code (`editor-core/src/types.ts`, `editor/src/host/types.ts`) is the reference.
+`ViewportManager` gained `viewState(paneId)` / `setViewState(paneId, state)` at T12 (J10's camera, P-T11-3), and the
+agent session `beforeAgentSnapshot()` (P-T10-4).
 
 ```ts
 // editor-core (additive) — owned by T2
@@ -2200,33 +2292,72 @@ export interface HaloHandoffState {
 // ToolPointerEvent (additive; absent = today's behaviour)
 //   pressure?, tiltX?, tiltY?, altitude?, azimuth?, pointerId?, isPrimary?,
 //   coalesced?: readonly { x: number; y: number; pressure: number; t: number }[], virtual?: boolean
+//   T1: `pressure`, `pointerId` and `coalesced` are set only on the arbiter's path (`coalesced` [] on the replayed down
+//   and up, every sample on moves); `virtual` while a virtual modifier is on. ToolKeyEvent gains `virtual?` (a virtual
+//   hold). The tilt fields stay T2's.
 
-// viewport (additive) — spiked in T1a, built in T1
+// viewport (additive) — spiked in T1a, built in T1 (amendments A1–A16, docs/wp-notes/halo-t1.md)
 interface ViewportManager {
-  navigate(paneId: string, gesture: 'orbit' | 'pan' | 'dolly', dx: number, dy: number): void;
+  navigate(paneId: string, gesture: 'orbit' | 'pan' | 'dolly', dx: number, dy: number,
+           at?: { readonly x: number; readonly y: number }): void;   // dolly: dx = ln(distance ratio), towards `at`
+  endNavigate(paneId?: string): void;                               // commits a shot camera's navigate gesture once
+  setPointerArbiter(stage: PointerArbiterStage | null): Disposer;   // the one stage slot: first step of every event
   setModifierSource(source: ModifierSource | null): Disposer;
-  setPointerArbiter(config: ArbiterConfig | null): Disposer;  // a stage inside pointerDown/Move/Up, not a DOM wrapper
+  readonly modifierSource: ModifierSource | null;                   // the rig runtime's held keys read its holds
   setDisplayOverlay(paneId: string, overlay: DisplayOverlay | null): Disposer;
+  pipe(paneId: string, e: PointerEvent, step: PipeStep, coalesced?: readonly CoalescedSample[]): boolean; // the stage's port only
 }
+function createPointerArbiter(config: ArbiterConfig): PointerArbiterStage;   // imported by the shell only (lazy)
+function createTwoFingerStage(): PointerArbiterStage;                       // Auto-Rig's two fingers (lazy)
+type PointerArbiterStage = (host: ArbiterHost) => PointerArbiter;           // the host is the manager
+interface PointerArbiter {
+  down(paneId: string, e: PointerEvent): boolean;                           // true: taken (the pipeline waits)
+  move(paneId: string, e: PointerEvent): boolean;
+  up(paneId: string, e: PointerEvent, cancelled: boolean): boolean;
+  cancel(): void;                                                           // Esc, blur, replaced or removed
+  touches(): number;                                                        // C15: ignore gesturechange at ≥ 2
+}
+type PipeStep = 'down' | 'move' | 'up' | 'cancel' | 'capture' | 'tumble' | 'track' | 'dolly';
+interface ArbiterConfig {
+  readonly buffered: readonly ('touch' | 'pen')[];                          // the mouse stays eager
+  readonly slopPx: { readonly touch: number; readonly pen: number };        // 10 / 4
+  readonly longPressMs: number;                                             // 450
+  readonly multiTapMs: { readonly touch: number; readonly pen: number; readonly mouse?: number };   // 450 / 350 / 500
+  readonly multiTapPx: { readonly touch: number; readonly pen: number; readonly mouse?: number };   // 24 / 8 / 4
+  readonly brushDelayMs: number;                                            // 120
+  readonly twoFingerTapMs: number;                                          // 250
+  readonly palmMs: number;                                                  // 500
+  readonly palmContactPx?: number;                                          // 30 once a pen was seen (D14); absent: off
+  readonly quickPinch?: { readonly ms: number; readonly scale: number };    // C5: 300 / 0.7; absent: off
+  routing(): 'shared' | 'pencilEdits' | 'pencilOnly';                       // read after claims()
+  claims(press: ArbiterTap & { readonly pointerType: 'touch' | 'pen' }): 'tool' | 'navigate' | 'brush';
+  onTap(tap: ArbiterTap): 'select' | 'consumed';                            // 'select': the tool's click (down + up)
+  onDoubleTap(tap: ArbiterTap): void;                                       // frames; the tool never sees the tap
+  onLongPress(tap: ArbiterTap): ArbiterFollow | undefined;                  // the ring; a follower gets moves and release
+  onTwoFingerTap(paneId: string): void;                                     // undo, after the pair's endNavigate
+  onQuickPinch?(paneId: string): void;                                      // frame all (C5)
+}
+interface ArbiterTap {
+  readonly paneId: string; readonly x: number; readonly y: number;         // pane CSS px
+  readonly clientX: number; readonly clientY: number;
+  readonly pointerType: 'mouse' | 'pen' | 'touch'; readonly hit: PickResult | null;
+}
+interface ArbiterFollow { move(x: number, y: number): void; up(x: number, y: number): void; cancel(): void }
+const POINTER_TOLERANCE: Record<'mouse' | 'pen' | 'touch',                  // §5.4; the mouse keeps Pro's values
+  { pickPx: number; slopPx: number; multiTapMs: number; multiTapPx: number }>;
+function setPointerTolerance(pointerType: string): void;                    // PICK for that pointer (the stage calls it)
 interface VirtualModifiers {
   readonly shift: boolean; readonly mod: boolean; readonly alt: boolean;
   readonly held: ReadonlySet<'KeyX' | 'KeyV' | 'KeyJ' | 'KeyD' | 'KeyB' | 'KeyM' | 'KeyN' | 'KeyI'>;
   readonly button?: 0 | 1 | 2;                                // 1 stands in for the middle button
 }
-interface ModifierSource { get(): VirtualModifiers; subscribe(onChange: () => void): Disposer }
-interface ArbiterConfig {
-  readonly buffered: readonly ('touch' | 'pen')[];            // mouse stays eager, as in Pro
-  readonly slopPx: { readonly touch: number; readonly pen: number };
-  readonly longPressMs: number;                               // 450
-  readonly multiTapMs: { readonly touch: number; readonly pen: number };
-  routing(): 'shared' | 'pencilEdits' | 'pencilOnly';
-  claims(paneId: string, hit: PickCandidate | null, type: 'touch' | 'pen'): 'tool' | 'navigate';
-  onTap(tap: ArbiterTap): 'select' | 'consumed';              // 'select': delivered to the select tool as a click
-  onDoubleTap(tap: ArbiterTap): void;                         // frames; the second tap never reaches the tool
-  onLongPress(tap: ArbiterTap): void;                         // the Halo ring; the tool never saw the press
-  onTwoFingerTap(paneId: string): void;                       // undo
+interface ModifierSource {
+  get(): VirtualModifiers;
+  attach(deliver: (e: ToolKeyEvent) => void): Disposer;       // the source sends its holds as downs/ups (`virtual`)
 }
-type DisplayOverlay = Partial<DisplayFlags> & { readonly xrayOpacity?: number; readonly shading?: ShadingMode };
+function createModifierSource(initial?: VirtualModifiers):
+  ModifierSource & { set(next: VirtualModifiers): void; subscribe(onChange: () => void): Disposer };
+type DisplayOverlay = Partial<DisplayFlags> & { readonly xrayOpacity?: number };   // DisplayFlags has `shading`
 
 // editor services (additive) — T0
 interface SaveTicket {
@@ -2257,20 +2388,48 @@ export type EntryChoice = 'autorig' | 'studio' | 'halo';
 export const ENTRY_ROUTES = { autorig: '/autorig', studio: '/editor', halo: '/app' } as const;
 ```
 
-**Arbiter semantics (normative after T1a):**
-- It is the first step of `ViewportManager.pointerDown` for buffered pointer types, before the navigation override,
-  profile gestures, the marking menu, the pointer layer and the tool. Pro installs no arbiter, so Pro is unchanged.
-- The pane is the one whose element contains the event target (`elementFromPoint` at the down point, honouring
-  stacking). Pointers whose target is chrome never enter it (§5.3 C6).
-- The manager captures the pointer on the real `pointerdown` and holds that event and the following moves, with their
-  `getCoalescedEvents()`.
-- Travel beyond the slop: the original down and the held moves are replayed into the normal pipeline in order, with
-  `coalesced` filled, so the tool sees every Pencil sample. Still at 450 ms: `onLongPress`, nothing is delivered. Up
-  before the slop: a tap (delivered to the select tool as a click, or consumed) or the second tap of a double-tap.
-- A second pointer that starts in the same pane while the first is held makes a two-finger gesture; the first pointer
-  is never delivered.
-- `claims()` implements the Shared-mode rule of §5.1 (selected thing, handle or brush → tool; else navigate) and the
-  brush delay.
+**Arbiter semantics (normative; confirmed by T1a, built in T1):**
+- **One stage slot, first on every event.** The manager calls the installed stage first in `pointerDown`, `pointerMove`
+  and `pointerUp` for every pointer type; `false` sends the event on to the pipeline (the navigation override, the
+  profile's chords, the marking menus, the pointer layer, the tool). Pro installs none, so its pipeline is the old
+  handler bodies behind one null check. The slot is exclusive: Auto-Rig's two-finger stage and a touch shell's
+  arbiter never both run, and installing one cancels the other.
+- **The state machine stays out of the manager** (A1): the shell builds the stage with `createPointerArbiter(config)`
+  and the manager binds it to itself (`ArbiterHost`); the stage reaches the pipeline through `pipe()`, never through
+  manager internals.
+- **Panes by DOM containment.** The manager listens on each pane element, so a pointer whose target is outside it never
+  reaches the stage; a target inside a pane that is chrome (`[data-ekza-chrome]`, e.g. a chip floating in it) is taken
+  and dropped, never delivered (C6).
+- **Hold, then decide.** The pointer is captured on the real `pointerdown`; it and the following moves (with their
+  `getCoalescedEvents()` snapshotted in pane px) are held. Beyond the slop the claim decides: `'tool'` replays the
+  original down and the held moves in order (`coalesced` filled); `'navigate'` starts the manager's own orbit (track
+  in an orthographic pane) from the original down; `'brush'` delivers at the slop or after `brushDelayMs`, and a
+  long-press after that cancels the stroke. Still at `longPressMs`: `onLongPress`, nothing delivered. Up before
+  either: `onTap` (`'select'` replays down + up) or a double-tap.
+- **Double-tap and the tool's double-click (C17).** A press within the second press's multi-tap window and radius of
+  the previous tap — whatever pointer made it — is the second tap of a double-tap: `onDoubleTap`, the tool never sees
+  it. Taps after a double-tap within the window are absorbed silently, and a press the tool would pair with the last
+  click it was handed is a double-tap too. With the tool's own double-click window and radius no wider than the
+  arbiter's per pointer type (`POINTER_TOLERANCE`), the tool never forms a double-click from what it is handed.
+- **Two fingers.** A second finger in the same pane while the first is held makes a pair: the first finger is never
+  delivered (or its tool drag is cancelled, its orbit ended and kept, its ring follower cancelled); the midpoint pans
+  and the spread dollies (`navigate`); a third finger is ignored; when a pair finger lifts the other is idle until it
+  lifts. The pair ends its navigation (`endNavigate`) before `onTwoFingerTap` runs (both lifted within
+  `twoFingerTapMs` and the slop), so the undo never meets an open camera preview.
+- **Pen and palm.** While a pen press is held, touches are ignored; within `palmMs` of the last pen event they only
+  navigate and their taps are consumed; once a pen was seen, a touch whose reported contact exceeds `palmContactPx` is
+  ignored (no reported size, no rule: D14). `routing()` is read after `claims()` (the first pen press may switch it).
+- **Quick pinch (C5).** A pair released within `quickPinch.ms` whose spread closed below `quickPinch.scale` with the
+  midpoint inside the touch slop runs `onQuickPinch` (frame all) instead of the two-finger tap; it dollied meanwhile.
+- **The mouse stays eager**; only a candidate second click (config `multiTapMs.mouse`) is held, so a double-click frames
+  for every input (C2).
+- **`navigate` is a gesture.** A shot camera's `navigate` moves are one preview, committed once by `endNavigate`
+  (off the undo stack), whatever the pauses; the wheel keeps its 120 ms idle commit.
+- **Tolerances and press policy.** Every event's pointer type first switches `PICK` (control, joint and manipulator
+  radii, cycle radius, marquee threshold) to that pointer's §5.4 values; `cancel()` restores the mouse's. A buffered
+  press puts `user-select: none` and `-webkit-touch-callout: none` on its pane (every pane already has
+  `touch-action: none`).
+- **`cancel()`** (Esc, blur, the stage replaced or removed) drops every press and ends a pair's navigation.
 
 ### 20.5 Parity CI: the Disclosure Manifest
 
@@ -2324,8 +2483,9 @@ curve-editor focus contributions, Pro's shell operators, the host's `prefs.set`,
    a `FormDef` that type-checks; every operator with a Pro option box has an Options surface.
 10. Search lists every operator that has an entry, in every stage.
 
-§15 is the committed inventory; T6b adds the FEATURES.md row id to each row. The PR template gains the checkbox *"Ekza
-Studio path (manifest entry) added or not needed"*.
+§15 is the committed inventory; T6b added the FEATURES.md row ids to each row (`F<section>:<Feature name>`, §15), and
+`packages/halo/test/features-map.test.ts` checks that each one names exactly one FEATURES.md row. The PR template gains
+the checkbox *"Ekza Studio path (manifest entry) added or not needed"*.
 
 ### 20.6 Lazy loading and the bundle gate
 
@@ -2346,7 +2506,8 @@ Studio path (manifest entry) added or not needed"*.
   - `ekza-halo-shell` is banned from `editor` and `autorig`;
   - `ROUTE_INITIAL_MARKERS.app = ['ekza-studio-host', 'ekza-halo-shell']`;
   - `size-baseline.json` `routes.app` is an unenforced placeholder at T2 and enforced at T12 (the Auto-Rig D0→D7
-    pattern);
+    pattern) — as built: the owner's SIZE-1 (2026-10-24) made every route's gate 5,000,000 B, enforced, with the
+    targets and allowances report-only; T12 recorded the merged measure, **736,853 B** (ST-INT-10);
   - `apps/web/test/halo-size.test.ts` is modelled on `ar-size.test.ts`, and the route is added to `budgets.bench.ts`.
 - **`/editor` and `/autorig` gain 0 B from the route.** The shared extractions and Pro's lazy *Simple layout* items are
   measured after every merge and recorded in one re-baseline row (**ST-B1**, AR-B1 pattern).
