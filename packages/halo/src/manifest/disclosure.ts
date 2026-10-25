@@ -177,7 +177,8 @@ export const DISCLOSURE: Readonly<Record<string, ManifestEntry>> = {
   'model.symmetry.set': on(1, [T('make'), M('mesh', 'Clean up')], MAKE),
 
   // ===== keys, channels and pose (§15.7, §15.8) =====
-  'key.set': on(1, [P('control'), P('foot'), P('channel'), P('empty'), P('character')], ANIMATE),
+  // ST-KEY-1: ◆ Key in the Thread, beside ● Rec (owner 2026-10-25), and the Key ◆ petals
+  'key.set': on(0, [C('thread'), P('control'), P('foot'), P('channel'), P('empty'), P('character')], ANIMATE),
   'key.deleteAtFrame': on(2, [M('control', 'Pose'), M('channel', 'Channel')], ANIMATE),
   'key.toggleAutoKey': on(2, [S('settings', 'animation')], { ...ANIMATE, plain: 'Auto Key in Studio Pro' }),
   'key.setTarget': on(2, [M('control', 'Pose')], { ...ANIMATE, plain: 'What to key' }),

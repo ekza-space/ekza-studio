@@ -46,7 +46,7 @@ export interface SwatchShaderArgs {
   readonly glossiness?: number;
   readonly specular?: readonly [number, number, number];
 }
-export type KeyChannels = 'all' | 'translate' | 'rotate' | 'scale' | 'attributes' | 'selected';   // changed: + 'attributes'
+export type KeyChannels = 'all' | 'translate' | 'rotate' | 'scale' | 'attributes' | 'selected' | 'changed';   // changed: + 'attributes'; + 'changed' (ST-KEY-3)
 /** M2a §5.19: the body parts a 'bodyPart' key target groups controls into (re-exported for operator authors). */
 export type { BodyPart };
 export interface ClipSettingsArgs {

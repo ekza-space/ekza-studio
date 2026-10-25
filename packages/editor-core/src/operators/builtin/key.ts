@@ -14,6 +14,7 @@ import {
 } from '@ekza-studio/doc';
 import {
   attrChannelsOf,
+  channelDefaultOf,
   isAttrChannel,
   isKeyAllChannel,
   isKeyable,
@@ -36,12 +37,22 @@ import type { CountResult, KeyChannels } from '../args';
 import { type AnyOperator, all, defineOperator, fail, isFiniteNumber, isRecord, OK, optionalArgs } from './define';
 import { pollActiveClip, pollClipEdit, pollEditable } from './polls';
 
-const KEY_CHANNELS: readonly KeyChannels[] = ['all', 'translate', 'rotate', 'scale', 'attributes', 'selected'];
+const KEY_CHANNELS: readonly KeyChannels[] = [
+  'all',
+  'translate',
+  'rotate',
+  'scale',
+  'attributes',
+  'selected',
+  'changed',
+];
 const KEY_TARGETS: readonly KeyTarget[] = ['selected', 'bodyPart', 'character'];
 const KEY_POLICIES: readonly KeyPolicy[] = ['auto', 'force', 'none'];
 const ROTATIONS: readonly TrsChannel[] = ['rx', 'ry', 'rz'];
 /** Two keys this close (frames) share a frame (§4.11.1). */
 const SAME_FRAME = 1e-6;
+/** An unkeyed channel this close to its default has not changed ('changed'). */
+const UNCHANGED = 1e-9;
 
 interface KeySetArgs {
   readonly channels: KeyChannels;
@@ -76,9 +87,31 @@ function selectedChannelsByControl(app: EditorApp): ReadonlyMap<ControlId, Reado
 }
 
 /**
+ * The channels of a control that changed since they were keyed (`key.set {channels: 'changed'}`, ST-KEY-3): those
+ * with a session override (an unkeyed change on a keyed channel, §4.11.2), and those without keys in the control's
+ * active clip whose value is not their default (a change Auto Key off wrote as the static value).
+ */
+function changedChannelsOf(app: EditorApp, view: ReadView, control: ControlRecord): ReadonlySet<ChannelId> {
+  const state = app.session.getState();
+  const out = new Set(Object.keys(state.overrides.get(control.id) ?? {}) as ChannelId[]);
+  const owner = ownerOfControl(view, control.id);
+  const clip = owner === null ? undefined : activeClipOf(view, state, owner);
+  if (clip === undefined) return out;
+  for (const channel of [...TRS_CHANNELS, ...attrChannelsOf(control)]) {
+    if (out.has(channel)) continue;
+    const curve = curveOf(view, clip, control.id, channel);
+    if (curve !== undefined && view.query.keysOfCurve(curve.id).length > 0) continue;
+    const value = app.evaluation.channelValue(control.id, channel);
+    if (Math.abs(value - channelDefaultOf(control, channel)) > UNCHANGED) out.add(channel);
+  }
+  return out;
+}
+
+/**
  * Channels `key.set` keys on a control (§4.11.1 rule 2, M2A-SPEC §5.1 rule 4): keyable, unlocked TRS channels of the
  * group (rotations always as a triple); for 'all' and 'attributes' every keyable attribute except `keyAll: false`
  * ones that are not `explicit` (channels selected in the Channels panel); for 'selected' the explicit channels;
+ * for 'changed' the channels 'all' keys that changed since they were keyed (`changedChannelsOf`, ST-KEY-3);
  * translate, rotate and scale never key attributes. TRS channels first (tx…sz), then attributes in `attrs` order.
  */
 export function keyChannelsOf(
@@ -86,11 +119,16 @@ export function keyChannelsOf(
   control: ControlRecord,
   which: KeyChannels,
   explicit: ReadonlySet<ChannelId> = selectedChannelsByControl(app).get(control.id) ?? new Set(),
+  view: ReadView = app.store,
 ): readonly ChannelId[] {
   const usable = (channel: ChannelId): boolean => isKeyable(control, channel) && !isLocked(control, channel);
+  // 'changed' picks from what 'all' keys; a changed rotation still keys all three (synchronized rotation keys)
+  const changed = which === 'changed' ? changedChannelsOf(app, view, control) : null;
+  const wantedNow = (channel: ChannelId): boolean => usable(channel) && (changed === null || changed.has(channel));
   let trs: TrsChannel[];
   switch (which) {
     case 'all':
+    case 'changed':
       trs = [...TRS_CHANNELS];
       break;
     case 'translate':
@@ -109,13 +147,13 @@ export function keyChannelsOf(
       trs = TRS_CHANNELS.filter((channel) => explicit.has(channel));
       break;
   }
-  const picked = new Set<TrsChannel>(trs.filter(usable));
+  const picked = new Set<TrsChannel>(trs.filter(wantedNow));
   if (ROTATIONS.some((channel) => picked.has(channel)))
     for (const channel of ROTATIONS) if (usable(channel)) picked.add(channel);
   const out: ChannelId[] = TRS_CHANNELS.filter((channel) => picked.has(channel));
-  if (which === 'all' || which === 'attributes' || which === 'selected') {
+  if (which === 'all' || which === 'attributes' || which === 'selected' || which === 'changed') {
     for (const channel of attrChannelsOf(control)) {
-      if (!usable(channel)) continue;
+      if (!wantedNow(channel)) continue;
       const wanted =
         which === 'selected' ? explicit.has(channel) : isKeyAllChannel(control, channel) || explicit.has(channel);
       if (wanted) out.push(channel);
@@ -137,10 +175,11 @@ function keyPlan(app: EditorApp, view: ReadView, args: KeySetArgs): Map<ControlR
     const control = view.get('controls', id);
     if (control === undefined) continue;
     targets.add(id);
-    const channels = keyChannelsOf(app, control, args.channels, explicit.get(id) ?? new Set());
+    const channels = keyChannelsOf(app, control, args.channels, explicit.get(id) ?? new Set(), view);
     if (channels.length > 0) plan.set(control, channels);
   }
-  if (args.channels === 'all' || args.channels === 'attributes' || args.channels === 'selected') {
+  const which = args.channels;
+  if (which === 'all' || which === 'attributes' || which === 'selected' || which === 'changed') {
     for (const [id, channels] of explicit) {
       if (targets.has(id)) continue;
       const control = view.get('controls', id);
@@ -150,8 +189,13 @@ function keyPlan(app: EditorApp, view: ReadView, args: KeySetArgs): Map<ControlR
       const { fk, pole } = limb.params;
       const limbControls = [fk.upper, fk.mid, fk.end, fk.toes, pole];
       if (!limbControls.some((member) => member !== null && targets.has(member))) continue;
+      const changed = which === 'changed' ? changedChannelsOf(app, view, control) : null;
       const proxied = [...channels].filter(
-        (channel) => isAttrChannel(channel) && isKeyable(control, channel) && !isLocked(control, channel),
+        (channel) =>
+          isAttrChannel(channel) &&
+          isKeyable(control, channel) &&
+          !isLocked(control, channel) &&
+          (changed === null || changed.has(channel)),
       );
       if (proxied.length > 0) plan.set(control, proxied);
     }
@@ -166,6 +210,7 @@ const KEY_LABEL: Readonly<Record<KeyChannels, string>> = {
   rotate: 'Key Rotate',
   scale: 'Key Scale',
   attributes: 'Key Attributes',
+  changed: 'Key Changed Channels',
 };
 
 const keySet = defineOperator({
@@ -191,6 +236,9 @@ const keySet = defineOperator({
     if (keyTargetControls(app, parsed.target).length === 0) return fail('nothing selected');
     if (parsed.channels === 'selected' && keyPlan(app, app.store, parsed).size === 0) {
       return fail('No keyable channels are selected');
+    }
+    if (parsed.channels === 'changed' && keyPlan(app, app.store, parsed).size === 0) {
+      return fail('Nothing changed since the last key');
     }
     return OK;
   },
