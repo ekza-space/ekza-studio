@@ -5,7 +5,7 @@
 // hooks; the curve editor is a lazy chunk on `/app`, so its tick code is not used here). Pure.
 import type { Fps, Frame } from '@ekza-studio/anim-core';
 import type { CharacterId, ClipRecord, ControlId, KeyId } from '@ekza-studio/doc';
-import type { EditorApp } from '@ekza-studio/editor-core';
+import { type EditorApp, editLayerOf } from '@ekza-studio/editor-core';
 import { animateCharacter } from '../../stages/animate/model';
 import type { TimeUnit } from '../units';
 
@@ -57,7 +57,7 @@ export interface KeyDot {
   readonly inBetween: boolean;
   /** A key at this time is selected. */
   readonly selected: boolean;
-  /** The keys at this time (of the shown controls' base-layer curves). */
+  /** The keys at this time (of the shown controls' curves on the active layer). */
   readonly keys: readonly KeyId[];
 }
 
@@ -67,7 +67,8 @@ export function keyDots(
   ctx: ThreadContext,
 ): { readonly dots: readonly KeyDot[]; readonly faint: boolean } {
   const { controls, faint } = keyTargets(app, ctx);
-  const base = app.store.query.baseLayer(ctx.clip.id);
+  // ANIM-LAYERS: the dots (and ◆ Key's diamond) are the keys of the layer `key.set` keys into, as on Pro's slider.
+  const base = editLayerOf(app, app.store, ctx.clip.id);
   if (base === undefined) return { dots: [], faint };
   const selection = app.session.getState().selection.keys;
   const byTime = new Map<number, { inBetween: boolean; selected: boolean; keys: KeyId[] }>();

@@ -25,7 +25,7 @@ import {
 import { applyChannelEdits } from '../../edit/channels';
 import { currentClipFrame } from '../../edit/context';
 import { deleteKeys, ensureCurve, writeKeyAt } from '../../edit/keys';
-import { editLayerOf, layerKeyProblem, solveLayerValues } from '../../edit/layers';
+import { editLayerOf, isBaseLayer, layerKeyProblem, solveLayerValues } from '../../edit/layers';
 import { redirectedChannelEdit } from '../../evaluation/rigSource';
 import { activeClipOf } from '../../evaluation/time';
 import { basePrefs } from '../../prefs/persist';
@@ -98,10 +98,21 @@ function changedChannelsOf(app: EditorApp, view: ReadView, control: ControlRecor
   const owner = ownerOfControl(view, control.id);
   const clip = owner === null ? undefined : activeClipOf(view, state, owner);
   if (clip === undefined) return out;
+  // ANIM-LAYERS: the layer `key.set` keys into. On a layered clip a key-less channel changed when that layer holds a
+  // static value away from its rest (an additive layer's identity), since the composite there is the layers', not 0.
+  const layer = editLayerOf(app, view, clip.id);
+  const layered = view.query.layersOfClip(clip.id).length > 1;
+  const additive = layer !== undefined && layer.mode === 'additive' && !isBaseLayer(view, layer);
   for (const channel of [...TRS_CHANNELS, ...attrChannelsOf(control)]) {
     if (out.has(channel)) continue;
-    const curve = curveOf(view, clip, control.id, channel);
+    const curve = curveOf(view, clip, control.id, channel, layer?.id);
     if (curve !== undefined && view.query.keysOfCurve(curve.id).length > 0) continue;
+    if (layered) {
+      const rest = additive ? (channel === 'sx' || channel === 'sy' || channel === 'sz' ? 1 : 0) : channelDefaultOf(control, channel);
+      const value = curve?.staticValue;
+      if (value !== null && value !== undefined && Math.abs(value - rest) > UNCHANGED) out.add(channel);
+      continue;
+    }
     const value = app.evaluation.channelValue(control.id, channel);
     if (Math.abs(value - channelDefaultOf(control, channel)) > UNCHANGED) out.add(channel);
   }

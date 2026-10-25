@@ -109,4 +109,24 @@ describe("key.set {channels: 'changed'}", () => {
     select(app, [WAVE.cog]);
     expect(await runResult(app, 'key.set', { channels: 'moved' })).toMatchObject({ status: 'cancelled' });
   });
+
+  it('ANIM-LAYERS: reads the layer key.set keys into — a static fix on the active layer, not the base composite', async () => {
+    const app = opsApp();
+    const fixes = ((await runOk(app, 'clip.adjustOnLayer')) as { layer: import('@ekza-studio/doc').LayerId }).layer;
+    select(app, [WAVE.cog]);
+    // Nothing changed on Fixes yet, though the composite (the base's pose) is not the defaults everywhere.
+    expect((await runResult(app, 'key.set', { channels: 'changed' })).status).toBe('cancelled');
+    // Auto Key off writes a key-less change as the layer's static value: that channel (only) is changed.
+    await runOk(app, 'channel.setValues', { edits: [{ control: WAVE.cog, channel: 'tx', value: 0.2 }] });
+    const curve = app.store.query.curveFor(WAVE.clip, fixes, WAVE.cog, 'tx');
+    expect(curve?.staticValue).toBeCloseTo(0.2, 14);
+    expect(app.store.query.curveFor(WAVE.clip, WAVE.layer, WAVE.cog, 'tx')).toBeUndefined();
+    setSceneFrame(app, 12);
+    const { value } = await expectUndoRedoExact(app, 'key.set', { channels: 'changed' });
+    expect(value).toEqual({ count: 1 });
+    expect(app.store.query.keysOfCurve(curve?.id as never).map((k) => [k.t, k.v])).toEqual([[12, expect.closeTo(0.2, 14)]]);
+    // On the base the same change would read the composite: switching back, nothing on the base changed.
+    await runOk(app, 'layer.setActive', { layer: WAVE.layer });
+    expect((await runResult(app, 'key.set', { channels: 'changed' })).status).toBe('cancelled');
+  });
 });

@@ -171,4 +171,22 @@ describe('◆ Key in the Thread', () => {
     expect(keyCall()).toEqual({ op: 'key.set', args: { channels: 'all', target: 'selected' } });
     expect(keyCall('changed').args.channels).toBe('changed');
   });
+
+  it('ANIM-LAYERS: the diamond reads the layer ◆ Key keys into', async () => {
+    const { app, control, select, frame } = await freshAnimation();
+    const arm = control('fk.upperArm.L');
+    select([arm]);
+    await frame(24);
+    await run(app, keyCall('all'));
+    expect(keyButtonState(app).onKey).toBe(true);
+    // A fix layer has no key at 24 yet: hollow; a key on it at 30 fills the diamond there, not at 24.
+    await runOk(app, 'clip.adjustOnLayer');
+    expect(keyButtonState(app).onKey).toBe(false);
+    await frame(30);
+    await run(app, keyCall('all'));
+    expect(keyButtonState(app).onKey).toBe(true);
+    await frame(24);
+    expect(keyButtonState(app).onKey).toBe(false);
+    app.dispose();
+  });
 });
