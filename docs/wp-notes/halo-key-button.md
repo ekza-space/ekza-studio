@@ -46,6 +46,14 @@ be 23).
 | `halo/test/thread-key.test.ts` (8, Polybot, production kernel) | greyed without a selection; a tap keys every channel of the selection at the playhead as one step, the diamond fills there and empties off it, the toast in frames and seconds, undo; *3 parts*; Rec on: Rec keyed what changed, *Only changed* has nothing, ◆ Key keys every channel; Rec off: *Only changed* keys the turned rotation's triple only; the long-press lists *Selected channels* only with channels selected; the word is the manifest's plain name and the Thread a depth-0 surface; the call targets the selection |
 | `apps/web/e2e/ha-06-thread-keys.spec.ts` on `chrome-touch` | *◆ Key keys the selection by a tap* at **iPad landscape, iPad portrait and phone** sizes (● Rec and ◆ Key side by side with their words, 44 pt; greyed at rest with its reason and no step; the at-rest and selection budgets per size; Rec off by touch, a pose stays unkeyed, a tap keys frame 24 in one step, the diamond fills and empties, the toast, undo); *with Rec on* (Rec keyed the turned forearm only; *Only changed* greyed with its reason; ◆ Key keys both selected parts, every channel, Rec still on); *the long-press* (All · Only changed, then Selected channels once a channel is selected; each keys what it says); *the coach mark* once (`firstRun`); *a 360 pt phone* (Keys · Curves fit at rest; with Keys open the switch folds into one chip on the same row, nothing past 360; Timeline from the chip brings the switch back). The at-rest test asserts the two-segment switch, the Rec/layers test the three segments while Keys is open. `webkit-ipad`: the boot test taps ◆ Key (a key at 30) |
 
+## Gate
+
+`EKZA_E2E_PORT=3196 pnpm run ci` at `3a90bfc9`: format, lint, typecheck, deps, fixtures, licences, unit tests (Halo
+253, editor-core 1,838, headless 237, curve editor 226), the production build, `check:size`, the gen boundary and e2e —
+**green: 588 passed, 205 skipped, 0 failed, none flaky**. Sizes (gzip -9, first visit): `/app` **739,256 B** (T12's
+record 736,853 B: +2,403 B — ◆ Key, its menu, the layer switch and the words are in the eager Thread), `/editor`
+902,976 B, `/autorig` 661,547 B; all under the 5,000,000 B gate.
+
 ## Lines outside the Thread files (shared files)
 
 The row is `halo/src/thread/strip/**` and `key.set`'s arguments. Outside it, each the smallest seam-shaped change:
