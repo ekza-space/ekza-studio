@@ -80,20 +80,24 @@ export interface ControlStack {
 
 const REST = Object.freeze([0, 0, 0, 0, 0, 0, 1, 1, 1]);
 
+/** Which layers a stack folds: the playing ones (default) or an explicit list in stack order (merges). */
+export interface StackOptions {
+  readonly layers?: readonly LayerRecord[];
+}
+
 /**
  * The stack of `control` in `clip` at the frame `value` evaluates curves at (`value(curve)` gives a keyed curve's
- * value; key-less curves are resolved here). `extra` adds a layer that does not play (keying refusals inspect it).
+ * value; key-less curves are resolved here). `opts.layers` replaces the playing layers (merges ignore solo).
  */
 export function controlStackAt(
   view: ReadView,
   clip: ClipId,
   control: ControlRecord,
   value: (curve: CurveRecord) => number | null,
-  extra?: LayerRecord,
+  opts: StackOptions = {},
 ): ControlStack {
   const all = view.query.layersOfClip(clip);
-  const playing = playingLayers(all);
-  const wanted = extra === undefined || playing.includes(extra) ? playing : all.filter((l) => playing.includes(l) || l.id === extra.id);
+  const wanted = opts.layers ?? playingLayers(all);
   const curves = view.query.curvesOfControl(clip, control.id);
   const layers: LayerRecord[] = [];
   const entries: LayerStackEntry[] = [];
@@ -120,11 +124,10 @@ export function attrStackAt(
   control: ControlRecord,
   channel: ChannelId,
   value: (curve: CurveRecord) => number | null,
-  extra?: LayerRecord,
+  opts: StackOptions = {},
 ): { readonly layers: readonly LayerRecord[]; readonly entries: readonly ScalarLayerEntry[]; readonly input: number } {
   const all = view.query.layersOfClip(clip);
-  const playing = playingLayers(all);
-  const wanted = extra === undefined || playing.includes(extra) ? playing : all.filter((l) => playing.includes(l) || l.id === extra.id);
+  const wanted = opts.layers ?? playingLayers(all);
   const def = control.attrs?.[channel.slice(1)];
   const layers: LayerRecord[] = [];
   const entries: ScalarLayerEntry[] = [];

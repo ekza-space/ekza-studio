@@ -49,6 +49,7 @@ import {
   activeClipRecord,
   baseCurves,
   curveOf,
+  editLayerIdOf,
   keysOfCurves,
   selectedKeyIds,
   targetCurves,
@@ -474,7 +475,7 @@ export function keysPaste(ctx: ApplyContext, args: OperatorArgs<'graph.keys.past
     // Every key of the §5.11 scope curves at or after the paste frame first moves by the clipboard's span.
     let last = 0;
     for (const curve of clipboard.curves) for (const key of curve.keys) last = Math.max(last, key.dt);
-    const curves = rippleCurves(t, clip.id, rippleControls(app, t, clip.id, panelOf(ctx)));
+    const curves = rippleCurves(t, clip.id, rippleControls(app, t, clip.id, panelOf(ctx)), editLayerIdOf(app, t, clip));
     shiftKeysFrom(t, curves, frame, last + 1);
   }
   const result = pasteKeys(app, t, clip, clipboard, frame, mode === 'replace' ? 'replace' : 'merge');
@@ -492,16 +493,17 @@ export function eulerFilter(ctx: ApplyContext) {
   const clip = scopedClipRecord(ctx, t);
   if (clip === undefined) return { count: 0 };
   const selected = scopedTargetControls(ctx, t);
+  const layer = editLayerIdOf(app, t, clip);
   const controls =
     selected.length > 0
       ? selected
-      : [...new Set(baseCurves(t, clip).map((curve) => curve.control))]
+      : [...new Set(baseCurves(t, clip, undefined, layer).map((curve) => curve.control))]
           .map((id: ControlId) => t.get('controls', id))
           .filter((control) => control !== undefined);
   let count = 0;
   let skipped = 0;
   for (const control of controls) {
-    const curves = ROTATIONS.map((channel) => curveOf(t, clip, control.id, channel));
+    const curves = ROTATIONS.map((channel) => curveOf(t, clip, control.id, channel, layer));
     const keys = curves.map((curve) => (curve === undefined ? [] : t.query.keysOfCurve(curve.id)));
     if (keys.every((list) => list.length === 0)) continue;
     // The filter may switch all three angles to the alternate triple together: a locked curve that cannot follow

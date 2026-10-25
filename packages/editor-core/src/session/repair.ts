@@ -43,6 +43,8 @@ export function repairSession(
     if (clip !== undefined) activeClip[character] = clip;
   }
   if (!sameRecord(activeClip, state.activeClip)) patch.activeClip = activeClip;
+  // ANIM-LAYERS: `activeLayer` entries are never pruned: a deleted layer reads as the base (`editLayerOf`), and a redo
+  // that brings it back makes it the edit layer again.
   const selection = pruneSelection({ store }, state.selection);
   if (selection !== state.selection) patch.selection = selection;
   if (state.overrides.size > 0) {

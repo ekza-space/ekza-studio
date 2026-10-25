@@ -128,7 +128,19 @@ const MENUS =
 const MODEL_ONLY_MENUS = /^(create|modify|display|mesh|edit-mesh|mesh-tools|mesh-display|uv)$/;
 
 /** Operators beyond §4.9 requested by other work packages (WP-9 R-1, R-3), with their undo flag. */
-const ADDITIONS: Readonly<Record<string, boolean>> = { 'select.channels': false, 'view.camera.setSettings': true };
+const ADDITIONS: Readonly<Record<string, boolean>> = {
+  'select.channels': false,
+  'view.camera.setSettings': true,
+  // ANIM-LAYERS (ADR 0026, ANIM-LAYERS-SPEC §4)
+  'clip.adjustOnLayer': true,
+  'layer.add': true,
+  'layer.remove': true,
+  'layer.setActive': false,
+  'layer.set': true,
+  'layer.reorder': true,
+  'layer.duplicate': true,
+  'layer.merge': true,
+};
 
 /**
  * M2A-SPEC §4.9 operators registered by the built-ins from A0 on (stubs until their owners land them), with the U

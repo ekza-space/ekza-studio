@@ -13,7 +13,8 @@ import {
   type TimeState,
 } from '../../types';
 import { clipFrameOfScene, sceneFpsIn, sceneFrameOf } from '../../workflows/session';
-import { activeClipRecord, controlsOfCharacter, keyTimes, selectedControls } from '../../workflows/targets';
+import { isCurveLocked } from '../../edit/layers';
+import { activeClipRecord, controlsOfCharacter, editLayerIdOf, keyTimes, selectedControls } from '../../workflows/targets';
 import { type AnyOperator, defineOperator, fail, isFiniteNumber, isRecord, OK, optionalArgs } from './define';
 import { pollClipEdit } from './polls';
 
@@ -160,7 +161,8 @@ function keyJump(direction: 1 | -1): AnyOperator {
       if (clip === undefined) return;
       const selected = selectedControls(app);
       // Keys outside the clip range (kept after shortening it) are not frames the clip can show.
-      const times = keyTimes(app.store, clip, selected.length > 0 ? new Set(selected.map((c) => c.id)) : null).filter(
+      const controls = selected.length > 0 ? new Set(selected.map((c) => c.id)) : null;
+      const times = keyTimes(app.store, clip, controls, editLayerIdOf(app, app.store, clip)).filter(
         (t) => t >= clip.range.start - KEY_EPSILON && t <= clip.range.end + KEY_EPSILON,
       );
       if (times.length === 0) return;
@@ -349,7 +351,11 @@ function timeCurves(app: EditorApp, view: ReadView, target: TimeTarget | undefin
     target === 'character'
       ? controlsOfCharacter(view, character).map((control) => control.id)
       : defaultRippleControls(app, view, clip.id);
-  return rippleCurves(view, clip.id, controls).filter((id) => view.get('curves', id)?.locked !== true);
+  // ANIM-LAYERS: time edits move every layer's keys, so a fix stays on the frames it fixes.
+  return rippleCurves(view, clip.id, controls, 'all').filter((id) => {
+    const curve = view.get('curves', id);
+    return curve !== undefined && !isCurveLocked(view, curve);
+  });
 }
 
 /** The active character's current clip frame, rounded like the slider shows it (whole frames when snapping). */

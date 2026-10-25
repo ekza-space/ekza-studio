@@ -99,6 +99,7 @@ export {
   layerRestValue,
   layerWeight,
   playingLayers,
+  type StackOptions,
 } from './sampler/layers';
 export {
   applyOverrides,

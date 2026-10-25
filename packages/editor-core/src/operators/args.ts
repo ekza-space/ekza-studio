@@ -2,7 +2,7 @@
 // Excluded from formatting in biome.json so it stays diffable against the spec.
 import type { Fps, Frame, InfinityMode, ParamValues, Quat, ReadonlyVec3, ReadonlyXf, RotateOrder, TangentType, Vec3 } from '@ekza-studio/anim-core';
 import type { CameraId, ChannelId, CharacterId, CharacterVrmMeta, ClipId, ConstraintId, ControlId, CurveId, DerivedFrom, DocSnapshot,
-  GroupId, HumanBoneName, ImagePlaneId, ImagePlaneRecord, JointId, JointRole, KeyId, MeshId, MeshRecord, OrthoCamera,
+  GroupId, HumanBoneName, ImagePlaneId, ImagePlaneRecord, JointId, JointRole, KeyId, LayerId, MeshId, MeshRecord, OrthoCamera,
   PaletteId, Redistributable, RootMotionMode, Side, SkeletonId, SwatchId, SwatchShader } from '@ekza-studio/doc';
 import type { BindMethod, ComponentKind, PaintOp, StrokeStamp } from '@ekza-studio/mesh-core';
 import type { CharacterExportRequest, ExportArtifact, ExportRequest, LintIssue, StaticExportRequest } from '@ekza-studio/io';
@@ -176,6 +176,17 @@ export interface OperatorMap {
   'clip.delete': { args: { readonly clip: ClipId }; result: void };
   'clip.setActive': { args: { readonly clip: ClipId }; result: void };
   'clip.setSettings': { args: ClipSettingsArgs; result: void };
+  // ANIM-LAYERS (ADR 0026, ANIM-LAYERS-SPEC §4): animation layers
+  'clip.adjustOnLayer': { args: { readonly clip?: ClipId } | void; result: { readonly layer: LayerId } };
+  'layer.add': { args: { readonly clip?: ClipId; readonly name?: string; readonly mode?: LayerMode;
+    readonly weight?: number; readonly activate?: boolean } | void; result: { readonly layer: LayerId } };
+  'layer.remove': { args: { readonly layer: LayerId }; result: void };
+  'layer.setActive': { args: { readonly layer: LayerId }; result: void };
+  'layer.set': { args: { readonly layer: LayerId } & LayerSetFields; result: void };
+  'layer.reorder': { args: { readonly layer: LayerId; readonly to: 'up' | 'down' | number }; result: void };
+  'layer.duplicate': { args: { readonly layer: LayerId }; result: { readonly layer: LayerId } };
+  'layer.merge': { args: { readonly layer?: LayerId; readonly scope?: 'down' | 'all'; readonly times?: 'keys' | 'frames' } | void;
+    result: { readonly layer: LayerId; readonly keys: number } };
   // view
   'view.layout': { args: { readonly layout: ViewportLayout }; result: void };
   'view.toggleMaximize': { args: { readonly paneId?: string; readonly panel?: PanelKind } | void; result: void };
@@ -673,4 +684,17 @@ export interface OperatorMap {
   'pose.recipe': { args: { readonly clip: ClipId; readonly recipe: PoseRecipeName; readonly startFrame?: Frame;
     readonly params?: Readonly<Record<string, number | string | boolean>>; readonly label?: string };
     result: { readonly keyed: number; readonly range: { readonly start: Frame; readonly end: Frame } } };
+}
+
+/** ANIM-LAYERS: a layer's blend mode. */
+export type LayerMode = 'additive' | 'override';
+/** ANIM-LAYERS: the fields `layer.set` changes (the base takes only mute, solo and locked). */
+export interface LayerSetFields {
+  readonly weight?: number;
+  readonly mute?: boolean;
+  readonly solo?: boolean;
+  readonly locked?: boolean;
+  readonly mode?: LayerMode;
+  readonly name?: string;
+  readonly mask?: readonly ControlId[] | null;
 }

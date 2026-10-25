@@ -19,6 +19,7 @@ import { GRAPH_BUFFER_OPERATORS } from './graphBuffer';
 import { IK_OPERATORS } from './ik';
 import { BUILTIN_IMPORTERS } from './importers';
 import { KEY_OPERATORS } from './key';
+import { LAYER_OPERATORS } from './layer';
 import { BUILTIN_MENU_ITEMS } from './menus';
 import { MIRROR_ANIMATION_OPERATORS } from './mirrorAnimation';
 import { POSE_OPERATORS } from './pose';
@@ -50,6 +51,8 @@ export const BUILTIN_OPERATORS: readonly AnyOperator[] = [
   ...TIME_OPERATORS,
   ...GRAPH_OPERATORS,
   ...CLIP_OPERATORS,
+  // ANIM-LAYERS (ADR 0026)
+  ...LAYER_OPERATORS,
   ...VIEW_OPERATORS,
   ...RIG_OPERATORS,
   // M2a (M2A-SPEC §3 rule 2: new operators live in new files; A0 registers their stubs here)

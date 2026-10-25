@@ -7,7 +7,7 @@ import type { StoreApi } from 'zustand/vanilla';
 import type { AnimCurve, CompiledAnimCurve, Disposer, Frame, Handle, ParamDef, ParamValues, Quat, TangentType,
   Vec3 } from '@ekza-studio/anim-core';
 import type { AnyChange, AssetId, AssetRecord, CameraId, ChangeBatch, ChannelId, ChannelValues, CharacterId, ClipId, ConstraintId,
-  ControlId, CurveId, DocumentStore, GroupId, ImagePlaneId, JointId, KeyId, MeshId, MeshRef, SkeletonId, Tx, UndoResult,
+  ControlId, CurveId, DocumentStore, GroupId, ImagePlaneId, JointId, KeyId, LayerId, MeshId, MeshRef, SkeletonId, Tx, UndoResult,
   UserId } from '@ekza-studio/doc';
 import type { ComponentKind, ComponentSelection, DirtySet, EditMesh, ElementRemap, FalloffCurve, HiddenSet, MeshData,
   MeshOp, MeshSetOp, Normals, OpFrame, OpResult, OpWarning, Refusal, SymmetryAxis, SymmetryMap,
@@ -206,6 +206,8 @@ export interface SessionState {
   readonly dirty: boolean;                                        // unsaved document changes
   readonly activeCharacter: CharacterId | null;
   readonly activeClip: Readonly<Record<CharacterId, ClipId>>;
+  /** ANIM-LAYERS (ADR 0026): the layer keys go to, per clip; absent = the clip's base layer. Never saved. */
+  readonly activeLayer?: Readonly<Record<ClipId, LayerId>>;
   readonly selection: Selection;
   readonly time: TimeState;
   readonly tools: ToolState;
@@ -889,7 +891,9 @@ export interface ChannelEditResult {
   readonly statics: number;
   /** Override values to merge into session.overrides after the write (keyed channels edited without keying). */
   readonly overrides: ReadonlyMap<ControlId, ChannelValues>;
-  readonly skipped: readonly { readonly control: ControlId; readonly channel: ChannelId; readonly reason: 'locked' | 'non-keyable' }[];
+  /** ANIM-LAYERS: reason 'layer' — the active layer cannot take the key (locked, muted, covered…), `message` says why. */
+  readonly skipped: readonly { readonly control: ControlId; readonly channel: ChannelId;
+    readonly reason: 'locked' | 'non-keyable' | 'layer'; readonly message?: string }[];
 }
 /** One interactive edit (manipulator drag, Channels panel scrub): preview + overrides + auto-key on commit. */
 export interface ChannelEditGesture {

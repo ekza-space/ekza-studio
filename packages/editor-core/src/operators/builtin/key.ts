@@ -24,6 +24,7 @@ import {
 import { applyChannelEdits } from '../../edit/channels';
 import { currentClipFrame } from '../../edit/context';
 import { deleteKeys, ensureCurve, writeKeyAt } from '../../edit/keys';
+import { editLayerOf, layerKeyProblem, solveLayerValues } from '../../edit/layers';
 import { redirectedChannelEdit } from '../../evaluation/rigSource';
 import { activeClipOf } from '../../evaluation/time';
 import { basePrefs } from '../../prefs/persist';
@@ -31,7 +32,7 @@ import { ownerOfControl } from '../../session/location';
 import { type ChannelEditResult, type EditorApp, GLOBAL_SCOPE, type KeyPolicy, type KeyTarget } from '../../types';
 import { isHumanoidRigOf } from '../../workflows/bodyParts';
 import { limbOfControlApp } from '../../workflows/ik';
-import { activeClipRecord, curveOf, keyTargetControls, selectedControls } from '../../workflows/targets';
+import { activeClipRecord, curveOf, editLayerIdOf, keyTargetControls, selectedControls } from '../../workflows/targets';
 import type { CountResult, KeyChannels } from '../args';
 import { type AnyOperator, all, defineOperator, fail, isFiniteNumber, isRecord, OK, optionalArgs } from './define';
 import { pollActiveClip, pollClipEdit, pollEditable } from './polls';
@@ -187,6 +188,11 @@ const keySet = defineOperator({
     if (typeof parsed === 'string') return fail(parsed);
     const base = all(pollEditable(app), pollActiveClip(app));
     if (base !== true) return base;
+    // ANIM-LAYERS (§3): keys go to the active layer; say plainly when it cannot take them.
+    const clip = activeClipRecord(app);
+    const layer = clip === undefined ? undefined : editLayerOf(app, app.store, clip.id);
+    const problem = layer === undefined ? null : layerKeyProblem(app.store, layer);
+    if (problem !== null) return fail(problem);
     if (selectedControls(app).length === 0 && parsed.target !== 'character') return fail('nothing selected');
     if (keyTargetControls(app, parsed.target).length === 0) return fail('nothing selected');
     if (parsed.channels === 'selected' && keyPlan(app, app.store, parsed).size === 0) {
@@ -202,14 +208,27 @@ const keySet = defineOperator({
     const prefs = app.prefs.getState();
     let count = 0;
     const keyed = new Map<ControlId, Set<ChannelId>>();
+    let refused: string | null = null;
     for (const [control, channels] of keyPlan(app, tx, parsed)) {
       const owner = ownerOfControl(tx, control.id);
       const clip = owner === null ? undefined : activeClipOf(tx, state, owner);
       if (clip === undefined) continue;
       const frame = currentClipFrame(app, tx, clip);
+      // ANIM-LAYERS (§3): the keys go to the active layer, as the values that keep what plays (an additive layer
+      // keys deltas: 0 for an untouched channel).
+      const layer = editLayerOf(app, tx, clip.id);
+      const posed = new Map(channels.map((channel) => [channel, app.evaluation.channelValue(control.id, channel)]));
+      const solved =
+        layer === undefined
+          ? ({ ok: true, values: posed } as const)
+          : solveLayerValues(app, tx, clip.id, layer, control, posed, frame);
+      if (!solved.ok) {
+        refused ??= solved.reason;
+        continue;
+      }
       for (const channel of channels) {
         const curve = ensureCurve(app, tx, clip.id, control.id, channel);
-        const value = app.evaluation.channelValue(control.id, channel);
+        const value = solved.values.get(channel) ?? (posed.get(channel) as number);
         const tangents = newKeyTangents(control, channel, prefs.defaultTangents);
         writeKeyAt(
           app,
@@ -223,6 +242,10 @@ const keySet = defineOperator({
         count++;
       }
       keyed.set(control.id, new Set(channels));
+    }
+    if (refused !== null) {
+      if (count === 0) throw new EkzaError('unsupported', refused);
+      app.services.notify.toast({ kind: 'warning', text: refused });
     }
     if (parsed.target === 'bodyPart') noteGenericBodyPart(app, tx);
     // Keyed channels leave the overrides (§4.11.1 rule 5); the runner drops their history parts.
@@ -309,7 +332,7 @@ const keyDeleteAtFrame = defineOperator({
       for (const channel of [...TRS_CHANNELS, ...attrs]) {
         // Locked channels (Channels) and locked curves (Graph Editor) keep their keys.
         if (isLocked(control, channel)) continue;
-        const curve = curveOf(tx, clip, control.id, channel);
+        const curve = curveOf(tx, clip, control.id, channel, editLayerIdOf(app, tx, clip));
         if (curve === undefined || curve.locked) continue;
         for (const key of tx.query.keysOfCurve(curve.id)) if (Math.abs(key.t - frame) < SAME_FRAME) keys.push(key.id);
       }
@@ -354,6 +377,11 @@ function editsProblem(app: EditorApp, edits: unknown): string | null {
 
 function toastSkipped(app: EditorApp, result: ChannelEditResult): void {
   if (result.skipped.length === 0) return;
+  const layer = result.skipped.find((s) => s.reason === 'layer');
+  if (layer !== undefined) {
+    app.services.notify.toast({ kind: 'warning', text: layer.message ?? 'The active layer cannot take this key' });
+    return;
+  }
   const locked = result.skipped.filter((s) => s.reason === 'locked').length;
   const parts = [
     ...(locked > 0 ? [`${locked} locked`] : []),

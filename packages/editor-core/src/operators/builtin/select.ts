@@ -14,8 +14,8 @@ import {
 } from '../../types';
 import {
   activeClipRecord,
-  baseCurves,
   controlsOfCharacter,
+  editCurves,
   keysOfCurves,
   selectedControls,
   visibleControls,
@@ -67,7 +67,7 @@ export function pruneForControls(app: EditorApp, selection: Selection): Selectio
   const controls = new Set(selection.controls);
   const clip = activeClipRecord(app);
   const shown = new Set(
-    clip === undefined ? [] : baseCurves(app.store, clip, controls.size > 0 ? controls : undefined).map((c) => c.id),
+    clip === undefined ? [] : editCurves(app, app.store, clip, controls.size > 0 ? controls : undefined).map((c) => c.id),
   );
   const keys = new Map<KeyId, KeyPartSelection>();
   for (const [id, parts] of selection.keys) {
@@ -202,7 +202,7 @@ const selectAll = defineOperator({
       const clip = activeClipRecord(app);
       if (clip === undefined) return;
       const selected = selectedControls(app);
-      const curves = baseCurves(app.store, clip, selected.length > 0 ? new Set(selected.map((c) => c.id)) : undefined);
+      const curves = editCurves(app, app.store, clip, selected.length > 0 ? new Set(selected.map((c) => c.id)) : undefined);
       const keys = new Map<KeyId, KeyPartSelection>();
       for (const id of keysOfCurves(app.store, curves)) keys.set(id, { key: true, in: false, out: false });
       app.session.setState({ selection: { ...state.selection, keys } });
