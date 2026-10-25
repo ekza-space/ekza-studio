@@ -1,7 +1,7 @@
 // ANIM-LAYERS-SPEC §3–§4 (ADR 0026): layer operators headless — one undo step each, polls with plain reasons, keying
 // deltas on an additive layer, full and partial override layers, mute / solo / lock refusals, Auto Key's keyed rule,
 // merge down and all (keys and frames) keeping what plays, reorder, duplicate and remove.
-import type { ChannelId, ControlId, CurveId, KeyRecord, LayerId, LayerRecord } from '@ekza-studio/doc';
+import type { ChannelId, ControlId, CurveId, DocSnapshot, KeyRecord, LayerId, LayerRecord } from '@ekza-studio/doc';
 import { describe, expect, it } from 'vitest';
 import type { EditorApp } from '../../src';
 import { DEG, expectUndoRedoExact, opsApp, runOk, runResult, setSceneFrame, WAVE } from './support';
@@ -292,6 +292,26 @@ describe('layer.merge (§4)', () => {
     expect(await reason(app, 'layer.merge', { layer: WAVE.layer })).toMatch(/nothing below/);
     await runOk(app, 'layer.set', { layer: WAVE.layer, locked: true });
     expect(await reason(app, 'layer.merge', { layer: fixes })).toBe('Base is locked — unlock it to merge into it');
+  });
+});
+
+describe('the project file (§7)', () => {
+  it('layers persist: a snapshot through JSON reopens with the same stack, lock, mask and what plays', async () => {
+    const app = opsApp();
+    const fixes = ((await runOk(app, 'clip.adjustOnLayer')) as { layer: LayerId }).layer;
+    await pose(app, 10, shown(app, 10) + 20 * DEG);
+    await runOk(app, 'layer.set', { layer: fixes, weight: 0.5, locked: true, mask: [WAVE.lowerArmL] });
+    const played = [0, 10, 20].map((f) => shown(app, f));
+    const reopened = opsApp({ snapshot: JSON.parse(JSON.stringify(app.store.snapshot())) as DocSnapshot });
+    expect(
+      reopened.store.query.layersOfClip(WAVE.clip).map((l) => [l.name, l.mode, l.weight, l.locked, l.mask]),
+    ).toEqual([
+      ['Base', 'override', 1, undefined, undefined],
+      ['Fixes', 'additive', 0.5, true, [WAVE.lowerArmL]],
+    ]);
+    expect([0, 10, 20].map((f) => shown(reopened, f))).toEqual(played);
+    // a clip of one layer writes no new field (the records stay byte-identical to before layers)
+    expect(JSON.stringify(opsApp().store.snapshot().tables.layers)).not.toMatch(/locked|mask/);
   });
 });
 

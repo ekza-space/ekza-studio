@@ -476,7 +476,6 @@ export function createTestApi(host: HostShell, opts: { readonly engine?: CurveEn
             outHandle: { dt: key.outHandle.dt, dv: key.outHandle.dv },
             breakdown: key.breakdown === true,
           })),
-          layer: curve.layer,
         }));
     },
     layers(clipRef) {
@@ -492,6 +491,7 @@ export function createTestApi(host: HostShell, opts: { readonly engine?: CurveEn
       const layers = store.query.layersOfClip(id);
       const playing = new Set(playingLayers(layers).map((layer) => layer.id));
       const active = editLayerOf(app, store, id)?.id;
+      const curves = store.query.curvesOfClip(id);
       return layers.map((layer, i) => ({
         id: layer.id,
         name: layer.name,
@@ -503,6 +503,7 @@ export function createTestApi(host: HostShell, opts: { readonly engine?: CurveEn
         base: i === 0,
         active: layer.id === active,
         playing: playing.has(layer.id),
+        curves: curves.filter((curve) => curve.layer === layer.id).map((curve) => curve.id),
       }));
     },
     curveValue(curve, frame) {

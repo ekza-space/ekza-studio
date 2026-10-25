@@ -45,8 +45,8 @@ test('ha-AL: Adjust on a layer, the layer chip and its Halo, weight, mute, merge
   // Rec is on: the pose at 10 and 30 keys into Fixes; the Walk's keys stay
   expect((await call(page, 'state')).autoKey).toBe(true);
   await fixWalk(page, 'auto');
-  const fixes = (await call(page, 'layers'))[1]?.id ?? '';
-  const keyed = (await call(page, 'curves', scene.clip)).filter((curve) => curve.layer === fixes);
+  const fixes = new Set((await call(page, 'layers'))[1]?.curves ?? []);
+  const keyed = (await call(page, 'curves', scene.clip)).filter((curve) => fixes.has(curve.id));
   expect([...new Set(keyed.flatMap((curve) => curve.keys.map((key) => key.t)))].sort((a, b) => a - b)).toEqual([
     10, 30,
   ]);
@@ -67,8 +67,9 @@ test('ha-AL: Adjust on a layer, the layer chip and its Halo, weight, mute, merge
   await page.setViewportSize({ width: 1194, height: 834 });
   await runOk(page, 'select.none');
 
-  // ◆ Key's hold says where keys go
-  await fingerHold(page, await centreOf(page, 'halo-thread-key'), 700);
+  // ◆ Key's hold says where keys go (a long hold: a loaded machine's timers may run late)
+  await fingerHold(page, await centreOf(page, 'halo-thread-key'), 1500);
+  await expect(page.getByTestId('halo-thread-key-menu')).toBeVisible();
   await expect(page.getByTestId('halo-key-menu-layer')).toHaveText('Keying into: Fixes');
   await fingerTap(page, await centreOf(page, 'halo-key-menu-layer'));
   await expect(page.getByTestId('halo-sheet-layers')).toBeVisible();

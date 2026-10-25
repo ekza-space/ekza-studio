@@ -39,8 +39,8 @@ test('AL-01: fix a library Walk on a layer in the Layers panel — weight, mute,
 
   // frames 10 and 30: raise the right arm, tilt the torso — the keys go into Fixes; the Walk's keys stay
   await fixWalk(page);
-  const fixes = (await call(page, 'layers'))[1]?.id ?? '';
-  const onFixes = (await call(page, 'curves', scene.clip)).filter((curve) => curve.layer === fixes);
+  const fixes = new Set((await call(page, 'layers'))[1]?.curves ?? []);
+  const onFixes = (await call(page, 'curves', scene.clip)).filter((curve) => fixes.has(curve.id));
   expect(onFixes.length).toBeGreaterThan(0);
   expect([...new Set(onFixes.flatMap((curve) => curve.keys.map((key) => key.t)))].sort((a, b) => a - b)).toEqual([
     10, 30,

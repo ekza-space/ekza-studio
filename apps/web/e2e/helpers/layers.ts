@@ -26,8 +26,8 @@ export async function addWalk(page: Page, character: string): Promise<WalkScene>
 /** The base layer's curves and keys of a clip as JSON (unchanged until a merge). */
 export async function baseKeys(page: Page, clip: string): Promise<string> {
   const layers = await call(page, 'layers', clip);
-  const base = layers[0]?.id;
-  const curves = (await call(page, 'curves', clip)).filter((curve) => curve.layer === base);
+  const base = new Set(layers[0]?.curves ?? []);
+  const curves = (await call(page, 'curves', clip)).filter((curve) => base.has(curve.id));
   return JSON.stringify(curves.map((curve) => [curve.id, curve.keys]));
 }
 
