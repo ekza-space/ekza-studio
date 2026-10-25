@@ -11,6 +11,9 @@
 import { Cluster, useLongPress } from '@ekza-studio/ui/touch';
 import type { JSX } from 'react';
 import { animateWords } from '../../i18n/animate';
+import { layerWords } from '../../i18n/layers';
+import { openLayersSheet } from '../../layers/LayerChip';
+import { keyingInto } from '../../layers/model';
 import { coachOnce } from '../../shell/coach';
 import type { HaloController } from '../../shell/controller';
 import { useDocumentVersion, useSessionValue } from '../../shell/hooks';
@@ -139,6 +142,8 @@ export function KeyMenu({
   useDocumentVersion(app);
   const units = useAnimateUi(ui, (s) => s.units);
   const choices = keyChoices(app, keyButtonState(app));
+  // ANIM-LAYERS: on a layered animation the hold says which layer the key goes into; a tap opens the Layers sheet
+  const into = keyingInto(app);
   return (
     <Cluster
       data-halo-chrome=""
@@ -147,6 +152,20 @@ export function KeyMenu({
       aria-label={w.keyMenu}
       className="pointer-events-auto flex flex-wrap items-center gap-1 p-[5px]"
     >
+      {into === null ? null : (
+        <button
+          type="button"
+          role="menuitem"
+          data-testid="halo-key-menu-layer"
+          className={keyClass}
+          onClick={() => {
+            onClose();
+            openLayersSheet(controller);
+          }}
+        >
+          {layerWords.keyingInto(into)}
+        </button>
+      )}
       {choices.map((item) => (
         <button
           key={item.choice}

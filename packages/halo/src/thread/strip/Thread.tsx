@@ -15,6 +15,7 @@ import { useHaloStore } from '../../shell/store';
 import { AnimateGlyph, type AnimateIcon } from '../../stages/animate/icons';
 import { sceneFps } from '../../stages/animate/model';
 import { type AnimateUiStore, useAnimateUi } from '../../stages/animate/ui';
+import { LayerChip as AnimLayerChip, LayerChipHalo } from '../../layers/LayerChip';
 import { coachRecKey, KeyButton, KeyMenu } from './KeyButton';
 import { currentFrame, threadContext, timeText } from './model';
 import { ThreadStrip } from './ThreadStrip';
@@ -455,8 +456,8 @@ export function Thread({
   const layer = useHaloStore(store, (s) => s.threadLayer);
   const transport = useAnimateUi(ui, (s) => s.transport);
   const playMenu = useAnimateUi(ui, (s) => s.playMenu);
-  // ◆ Key's menu or the folded layer list: one menu at a time above the row
-  const [menu, setMenu] = useState<'key' | 'layer' | null>(null);
+  // ◆ Key's menu, the folded layer list or the animation layer chip's Halo: one menu at a time above the row
+  const [menu, setMenu] = useState<'key' | 'layer' | 'animLayer' | null>(null);
   const [row, setRow] = useState<HTMLDivElement | null>(null);
   const fold = useFoldLayers(row, compact, layerItems(layer).length);
   // the transport or ▶'s menu opening closes it (adjusted while rendering, React's derived-state pattern)
@@ -467,6 +468,8 @@ export function Thread({
     if (other) setMenu(null);
   }
   const keyMenu = menu === 'key';
+  const animLayerMenu = menu === 'animLayer' && layer !== 0;
+  const openAnimLayerMenu = (open: boolean): void => setMenu(open ? 'animLayer' : null);
   const layerMenu = menu === 'layer' && fold;
   const openKeyMenu = (open: boolean): void => setMenu(open ? 'key' : null);
   const openLayerMenu = (open: boolean): void => {
@@ -479,6 +482,7 @@ export function Thread({
       {playMenu ? <PlayMenu controller={controller} ui={ui} /> : null}
       {keyMenu ? <KeyMenu controller={controller} ui={ui} onClose={() => setMenu(null)} /> : null}
       {layerMenu ? <LayerMenu controller={controller} onClose={() => setMenu(null)} /> : null}
+      {animLayerMenu ? <LayerChipHalo controller={controller} onClose={() => setMenu(null)} /> : null}
       <Cluster
         ref={setRow}
         data-halo-chrome=""
@@ -495,6 +499,8 @@ export function Thread({
         <ThreadStrip controller={controller} ui={ui} row={compact} />
         <RecChip controller={controller} />
         <KeyButton controller={controller} ui={ui} menu={keyMenu} onMenu={openKeyMenu} />
+        {/* ANIM-LAYERS: while Keys or Curves is open on a layered animation, the layer keys go into (§4.8: never at rest) */}
+        <AnimLayerChip controller={controller} open={animLayerMenu} onOpen={openAnimLayerMenu} />
         {fold ? (
           <LayerChip controller={controller} open={layerMenu} onOpen={openLayerMenu} />
         ) : (

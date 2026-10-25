@@ -66,6 +66,8 @@ export const SHEET_SECTIONS: Readonly<Record<SheetId, readonly string[] | null>>
   ask: ['request', 'connection', 'grants', 'activity', 'revertAll'],
   // T11 (§13.3): the destinations and the game target, the card, Advanced, More formats, the footer's project save
   share: ['destination', 'card', 'advanced', 'moreFormats', 'footer'],
+  // ANIM-LAYERS: the header (Adjust on a layer, a replacing layer, Merge ▾) and the stack's rows
+  layers: ['stack', 'merge'],
 };
 
 /** The sheets T6b builds (the lazy loaders in `sheetLoaders.ts`). */

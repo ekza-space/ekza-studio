@@ -121,6 +121,15 @@ export const PLAIN_LABELS: Readonly<Record<string, string>> = {
   // animations
   'clip.new': 'New animation',
   'clip.loop': 'Loop it',
+  // ANIM-LAYERS (ADR 0026)
+  'clip.adjustOnLayer': 'Adjust on a layer',
+  'layer.add': 'New layer',
+  'layer.setActive': 'Key into this layer',
+  'layer.set': 'Layer settings',
+  'layer.reorder': 'Layer up or down',
+  'layer.duplicate': 'Duplicate layer',
+  'layer.remove': 'Delete layer',
+  'layer.merge': 'Merge layers',
   'library.open': 'Library',
   'library.stop': 'Stop preview',
   'autorig.clip.add': 'Add starter animations',

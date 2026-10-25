@@ -28,8 +28,10 @@ import {
 import {
   channelDefaultOf,
   controlVisibility,
+  editLayerOf,
   type ManipHandle,
   type OperatorResult,
+  playingLayers,
   type RunContext,
 } from '@ekza-studio/editor-core';
 import { applyOverrides, controlWorld, footPivotWorlds, type LimbId } from '@ekza-studio/rig';
@@ -474,7 +476,34 @@ export function createTestApi(host: HostShell, opts: { readonly engine?: CurveEn
             outHandle: { dt: key.outHandle.dt, dv: key.outHandle.dv },
             breakdown: key.breakdown === true,
           })),
+          layer: curve.layer,
         }));
+    },
+    layers(clipRef) {
+      sync();
+      const state = app.session.getState();
+      const id =
+        clipRef !== undefined
+          ? clip(clipRef).id
+          : state.activeCharacter === null
+            ? undefined
+            : state.activeClip[state.activeCharacter];
+      if (id === undefined) return [];
+      const layers = store.query.layersOfClip(id);
+      const playing = new Set(playingLayers(layers).map((layer) => layer.id));
+      const active = editLayerOf(app, store, id)?.id;
+      return layers.map((layer, i) => ({
+        id: layer.id,
+        name: layer.name,
+        mode: i === 0 ? 'base' : layer.mode,
+        weight: i === 0 ? 1 : layer.weight,
+        mute: layer.mute,
+        solo: layer.solo,
+        locked: layer.locked === true,
+        base: i === 0,
+        active: layer.id === active,
+        playing: playing.has(layer.id),
+      }));
     },
     curveValue(curve, frame) {
       sync();

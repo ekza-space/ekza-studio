@@ -42,6 +42,8 @@ export const ANIMATE_SLOTS: readonly { readonly kind: PanelKind; readonly slot: 
   { kind: PANEL.dopeSheet, slot: 'bottom', title: 'Dope Sheet' },
   // M6b (M6B-SPEC §0.4.7; C0): a right-dock tab of Animate, opened from Windows › Clip Library (derived from here).
   { kind: PANEL.clipLibrary, slot: 'right', title: 'Clip Library' },
+  // ANIM-LAYERS (ADR 0026): a bottom-dock tab of Animate beside the Dope Sheet, opened from Windows › Layers.
+  { kind: 'layers', slot: 'bottom', title: 'Layers' },
 ];
 
 /** M6a panel kinds (§4.8 `PANEL` additions; registered by B10, B11, B13 as lazy chunks). */

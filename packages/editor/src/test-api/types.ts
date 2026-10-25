@@ -27,7 +27,10 @@ export interface EkzaStudioTestApi {
   clips(character?: string): { id: string; name: string; fps: number; start: number; end: number; loop: boolean; sceneStart: number }[];
   curves(clip: string, control?: string): { id: string; control: string; channel: ChannelId; weighted: boolean; pre: string; post: string;
     keys: { id: string; t: number; v: number; inType: string; outType: string; broken: boolean; inHandle: { dt: number; dv: number }; outHandle: { dt: number; dv: number };
-      breakdown: boolean }[] }[];   // M2a: breakdown (additive)
+      breakdown: boolean }[]; layer: string }[];   // M2a: breakdown (additive); ANIM-LAYERS: layer (additive)
+  /** ANIM-LAYERS (additive): a clip's layers base first (default: the active clip), with the one keys go into. */
+  layers(clip?: string): { id: string; name: string; mode: string; weight: number; mute: boolean; solo: boolean;
+    locked: boolean; base: boolean; active: boolean; playing: boolean }[];
   /** Evaluates the curve exactly (anim-core) at a clip frame. */
   curveValue(curve: string, frame: number): number;
   channelValues(control: string, clipFrame?: number): Record<string, number>;   // default: current frame
