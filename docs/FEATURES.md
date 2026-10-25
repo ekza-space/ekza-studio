@@ -461,6 +461,7 @@ byte-equal to Pro's and Auto-Rig's). English only at GA.
 | Feature | What it does | Where | Status |
 |---|---|---|---|
 | Thread | The timeline in **frames** by default (seconds in Settings › Time), a ruler with a tick on every frame and numbers that never overlap, keys as marks; Rec on by default as this layout's own setting (Pro's Auto Key untouched) | bottom strip | `v0.7.0` |
+| ◆ Key | An explicit Key button beside ● Rec: a tap keys every channel of the selected parts at the playhead (Rec on or off), hold for *All channels* · *Only changed channels* · *Selected channels*; greyed until a part is selected; the diamond fills on a key | Thread, after ● Rec | **Next release** |
 | Animations row | The character's animations as chips: switch cycles in one tap; *+ New* (30 / 60 / 100 frames); Play, Loop it, Rename, Duplicate, Settings | above the Thread | `v0.7.0` |
 | Keys | Pro's Dope Sheet at touch size: marquee, retime by drag, bands, the key Halo docked in the header | Thread › Keys | `v0.7.0` |
 | Curves | Pro's Graph Editor by touch and Pencil: *Ease ▾*, *Fewer keys*, *Fix flips*, *Cycle ▾*, ⟨Time⟩ ⟨Value⟩ ⟨In⟩ ⟨Out⟩ chips, ⇆ Before, per-axis pinch | Thread › Curves | `v0.7.0` |

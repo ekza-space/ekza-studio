@@ -2501,8 +2501,10 @@ add nothing and keep the redo stack.
 1. Target controls: `args.target === 'character'` or `tools.keyTarget === 'character'` → all non-hidden controls
    of the active character; otherwise the selected controls. No targets → `cancelled: 'nothing selected'`.
 2. Channels: `all` = every keyable, unlocked TRS channel of the control; `translate`/`rotate`/`scale` filter;
-   `selected` = `selection.channels` ∩ keyable. If any of `rx ry rz` is included, all three keyable rotation
-   channels are included (synchronized rotation keys).
+   `selected` = `selection.channels` ∩ keyable; `changed` (ST-KEY-3, the Simple layout's ◆ Key) = the channels `all`
+   keys that changed since they were keyed — a session override, or a channel without keys in the active clip whose
+   value is not its default — and none is a refusal (*Nothing changed since the last key*). If any of `rx ry rz` is
+   included, all three keyable rotation channels are included (synchronized rotation keys).
 3. Value = `evaluation.channelValues(control)[channel]` (curve ⊕ static ⊕ override) at the active clip frame.
 4. For each channel: `ensureCurve`; if a key exists with `|t − frame| < 1e-6` patch its `v`; else insert a key
    with `prefs.defaultTangents`, handles `{dt: 0, dv: 0}`, `broken: false`, `weightLocked: true`.

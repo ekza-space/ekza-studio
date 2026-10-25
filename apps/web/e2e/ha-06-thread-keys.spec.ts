@@ -1,3 +1,4 @@
+import { join } from 'node:path';
 import { expect, type Page, type TestInfo, test } from '@playwright/test';
 import { animate, centreOf, controlFree, dockedPetal, loadSample, ringPoint, rulerPoint } from './helpers/halo-animate';
 import { halo, openHalo, openSheetFromShell, selectedControls } from './helpers/halo';
@@ -12,6 +13,12 @@ import { cdp, fingerDrag, fingerHold, fingerTap, type Point, touchEvent, twoFing
 //   tap the ruler to jump, drag it to scrub; the time readout opens the transport; ▶ plays and pauses, holding it
 //   offers repeat, once, ping-pong;
 // - Rec is the Simple layout's own setting, laid over Auto Key as a removable override (every channel keys);
+// - ◆ Key beside ● Rec (ST-KEY-1, owner 2026-10-25), at iPad landscape, portrait and phone sizes: greyed without a
+//   selection ("Select a body part to key"), a tap keys every channel of the selection at the playhead as one undo
+//   step with Rec on or off, the diamond fills on a key; its long-press offers All · Only changed · Selected channels;
+//   the at-rest budget holds (the switch offers Keys · Curves at rest, ST-KEY-5); a narrow phone folds the switch into
+//   one chip, never ◆ Key; the first tap on ● Rec says what each does (ST-KEY-4). `EKZA_KEY_SHOTS=<folder>` saves
+//   the screenshots there;
 // - key dots: tap one for its docked Halo (Ease ▾ › Linear), drag one to retime it (one undo step);
 // - a long-press on the ruler then a drag draws a band: its Halo, its body drag moves the keys (one step), Delete;
 // - the playhead's Halo: Insert frame;
@@ -21,6 +28,12 @@ import { cdp, fingerDrag, fingerHold, fingerTap, type Point, touchEvent, twoFing
 // `webkit-ipad` boots the Thread with single taps (compatibility only).
 
 const touchOnly = (info: TestInfo): void => test.skip(info.project.name !== 'chrome-touch', 'chrome-touch only (CDP)');
+
+const SHOTS = process.env['EKZA_KEY_SHOTS'] ?? '';
+
+async function shot(page: Page, name: string): Promise<void> {
+  if (SHOTS !== '') await page.screenshot({ path: join(SHOTS, `key-${name}.png`) });
+}
 
 /** A clean 60-frame animation on the loaded character (setup through the test API, not counted). */
 async function freshAnimation(page: Page, name: string): Promise<void> {
@@ -57,7 +70,8 @@ test.describe('ha-06: the Thread', () => {
     await expect(page.getByTestId('halo-clip-others')).toHaveCount(0);
     await expect(page.getByTestId('halo-next-chip')).toBeVisible();
     expect((await halo(page)).visibleTargets).toBeLessThanOrEqual(22);
-    await expect(page.getByTestId('halo-thread-layer').getByRole('radio')).toHaveCount(3);
+    // ST-KEY-5: at rest the switch offers Keys · Curves (the Thread is the timeline); Timeline joins while one is open
+    await expect(page.getByTestId('halo-thread-layer').getByRole('radio')).toHaveCount(2);
     await expect(page.getByTestId('halo-thread-ruler')).toHaveAttribute('role', 'slider');
 
     // tap to jump, drag to scrub
@@ -120,8 +134,10 @@ test.describe('ha-06: the Thread', () => {
     await page.getByTestId('halo-thread-layer').getByRole('radio', { name: 'Keys' }).tap();
     await expect.poll(async () => (await halo(page)).threadLayer).toBe(1);
     await expect(page.getByTestId('halo-thread-keys')).toBeVisible();
+    await expect(page.getByTestId('halo-thread-layer').getByRole('radio')).toHaveCount(3);
     await page.getByTestId('halo-thread-layer').getByRole('radio', { name: 'Timeline' }).tap();
     await expect(page.getByTestId('halo-thread-keys')).toHaveCount(0);
+    await expect(page.getByTestId('halo-thread-layer').getByRole('radio')).toHaveCount(2);
   });
 
   test('key dots: the docked key Halo and a retime in one undo step', async ({ page }, testInfo) => {
@@ -533,8 +549,252 @@ test.describe('ha-06: the Thread', () => {
     const at = await rulerPoint(page, 30);
     await page.touchscreen.tap(at.x, at.y);
     await expect.poll(async () => (await animate(page)).thread.frame).toBe(30);
+    // ◆ Key: a single tap keys the selection at the playhead (ST-KEY-1)
+    const forearm = (await call(page, 'controls')).find((c) => c.name === 'R Lower Arm')?.id ?? '';
+    await runOk(page, 'select.controls', { ids: [forearm], mode: 'replace' });
+    await expect(page.getByTestId('halo-thread-key')).not.toHaveAttribute('aria-disabled', 'true');
+    const key = await centreOf(page, 'halo-thread-key');
+    await page.touchscreen.tap(key.x, key.y);
+    await expect.poll(async () => (await animate(page)).thread.dots.map((d) => d.frame)).toContain(30);
     await page.touchscreen.tap(...(Object.values(await centreOf(page, 'halo-new')) as [number, number]));
     await expect(page.getByTestId('halo-new-animation')).toBeVisible();
+  });
+});
+
+/** ◆ Key and ● Rec as the Thread draws them. */
+const keyButton = (page: Page) => page.getByTestId('halo-thread-key');
+const recChip = (page: Page) => page.getByTestId('halo-thread-rec');
+
+/** The frames at which a control has keys on any channel, with the channels keyed at each. */
+async function keyedChannels(page: Page, control: string, frame: number): Promise<string[]> {
+  const clip = (await call(page, 'state')).activeClip ?? '';
+  const curves = await call(page, 'curves', clip, control);
+  return curves
+    .filter((c) => c.keys.some((k) => Math.abs(k.t - frame) < 1e-6))
+    .map((c) => c.channel)
+    .sort();
+}
+
+async function controlIdOf(page: Page, name: string): Promise<string> {
+  return (await call(page, 'controls')).find((c) => c.name === name)?.id ?? '';
+}
+
+/** Holds ◆ Key until its menu shows. */
+async function holdKey(page: Page): Promise<void> {
+  await fingerHold(page, await centreOf(page, 'halo-thread-key'), 650);
+  await expect(page.getByTestId('halo-thread-key-menu')).toBeVisible();
+}
+
+/** Phone budget of §4.8 (its own row, ST-KEY-5): measured 20 at rest and 26 with a selection on 390 × 844. */
+const PHONE_BUDGET = { rest: 20, halo: 28 } as const;
+
+const KEY_SIZES = [
+  { slug: 'ipad-landscape', width: 1194, height: 834, budget: { rest: 22, halo: 36 } },
+  { slug: 'ipad-portrait', width: 834, height: 1194, budget: { rest: 22, halo: 36 } },
+  { slug: 'phone', width: 390, height: 844, budget: PHONE_BUDGET },
+] as const;
+
+test.describe('ha-06: ◆ Key beside ● Rec (ST-KEY-1)', () => {
+  for (const size of KEY_SIZES) {
+    test(`a tap on ◆ Key keys the selection at the playhead, Rec off (${size.slug})`, async ({ page }, testInfo) => {
+      touchOnly(testInfo);
+      test.setTimeout(90_000);
+      await page.setViewportSize({ width: size.width, height: size.height });
+      await openHalo(page);
+      await loadSample(page, 'seed-san');
+      await freshAnimation(page, 'Keyed');
+      // ● Rec and ◆ Key sit side by side, each with its word, each a 44 pt target
+      await expect(recChip(page)).toHaveText('Rec');
+      await expect(keyButton(page)).toHaveText('Key');
+      const rec = await recChip(page).boundingBox();
+      const key = await keyButton(page).boundingBox();
+      if (rec === null || key === null) throw new Error('no Rec or Key');
+      expect(Math.abs(key.y - rec.y)).toBeLessThan(1);
+      expect(key.x - (rec.x + rec.width)).toBeGreaterThanOrEqual(0);
+      expect(key.x - (rec.x + rec.width)).toBeLessThanOrEqual(8);
+      expect(Math.min(key.width, key.height)).toBeGreaterThanOrEqual(44);
+      // at rest: greyed, and a tap says why; the stage keeps its budget
+      await expect(keyButton(page)).toHaveAttribute('aria-disabled', 'true');
+      expect((await halo(page)).visibleTargets).toBeLessThanOrEqual(size.budget.rest);
+      const before = (await call(page, 'history')).undo.length;
+      await fingerTap(page, await centreOf(page, 'halo-thread-key'));
+      await expect(page.getByTestId('halo-toasts')).toContainText('Select a body part to key');
+      expect((await call(page, 'history')).undo.length).toBe(before);
+      await shot(page, `${size.slug}-rest`);
+
+      // Rec off: a pose change stays unkeyed until ◆ Key keys it
+      await fingerTap(page, await centreOf(page, 'halo-thread-rec'));
+      await expect(recChip(page)).toHaveAttribute('aria-pressed', 'false');
+      const forearm = await controlIdOf(page, 'R Lower Arm');
+      await fingerTap(page, await controlFree(page, 'R Lower Arm'));
+      await expect.poll(() => selectedControls(page)).toEqual([forearm]);
+      await fingerTap(page, await rulerPoint(page, 24));
+      await expect.poll(async () => (await animate(page)).thread.frame).toBe(24);
+      await runOk(page, 'channel.setValues', { edits: [{ control: forearm, channel: 'rz', value: 0.5 }] });
+      expect(await dotFrames(page)).toEqual([]);
+      await expect(keyButton(page)).not.toHaveAttribute('aria-disabled', 'true');
+      await expect(keyButton(page)).not.toHaveAttribute('data-keyed', '');
+      expect((await halo(page)).visibleTargets).toBeLessThanOrEqual(size.budget.halo);
+
+      // the tap: one undo step, every keyable channel of the forearm at frame 24, the diamond filled, the toast
+      const steps = (await call(page, 'history')).undo.length;
+      await fingerTap(page, await centreOf(page, 'halo-thread-key'));
+      await expect.poll(() => dotFrames(page)).toEqual([24]);
+      expect((await call(page, 'history')).undo.length).toBe(steps + 1);
+      expect(await keyedChannels(page, forearm, 24)).toEqual(expect.arrayContaining(['rx', 'ry', 'rz']));
+      await expect(keyButton(page)).toHaveAttribute('data-keyed', '');
+      await expect(page.getByTestId('halo-toasts')).toContainText('Keyed R Lower Arm · frame 24');
+      await shot(page, `${size.slug}-keyed`);
+      // off the key the diamond is hollow again
+      await fingerTap(page, await rulerPoint(page, 40));
+      await expect(keyButton(page)).not.toHaveAttribute('data-keyed', '');
+      // one undo takes the key back
+      await runOk(page, 'edit.undo');
+      await expect.poll(() => dotFrames(page)).toEqual([]);
+    });
+  }
+
+  test('with Rec on ◆ Key still works: Rec keys what you change, ◆ Key keys the whole selection', async ({
+    page,
+  }, testInfo) => {
+    touchOnly(testInfo);
+    test.setTimeout(90_000);
+    await openHalo(page);
+    await loadSample(page, 'seed-san');
+    await freshAnimation(page, 'Both');
+    await expect(recChip(page)).toHaveAttribute('aria-pressed', 'true');
+    // Rec: the turned forearm is keyed at 10, nothing else
+    const forearm = await keyForearm(page, [10]);
+    const upper = await controlIdOf(page, 'R Upper Arm');
+    expect(await keyedChannels(page, upper, 10)).toEqual([]);
+    // nothing is left unkeyed: Only changed channels is greyed and says why
+    await holdKey(page);
+    await expect(page.getByTestId('halo-key-menu-changed')).toHaveAttribute('aria-disabled', 'true');
+    const steps = (await call(page, 'history')).undo.length;
+    await fingerTap(page, await centreOf(page, 'halo-key-menu-changed'));
+    await expect(page.getByTestId('halo-toasts')).toContainText('Nothing changed since the last key');
+    expect((await call(page, 'history')).undo.length).toBe(steps);
+    // ◆ Key at 20, with the upper arm selected too: both parts, every channel, Rec still on
+    await runOk(page, 'select.controls', { ids: [forearm, upper], mode: 'replace' });
+    await fingerTap(page, await rulerPoint(page, 20));
+    await expect.poll(async () => (await animate(page)).thread.frame).toBe(20);
+    await fingerTap(page, await centreOf(page, 'halo-thread-key'));
+    await expect(page.getByTestId('halo-toasts')).toContainText('Keyed 2 parts · frame 20');
+    expect((await call(page, 'history')).undo.length).toBe(steps + 1);
+    expect(await keyedChannels(page, forearm, 20)).toEqual(expect.arrayContaining(['rx', 'ry', 'rz']));
+    expect(await keyedChannels(page, upper, 20)).toEqual(expect.arrayContaining(['rx', 'ry', 'rz']));
+    await expect(recChip(page)).toHaveAttribute('aria-pressed', 'true');
+    expect((await animate(page)).thread.autoKey).toBe(true);
+  });
+
+  test('its long-press: All channels · Only changed channels · Selected channels', async ({ page }, testInfo) => {
+    touchOnly(testInfo);
+    test.setTimeout(90_000);
+    await openHalo(page);
+    await loadSample(page, 'seed-san');
+    await freshAnimation(page, 'Choices');
+    await fingerTap(page, await centreOf(page, 'halo-thread-rec'));
+    await expect(recChip(page)).toHaveAttribute('aria-pressed', 'false');
+    const forearm = await controlIdOf(page, 'R Lower Arm');
+    const upper = await controlIdOf(page, 'R Upper Arm');
+    await fingerTap(page, await controlFree(page, 'R Lower Arm'));
+    await expect.poll(() => selectedControls(page)).toEqual([forearm]);
+
+    // without selected channels: All and Only changed; All is what a tap does
+    await holdKey(page);
+    const menu = page.getByTestId('halo-thread-key-menu');
+    await expect(menu.getByRole('menuitem')).toHaveText(['All channels', 'Only changed channels']);
+    await shot(page, 'menu');
+    await fingerTap(page, await centreOf(page, 'halo-key-menu-all'));
+    await expect(menu).toHaveCount(0);
+    await expect.poll(() => dotFrames(page)).toEqual([0]);
+    await expect(page.getByTestId('halo-toasts')).toContainText('Keyed R Lower Arm · frame 0');
+
+    // Only changed: of the two selected parts, only the turned forearm is keyed (all three rotations)
+    await runOk(page, 'select.controls', { ids: [forearm, upper], mode: 'replace' });
+    await fingerTap(page, await rulerPoint(page, 30));
+    await expect.poll(async () => (await animate(page)).thread.frame).toBe(30);
+    await runOk(page, 'channel.setValues', { edits: [{ control: forearm, channel: 'rz', value: 0.4 }] });
+    await holdKey(page);
+    await expect(page.getByTestId('halo-key-menu-changed')).not.toHaveAttribute('aria-disabled', 'true');
+    await fingerTap(page, await centreOf(page, 'halo-key-menu-changed'));
+    await expect.poll(async () => keyedChannels(page, forearm, 30)).toEqual(['rx', 'ry', 'rz']);
+    expect(await keyedChannels(page, upper, 30)).toEqual([]);
+    expect((await call(page, 'history')).undo.at(-1)).toBe('Key Changed Channels');
+    await expect(page.getByTestId('halo-toasts')).toContainText('Keyed the changed channels of 2 parts · frame 30');
+
+    // Selected channels: offered once a channel is selected (Numbers, Keys); it keys that channel's group only
+    await runOk(page, 'select.controls', { ids: [upper], mode: 'replace' });
+    await runOk(page, 'select.channels', { refs: [{ control: upper, channel: 'rx' }], mode: 'replace' });
+    await fingerTap(page, await rulerPoint(page, 45));
+    await expect.poll(async () => (await animate(page)).thread.frame).toBe(45);
+    await holdKey(page);
+    await expect(menu.getByRole('menuitem')).toHaveText(['All channels', 'Only changed channels', 'Selected channels']);
+    await fingerTap(page, await centreOf(page, 'halo-key-menu-selected'));
+    await expect.poll(async () => keyedChannels(page, upper, 45)).toEqual(['rx', 'ry', 'rz']);
+    await expect(page.getByTestId('halo-toasts')).toContainText(
+      'Keyed the selected channels of R Upper Arm · frame 45',
+    );
+  });
+
+  test('the first tap on ● Rec says what Rec and ◆ Key do, once (ST-KEY-4)', async ({ page }, testInfo) => {
+    touchOnly(testInfo);
+    await openHalo(page, '&firstRun=1');
+    await loadSample(page, 'seed-san');
+    const coach = 'Rec keys what you change. ◆ Key keys the selection now.';
+    await expect(page.getByTestId('halo-toasts')).not.toContainText(coach);
+    await fingerTap(page, await centreOf(page, 'halo-thread-rec'));
+    await expect(page.getByTestId('halo-toasts')).toContainText(coach);
+    expect(await page.evaluate(() => localStorage.getItem('ekza-studio:halo:coach:v1'))).toContain('recKey');
+    // dismissed, it does not come back on the next tap of ● Rec or ◆ Key
+    await page.getByTestId('halo-toasts').getByRole('button', { name: 'Got it' }).first().tap();
+    await expect(page.getByTestId('halo-toasts')).not.toContainText(coach);
+    await fingerTap(page, await centreOf(page, 'halo-thread-rec'));
+    await fingerTap(page, await centreOf(page, 'halo-thread-key'));
+    await page.waitForTimeout(300);
+    await expect(page.getByTestId('halo-toasts')).not.toContainText(coach);
+  });
+});
+
+test.describe('ha-06: a narrow phone folds the layer switch, never ◆ Key (ST-KEY-5)', () => {
+  test.use({ viewport: { width: 360, height: 780 } });
+
+  test('Keys · Curves at rest fit beside ● Rec and ◆ Key; with a layer open the switch is one chip', async ({
+    page,
+  }, testInfo) => {
+    touchOnly(testInfo);
+    test.setTimeout(90_000);
+    await openHalo(page);
+    await loadSample(page, 'seed-san');
+    const thread = page.getByTestId('halo-thread');
+    await expect(page.getByTestId('halo-thread-layer').getByRole('radio')).toHaveCount(2);
+    await expect(page.getByTestId('halo-thread-layer-chip')).toHaveCount(0);
+    // Keys opens: Timeline · Keys · Curves would not fit — the switch folds into one chip; ◆ Key and ● Rec stay
+    await page.getByTestId('halo-thread-layer').getByRole('radio', { name: 'Keys' }).tap();
+    await expect.poll(async () => (await halo(page)).threadLayer).toBe(1);
+    await expect(thread).toHaveAttribute('data-folded', '');
+    const chip = page.getByTestId('halo-thread-layer-chip');
+    await expect(chip).toHaveText(/Keys/);
+    await expect(keyButton(page)).toBeVisible();
+    await expect(recChip(page)).toBeVisible();
+    const boxes = await Promise.all([
+      page.getByTestId('halo-thread-play').boundingBox(),
+      recChip(page).boundingBox(),
+      keyButton(page).boundingBox(),
+      chip.boundingBox(),
+    ]);
+    const ys = boxes.map((b) => b?.y ?? -1);
+    expect(Math.max(...ys) - Math.min(...ys)).toBeLessThan(1);
+    expect(Math.max(...boxes.map((b) => (b?.x ?? 0) + (b?.width ?? 0)))).toBeLessThanOrEqual(360);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(360);
+    await shot(page, 'phone-folded');
+    // the chip lists the three layers: Timeline brings the two-segment switch back
+    await chip.tap();
+    await expect(page.getByTestId('halo-thread-layer-menu')).toBeVisible();
+    await page.getByTestId('halo-thread-layer-menu').getByRole('menuitemradio', { name: 'Timeline' }).tap();
+    await expect.poll(async () => (await halo(page)).threadLayer).toBe(0);
+    await expect(page.getByTestId('halo-thread-layer').getByRole('radio')).toHaveCount(2);
+    await expect(thread).not.toHaveAttribute('data-folded', '');
   });
 });
 

@@ -377,7 +377,7 @@ drag already wrote a key; there is no question card and no "not keyed" pill.
 │ (Hand leads)╱  (⋯)                                                               │
 │                                                                                  │
 │ ↶        Animations: [Idle] [Walk] [Wave ▾] [+ New]                  Library ▸   │
-│ ⊕ ≈ Fine  ▶ 15 f   ·◆····◆····┃···◆······◆· 60 f ● Rec  [Timeline│Keys│Curves]   │
+│ ⊕ ≈ Fine  ▶ 15 f  ·◆····◆····┃···◆······◆· 60 f  ● Rec  ◆ Key  [Keys│Curves]     │
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -399,7 +399,7 @@ visible together. The key Halo is docked in the layer header, not over the keys.
 │ │0.0│──────────────o====o── 2 keys ──────────────          │ │ Heel ⟨0°⟩ Ball ⟨0°⟩│
 │ └─────────────────────────────────────────────────────────┘ │                    │
 │ ⟨Time 0.40 s⟩ ⟨Value 0.000 m⟩ ⟨In 0°⟩ ⟨Out 0°⟩   Fewer keys · Fix flips · Cycle ▾ ⋯│
-│ ▶ 12 f   ··········┃································· 30 f  ● Rec                 │
+│ ▶ 12 f   ··········┃···························· 30 f  ● Rec  ◆ Key               │
 └──────────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -461,7 +461,7 @@ The Path moves under the top row. Sheets rise from the bottom. Halo, Thread, Thu
 │ ↶                                     ┌───┐    │
 │ ⊕ ≈ Fine                              │ P │    │
 │ Animations: [Idle][Walk][Wave ▾][+]   └───┘    │
-│ ▶ 15 f  ·◆··◆·┃·◆··◆· 60 f ●Rec  [Tl│Keys│Crv] │
+│ ▶ 15 f ·◆··◆┃·◆··◆ 60 f ●Rec ◆Key [Keys│Curves]│
 │ ═════════════ Numbers (peek) ══════════════    │
 │ Forearm R   Bend ⟨34°⟩  Twist ⟨0°⟩  Side ⟨−5°⟩ │
 └────────────────────────────────────────────────┘
@@ -485,7 +485,8 @@ and a smoke test, nothing more, until the owner decides otherwise.
 │                         (P)  │
 │ ──────────────────────────── │
 │ (Key◆)(Mirror)(Reset)   (⋯)  │ ← the Halo docks as a verb bar; ⋯ is pinned
-│ ▶ ·◆··┃··◆··◆· 2s  [Tl│K│C]  │ ← Thread (Animate)
+│ ▶  ● Rec  ◆ Key  [K│C]       │ ← Thread (Animate): ▶ · ● Rec · ◆ Key · the switch,
+│ ·◆··┃··◆··◆·········· 60     │   then the ruler on a row of its own
 │ ⊕ ≈ Fine                     │
 │ Make │ Paint │ Rig │ Animate●│ ← the Path becomes a tab bar
 └──────────────────────────────┘
@@ -552,8 +553,9 @@ Each stage has a budget for the interactive targets visible at L0 on an iPad lan
 
 | State | Budget | Example (Animate) |
 |---|---|---|
-| At rest (nothing selected) | ≤ 22 | top bar 8 · Thread 7 (▶, time readout, ruler, Rec, the three-way layer switch) · Animations row 5 · ↶ 1 · puck 1 |
+| At rest (nothing selected) | ≤ 22 | top bar 8 · Thread 7 (▶, time readout, ruler, Rec, ◆ Key, the layer switch's *Keys · Curves*) · Animations row 5 · ↶ 1 · puck 1 |
 | With a selection and its Halo | ≤ 36 | the above, plus breadcrumb 4 · petals 6 · channel chips 3 · Thumb key 1 |
+| Phone (< 700 pt), its own row | ≤ 20 at rest · ≤ 28 with a selection and its verb bar | measured on 390 × 844 (Seed-san, one animation): 20 and 26; ▶ · ● Rec · ◆ Key · the switch on one row, the ruler on the next (ST-KEY-5; asserted in ha-06) |
 
 The rules that keep it there:
 - The status corner appears only for a problem or a budget.
@@ -1292,7 +1294,14 @@ user's words). On iPad: an honest card plus the *wave* recipe. Live AI on iPad i
   - In-between (breakdown);
   - Key target (this part / body part / whole character).
 
-  The Thread has no separate ◆+ button. With nothing selected, the Animate tray's *Key all* keys the character.
+  With nothing selected, the Animate tray's *Key all* keys the character.
+- **◆ Key in the Thread** (owner, 2026-10-25: "an explicit Key button beside Rec", ST-KEY-1). v0.2 kept the Thread free
+  of a ◆+ button (R63: an unlabelled icon); on the owner's iPhone test the petal was not discoverable and the phone's verb
+  bar could fold it away. The Thread's labelled *◆ Key* sits right after *● Rec* on every size class (§10.3): Rec keys
+  what you change, ◆ Key keys the selection now. A tap runs `key.set {channels: 'all', target: 'selected'}` at the
+  playhead (one undo step, Rec on or off); its long-press offers *All channels* · *Only changed channels*
+  (`channels: 'changed'`, ST-KEY-3) · *Selected channels* (while channels are selected in Numbers or Keys). The petal
+  keeps its own long-press (key target, in-between).
 - OQ-4 asks the owner to confirm the default (the alternative is v0.1's "ask once").
 
 ### 10.3 The Thread (Timeline)
@@ -1305,7 +1314,8 @@ never imports Pro's `TimeSliderView`.
 
 | Element | Behaviour |
 |---|---|
-| At rest (L0) | ▶ · the time readout · the ruler · ● Rec · the layer switch `[Timeline │ Keys │ Curves]` |
+| At rest (L0) | ▶ · the time readout · the ruler · ● Rec · ◆ Key · the layer switch `[Keys │ Curves]` (*Timeline* joins it while Keys or Curves is open, ST-KEY-5) — seven targets |
+| ● Rec and ◆ Key | Side by side, each with its word on every size class, phones included (ST-KEY-1). **● Rec** is a toggle (Auto Key, §10.2). **◆ Key** (a 44 pt target; its plain name is the manifest's *Key*, as More and search show `key.set`): tap — `key.set` on the selected controls at the playhead, every channel, one undo step, with Rec on or off; a toast names what it keyed (*Keyed R Lower Arm · frame 24*; seconds under Settings › Time *Seconds*). Hold (a right-click with a mouse) — *All channels* (what a tap does) · *Only changed channels* (the channels changed since they were keyed: an unkeyed change on a keyed channel, or an unkeyed channel off its default; ST-KEY-3) · *Selected channels* (only while channels are selected in Numbers or Keys); each one `key.set` run. Nothing selected — greyed; a tap says *Select a body part to key*. The diamond is filled while the playhead sits on a key of the selection, hollow otherwise (ST-KEY-6). The first tap on either shows the coach mark *Rec keys what you change. ◆ Key keys the selection now.* once on the device (ST-KEY-4). |
 | Scale and units | **Frames** by default (owner, 2026-10-24: cycles are usually about 50 frames, at most 100, and animators count in frames; ST-T7-UNIT). Settings › Time: *Frames · Seconds* applies to the Thread's readout and ruler, every chip, an animation's Settings and the Curves axis; it is a per-device Halo preference, and a choice someone already made is kept. **The ruler is a classic animation time slider** (owner, 2026-10-24: "a tick on every frame"; ST-T10-RULER), read the same way as Studio Pro's time slider: a tick on every frame of the visible span — every 2nd, then every 5th frame only when frames would be closer than about 3 pt; taller numbered ticks every 5th or 10th frame by the zoom, and every frame when zoomed in, with a half-height tick between two numbers; the first and last frame of the animation always numbered (the playhead's box shows the frame it covers); numbers never overlap. No beat ticks. Under *Seconds* the ticks stay on frames and the numbers read seconds (0.1, 0.2, 0.5, 1 s … where they fall on whole frames). Keys always land on whole frames. |
 | Expanded transport | Tap the time readout: start, previous key, previous frame, next frame, next key, end (`time.step` ±1 for the frame steps, Pro's Alt+, / Alt+.); Speed: *Realtime · Every frame · Half · Double* (the four `PlaybackSpeed` values; a 0.25× for Perform would be a new kernel value, T16); *Range* shows the range brackets. Tap outside to collapse. |
 | ▶ | Tap: play / pause. Long-press: loop / once / oscillate, and play backwards. |
@@ -1315,7 +1325,7 @@ never imports Pro's `TimeSliderView`.
 | Band | A Pencil drag along the ruler, or a finger long-press on the ruler and then a drag. Drag the body to move, drag the ends to stretch, Thumb *Copy* + drag to copy. The band's Halo (§6.2) has Copy and Paste ▾. |
 | Blend | When the playhead sits between two keys of the selection, a ⟨Blend 50 %⟩ chip appears. Scrubbing previews; lifting runs `key.tween` with that value as one undo step (a pre-run form, because `key.tween` is not adjustable). Its long-press picks blend / toward a neighbour / ease / push-pull / to default; scrub past either end to overshoot. |
 | Zoom | Horizontal pinch zooms time; a two-finger drag pans it. |
-| Layers | The labelled switch replaces v0.1's unlabelled grab bar. The sheet's own grab bar only resizes the height. |
+| Layers | The labelled switch replaces v0.1's unlabelled grab bar. The sheet's own grab bar only resizes the height. At rest the Thread is the timeline, so the switch offers *Keys · Curves*; while one of them is open it reads *Timeline · Keys · Curves*, and *Timeline* folds it back — each layer one tap, as before (ST-KEY-5). On a phone whose row would not fit ▶ · ● Rec · ◆ Key and the switch on one line, the switch folds into one chip naming the layer (*Keys ▾*: a tap lists the three); ◆ Key is never the one that gives way. |
 
 ### 10.4 Keys (layer 1, the Dope Sheet)
 
@@ -1794,7 +1804,7 @@ needs a row here and a reason.
 
 | # | Capability | FEATURES.md | Ekza Studio surface | Depth | Pro gap closed / notes |
 |---|---|---|---|---|---|
-| 8.1 | Set key (all / T / R / S / attributes; selected channels) | `F6:Set key` | *Key ◆* petal (L1); its long-press (L2); channel Halo › Key this channel; *Key selected channels* on selected rows | L1 / L2 | RMB "Key Selected" → channel rows |
+| 8.1 | Set key (all / T / R / S / attributes; selected channels) | `F6:Set key` | The Thread's *◆ Key* (L0, ST-KEY-1) and its long-press (all · only changed · selected channels); *Key ◆* petal (L1); its long-press (L2); channel Halo › Key this channel; *Key selected channels* on selected rows | L0 / L1 / L2 | RMB "Key Selected" → channel rows |
 | 8.2 | Auto key and its mode | `F6:Auto key` | `● Rec` (Halo's own setting, default on, applied as a removable override); Pro's Auto Key mode in Settings › Animation | L0 / L2 | — |
 | 8.3 | Key target | `F6:Key target` | Long-press *Key ◆* › Key target | L2 | — |
 | 8.4 | Delete key at frame / selected keys | `F6:Time slider` | Key dot and band petal *Delete* | L1 | — |
