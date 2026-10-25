@@ -61,7 +61,26 @@ Screenshots for the review (not committed): `layers-pro-panel.png`, `layers-pro-
 
 ## Gate
 
-See the final section below (filled after the run).
+`EKZA_E2E_PORT=3197 pnpm run ci` at `5ca866ce`: format, lint, typecheck, deps, fixtures, licences, the unit tests (26 of
+26 tasks: anim-core 682, rig 332, editor-core 1,853, halo 254, agent-tools 275, headless 240, curve editor 230, editor
+678, …), the production build, `check:size`, the generation boundary and e2e — **green: 590 passed, 207 skipped, 0
+failed** (exit 0). `ha-parity` green: every new operator has a built surface, the `searchOnly` ratchet stays at 4.
+
+The run before it (at `ae6d1bfd`) failed four e2e tests: E2E-15 and E2E-LIB-02 compared `curves()` deeply and saw the
+new `layer` field (the field went; `layers()` lists each layer's curve ids instead), `ha-AL`'s ◆ Key hold of 700 ms read
+as a tap on the loaded machine (now 1,500 ms and the menu awaited), and `ha-J7` (Paint, untouched here) — all four
+passed alone on a fresh build before the green run.
+
+| Route (production build, gzip -9, first visit) | `dev` `b3fb0986` (◆ Key gate) | ANIM-LAYERS | Δ | Gate (SIZE-1) |
+|---|---|---|---|---|
+| `/editor` | 902,976 B | **912,208 B** | +9,232 | 5,000,000 B — OK |
+| `/autorig` | 661,547 B | **670,687 B** | +9,140 | 5,000,000 B — OK |
+| `/app` | 739,256 B | **750,491 B** | +11,235 | 5,000,000 B — OK |
+
+The eager bytes are the kernel's: anim-core's blend and solve, the layered sampler, the edit kernel's layer solve
+(`applyChannelEdits` and `key.set` call it synchronously) and the eight operators' definitions and polls; `/app` adds
+the layer chip, its Halo and the words. The Pro Layers panel, the Halo Layers sheet and the remove / duplicate / merge
+bodies are lazy chunks.
 
 ## Follow-ups
 
