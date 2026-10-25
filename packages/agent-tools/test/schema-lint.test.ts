@@ -3,7 +3,15 @@
 // annotation rule of §6.0.
 import Ajv2020 from 'ajv/dist/2020';
 import { describe, expect, it } from 'vitest';
-import { allTools, CORE_TOOL_COUNT, lintTools, manifestToolOf, SETUP_TOOL_COUNT, STRETCH_TOOL_COUNT } from '../src';
+import {
+  allTools,
+  CORE_TOOL_COUNT,
+  LAYER_TOOL_COUNT,
+  lintTools,
+  manifestToolOf,
+  SETUP_TOOL_COUNT,
+  STRETCH_TOOL_COUNT,
+} from '../src';
 
 const CATALOGUE = [
   'editor_connect',
@@ -49,6 +57,8 @@ const CATALOGUE = [
 const STRETCH = ['pose_plant_feet', 'analyze_diff', 'view_set_time', 'recipe_apply'];
 /** MCP-SPEC §0.4.4 (B4): the character setup tools, core tools of the MVP listed after the stretch tools. */
 const SETUP = ['model_inspect', 'model_fix', 'rig_create', 'library_list', 'library_use'];
+/** ANIM-LAYERS (ADR 0026): the layer tools, listed after the setup tools. */
+const LAYERS = ['layer_add', 'layer_set', 'layer_merge'];
 const ALWAYS_LOADED = [
   'editor_connect',
   'scene_summary',
@@ -106,10 +116,10 @@ const READ_ONLY = [
 ];
 
 describe('tool catalogue (MCP-SPEC §6.0)', () => {
-  it('lists the 39 core tools, the 4 stretch tools and the 5 setup tools, in tools/list order', () => {
+  it('lists the 39 core tools, the 4 stretch tools, the 5 setup tools and the 3 layer tools, in tools/list order', () => {
     const tools = allTools();
-    expect(tools.map((tool) => tool.name)).toEqual([...CATALOGUE, ...STRETCH, ...SETUP]);
-    expect(CORE_TOOL_COUNT + STRETCH_TOOL_COUNT + SETUP_TOOL_COUNT).toBe(tools.length);
+    expect(tools.map((tool) => tool.name)).toEqual([...CATALOGUE, ...STRETCH, ...SETUP, ...LAYERS]);
+    expect(CORE_TOOL_COUNT + STRETCH_TOOL_COUNT + SETUP_TOOL_COUNT + LAYER_TOOL_COUNT).toBe(tools.length);
     expect(tools.filter((tool) => tool.stretch).map((tool) => tool.name)).toEqual(STRETCH);
   });
 
@@ -126,7 +136,8 @@ describe('tool catalogue (MCP-SPEC §6.0)', () => {
       const { readOnly, destructive, idempotent } = tool.annotations;
       expect([tool.name, readOnly]).toEqual([tool.name, READ_ONLY.includes(tool.name)]);
       expect([tool.name, idempotent]).toEqual([tool.name, IDEMPOTENT.includes(tool.name)]);
-      const additive = tool.name === 'clip_create' || tool.name === 'project_import';
+      // ANIM-LAYERS: layer_add adds a layer above the base and changes nothing that plays (an empty layer)
+      const additive = tool.name === 'clip_create' || tool.name === 'project_import' || tool.name === 'layer_add';
       expect([tool.name, destructive]).toEqual([tool.name, !readOnly && !additive]);
     }
   });

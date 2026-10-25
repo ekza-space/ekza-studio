@@ -1,5 +1,5 @@
 {
-  "hash": "dc98feca1a6dd6613175fb8b3e89c26a9187b8892cf089dbc98a8571aeba3c74",
+  "hash": "3ef717d3c5efef907c8b145ca3c6258f88c8001ac61c06ccf8f08675548b2e90",
   "tools": [
     {
       "access": "pairing",
@@ -11206,7 +11206,708 @@
       },
       "requiresUserInteraction": false,
       "title": "Add a library clip"
+    },
+    {
+      "access": "edit",
+      "alwaysLoad": false,
+      "annotations": {
+        "destructiveHint": false,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Add an animation layer on top of a clip: additive (default; its curves add to what is below — a fix such as +10° on a joint) or override (it replaces what is below by its weight). weight is 0…1 (default 1). The base stays as it is. Agent key and pose tools write the base layer; the user keys into the layer they chose.",
+      "group": "clip",
+      "hosts": [
+        "live",
+        "headless"
+      ],
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "character": {
+            "description": "Character name (case-insensitive) or id; omit when the project has one character.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "clip": {
+            "description": "Clip name (unique per character) or id; in the user's editor every edit must pass it.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "ifClipRevision": {
+            "description": "Strict stale check: the clip revision you last read; the call fails with stale if the clip changed.",
+            "maximum": 1000000000000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "intent": {
+            "description": "Why, for the user, in ≤ 60 characters (Slow walk 1.5×); shown in the undo label.",
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string"
+          },
+          "mode": {
+            "default": "additive",
+            "description": "additive (default) or override.",
+            "enum": [
+              "additive",
+              "override"
+            ],
+            "type": "string"
+          },
+          "name": {
+            "description": "Name (default \"Layer 1\", \"Layer 2\"…).",
+            "pattern": "^[A-Za-z0-9 _.-]{1,64}$",
+            "type": "string"
+          },
+          "project": {
+            "description": "Project handle (tab_… for the paired editor tab, prj_… for a headless project); omit when one is open.",
+            "pattern": "^(tab|prj)_[0-9A-Za-z]{12}$",
+            "type": "string"
+          },
+          "weight": {
+            "default": 1,
+            "description": "Weight 0…1 (default 1).",
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "type": "object"
+      },
+      "name": "layer_add",
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "clip": {
+            "additionalProperties": false,
+            "properties": {
+              "character": {
+                "type": "string"
+              },
+              "fps": {
+                "type": "number"
+              },
+              "loop": {
+                "type": "boolean"
+              },
+              "name": {
+                "type": "string"
+              },
+              "rangeFrames": {
+                "items": false,
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "revision": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "character",
+              "name",
+              "fps",
+              "rangeFrames",
+              "loop",
+              "revision"
+            ],
+            "type": "object"
+          },
+          "data": {
+            "additionalProperties": false,
+            "properties": {
+              "layer": {
+                "type": "string"
+              },
+              "layers": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "curves": {
+                      "type": "number"
+                    },
+                    "locked": {
+                      "type": "boolean"
+                    },
+                    "mode": {
+                      "enum": [
+                        "base",
+                        "additive",
+                        "override"
+                      ],
+                      "type": "string"
+                    },
+                    "muted": {
+                      "type": "boolean"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "playing": {
+                      "type": "boolean"
+                    },
+                    "solo": {
+                      "type": "boolean"
+                    },
+                    "weight": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "mode",
+                    "weight",
+                    "muted",
+                    "solo",
+                    "locked",
+                    "playing",
+                    "curves"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "truncated": {
+                "description": "true when the runtime cut lists to fit the hard token cap (§5.5); narrow the call or page.",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "layer",
+              "layers"
+            ],
+            "type": "object"
+          },
+          "next": {
+            "type": "string"
+          },
+          "ok": {
+            "const": true,
+            "type": "boolean"
+          },
+          "undo": {
+            "additionalProperties": false,
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "step": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "step",
+              "label"
+            ],
+            "type": "object"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "data"
+        ],
+        "type": "object"
+      },
+      "requiresUserInteraction": false,
+      "title": "Add an animation layer"
+    },
+    {
+      "access": "edit",
+      "alwaysLoad": false,
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Change a layer of a clip by name: weight (0…1), mute, solo, lock, name, or move it up or down the stack. The base layer takes only mute, solo and lock. Returns the stack (base first) with what plays.",
+      "group": "clip",
+      "hosts": [
+        "live",
+        "headless"
+      ],
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "character": {
+            "description": "Character name (case-insensitive) or id; omit when the project has one character.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "clip": {
+            "description": "Clip name (unique per character) or id; in the user's editor every edit must pass it.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "ifClipRevision": {
+            "description": "Strict stale check: the clip revision you last read; the call fails with stale if the clip changed.",
+            "maximum": 1000000000000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "intent": {
+            "description": "Why, for the user, in ≤ 60 characters (Slow walk 1.5×); shown in the undo label.",
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string"
+          },
+          "layer": {
+            "description": "The layer (name or id).",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "lock": {
+            "description": "Lock: no edit changes its keys.",
+            "type": "boolean"
+          },
+          "move": {
+            "description": "Move one place up or down (the base stays at the bottom).",
+            "enum": [
+              "up",
+              "down"
+            ],
+            "type": "string"
+          },
+          "mute": {
+            "description": "Mute: the layer stops playing.",
+            "type": "boolean"
+          },
+          "name": {
+            "description": "New name.",
+            "pattern": "^[A-Za-z0-9 _.-]{1,64}$",
+            "type": "string"
+          },
+          "project": {
+            "description": "Project handle (tab_… for the paired editor tab, prj_… for a headless project); omit when one is open.",
+            "pattern": "^(tab|prj)_[0-9A-Za-z]{12}$",
+            "type": "string"
+          },
+          "solo": {
+            "description": "Solo: only soloed layers (and the base) play.",
+            "type": "boolean"
+          },
+          "weight": {
+            "description": "Weight 0…1.",
+            "maximum": 1,
+            "minimum": 0,
+            "type": "number"
+          }
+        },
+        "required": [
+          "layer"
+        ],
+        "type": "object"
+      },
+      "name": "layer_set",
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "clip": {
+            "additionalProperties": false,
+            "properties": {
+              "character": {
+                "type": "string"
+              },
+              "fps": {
+                "type": "number"
+              },
+              "loop": {
+                "type": "boolean"
+              },
+              "name": {
+                "type": "string"
+              },
+              "rangeFrames": {
+                "items": false,
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "revision": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "character",
+              "name",
+              "fps",
+              "rangeFrames",
+              "loop",
+              "revision"
+            ],
+            "type": "object"
+          },
+          "data": {
+            "additionalProperties": false,
+            "properties": {
+              "layers": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "curves": {
+                      "type": "number"
+                    },
+                    "locked": {
+                      "type": "boolean"
+                    },
+                    "mode": {
+                      "enum": [
+                        "base",
+                        "additive",
+                        "override"
+                      ],
+                      "type": "string"
+                    },
+                    "muted": {
+                      "type": "boolean"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "playing": {
+                      "type": "boolean"
+                    },
+                    "solo": {
+                      "type": "boolean"
+                    },
+                    "weight": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "mode",
+                    "weight",
+                    "muted",
+                    "solo",
+                    "locked",
+                    "playing",
+                    "curves"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "truncated": {
+                "description": "true when the runtime cut lists to fit the hard token cap (§5.5); narrow the call or page.",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "layers"
+            ],
+            "type": "object"
+          },
+          "next": {
+            "type": "string"
+          },
+          "ok": {
+            "const": true,
+            "type": "boolean"
+          },
+          "undo": {
+            "additionalProperties": false,
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "step": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "step",
+              "label"
+            ],
+            "type": "object"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "data"
+        ],
+        "type": "object"
+      },
+      "requiresUserInteraction": false,
+      "title": "Change an animation layer"
+    },
+    {
+      "access": "edit",
+      "alwaysLoad": false,
+      "annotations": {
+        "destructiveHint": true,
+        "idempotentHint": false,
+        "openWorldHint": false,
+        "readOnlyHint": false
+      },
+      "description": "Bake layers so that what plays stays the same: scope down (default) merges a layer (default the top one) into the layer below it; scope all merges every playing layer into the base (the editor asks the user; headless pass confirm: true). times keys (default) writes at the merged curves’ key times; frames on every frame (exact on every frame). The merged layers are removed (undoable).",
+      "group": "clip",
+      "hosts": [
+        "live",
+        "headless"
+      ],
+      "inputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "character": {
+            "description": "Character name (case-insensitive) or id; omit when the project has one character.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "clip": {
+            "description": "Clip name (unique per character) or id; in the user's editor every edit must pass it.",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "confirm": {
+            "description": "Headless: pass true for a consequential call (the editor asks the user instead).",
+            "type": "boolean"
+          },
+          "ifClipRevision": {
+            "description": "Strict stale check: the clip revision you last read; the call fails with stale if the clip changed.",
+            "maximum": 1000000000000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "intent": {
+            "description": "Why, for the user, in ≤ 60 characters (Slow walk 1.5×); shown in the undo label.",
+            "maxLength": 60,
+            "minLength": 1,
+            "type": "string"
+          },
+          "layer": {
+            "description": "The layer to merge down (default the top one).",
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "project": {
+            "description": "Project handle (tab_… for the paired editor tab, prj_… for a headless project); omit when one is open.",
+            "pattern": "^(tab|prj)_[0-9A-Za-z]{12}$",
+            "type": "string"
+          },
+          "scope": {
+            "default": "down",
+            "description": "down (default) or all.",
+            "enum": [
+              "down",
+              "all"
+            ],
+            "type": "string"
+          },
+          "times": {
+            "default": "keys",
+            "description": "keys (default) or frames.",
+            "enum": [
+              "keys",
+              "frames"
+            ],
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "name": "layer_merge",
+      "outputSchema": {
+        "$schema": "https://json-schema.org/draft/2020-12/schema",
+        "additionalProperties": false,
+        "properties": {
+          "clip": {
+            "additionalProperties": false,
+            "properties": {
+              "character": {
+                "type": "string"
+              },
+              "fps": {
+                "type": "number"
+              },
+              "loop": {
+                "type": "boolean"
+              },
+              "name": {
+                "type": "string"
+              },
+              "rangeFrames": {
+                "items": false,
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              "revision": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "character",
+              "name",
+              "fps",
+              "rangeFrames",
+              "loop",
+              "revision"
+            ],
+            "type": "object"
+          },
+          "data": {
+            "additionalProperties": false,
+            "properties": {
+              "into": {
+                "type": "string"
+              },
+              "keys": {
+                "type": "number"
+              },
+              "layers": {
+                "items": {
+                  "additionalProperties": false,
+                  "properties": {
+                    "curves": {
+                      "type": "number"
+                    },
+                    "locked": {
+                      "type": "boolean"
+                    },
+                    "mode": {
+                      "enum": [
+                        "base",
+                        "additive",
+                        "override"
+                      ],
+                      "type": "string"
+                    },
+                    "muted": {
+                      "type": "boolean"
+                    },
+                    "name": {
+                      "type": "string"
+                    },
+                    "playing": {
+                      "type": "boolean"
+                    },
+                    "solo": {
+                      "type": "boolean"
+                    },
+                    "weight": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "mode",
+                    "weight",
+                    "muted",
+                    "solo",
+                    "locked",
+                    "playing",
+                    "curves"
+                  ],
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "truncated": {
+                "description": "true when the runtime cut lists to fit the hard token cap (§5.5); narrow the call or page.",
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "into",
+              "keys",
+              "layers"
+            ],
+            "type": "object"
+          },
+          "next": {
+            "type": "string"
+          },
+          "ok": {
+            "const": true,
+            "type": "boolean"
+          },
+          "undo": {
+            "additionalProperties": false,
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "step": {
+                "type": "number"
+              }
+            },
+            "required": [
+              "step",
+              "label"
+            ],
+            "type": "object"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "type": "array"
+          }
+        },
+        "required": [
+          "ok",
+          "data"
+        ],
+        "type": "object"
+      },
+      "requiresUserInteraction": false,
+      "title": "Merge animation layers"
     }
   ],
-  "toolset": "1.0.0-mvp.3"
+  "toolset": "1.0.0-mvp.4"
 }

@@ -2,7 +2,7 @@
 // channel targets, the keyed pose of a clip at a frame (never the user's overrides) and the `hiddenByOverrides` report
 // (§5.12). Loaded with the implementation (`agentLoad.ts`); nothing here writes the session.
 import { EkzaError, type Frame } from '@ekza-studio/anim-core';
-import type { ChannelId, ChannelValues, ClipRecord, ControlId, ControlRecord, ReadView, Tx } from '@ekza-studio/doc';
+import type { ChannelId, ChannelValues, ClipRecord, ControlId, ControlRecord, LayerId, ReadView, Tx } from '@ekza-studio/doc';
 import { readControlChannels } from '@ekza-studio/rig';
 import { attrChannelsOf, attrDefOf, isTrsChannel } from '../../edit/channelMeta';
 import { SAME_FRAME_EPS } from '../../edit/context';
@@ -145,6 +145,14 @@ export function uniqueTargets<T extends ChannelTarget>(targets: readonly T[]): T
     out.push(target);
   }
   return out;
+}
+
+/**
+ * ANIM-LAYERS (ADR 0026): the agents' explicit-target operators read and write the base layer (raw values), whatever
+ * layer the user keys into; layer tools manage the rest. The id of a clip's base layer.
+ */
+export function baseLayerIdIn(view: ReadView, clip: ClipRecord): LayerId | undefined {
+  return view.query.baseLayer(clip.id)?.id;
 }
 
 /** The base-layer curve of a control channel in a clip (no curve: undefined). */

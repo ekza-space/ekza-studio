@@ -24,6 +24,7 @@ export const AGENT_PROTECTED_SESSION_FIELDS = [
   'overrides',
   'activeCharacter',
   'activeClip',
+  'activeLayer', // ANIM-LAYERS: the layer the user keys into
   'tools',
   'clipboard',
   'curveBuffers',

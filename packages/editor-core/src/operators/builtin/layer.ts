@@ -43,7 +43,8 @@ function clipArg(app: EditorApp, args: unknown): ClipRecord | string {
 
 /** Writes the active layer of a clip into the session (an agent run never writes the user's session). */
 export function setActiveLayer(ctx: Pick<OperatorContext, 'app'> & Partial<OperatorContext>, clip: ClipId, layer: LayerId): void {
-  if (ctx.actor !== undefined && ctx.actor !== null) return;
+  // MCP-SPEC §4.1 runner rule 6: an agent run changes what the user sees only with the View grant.
+  if (ctx.actor !== undefined && ctx.actor !== null && ctx.access !== 'view') return;
   const state = ctx.app.session.getState();
   if (state.activeLayer?.[clip] === layer) return;
   ctx.app.session.setState({ activeLayer: { ...state.activeLayer, [clip]: layer } });

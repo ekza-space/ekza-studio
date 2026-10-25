@@ -98,9 +98,12 @@ undoable.
 | `layer.merge` | `{ layer?, scope: 'down' \| 'all', times?: 'keys' \| 'frames' }` | Bakes into the layer below (`down`) or every playing layer into the base (`all`); `keys` (default) writes at the union of the merged curves' key times per control (rotation as a triple), `frames` on every frame of the clip range; the merged layers are deleted; active → the target. Muted layers are not merged (down: refused; all: they stay) |
 | `clip.adjustOnLayer` | `{ clip? }` | *Adjust on a layer*: an additive layer *Fixes* (*Fixes 2*…) on top, active; the base untouched |
 
-Agents (MCP, `agent-tools`): `layer_add`, `layer_set`, `layer_merge` (Edit access; `layer_merge` with `scope: 'all'`
-confirms, as other bulk rewrites do), and `clip_info` lists the layers. Keys written by agent key tools go to the
-active layer of the clip, which is the base for clips an agent creates.
+Agents (MCP, `agent-tools`, toolset `1.0.0-mvp.4`): `layer_add`, `layer_set` (weight, mute, solo, lock, name, move)
+and `layer_merge` (Edit access; `scope: 'all'` confirms, as other bulk rewrites do); each returns the clip's stack.
+The operator policy classifies every layer operator (`layer.remove` confirms; `layer.setActive` is View). The agents'
+key and pose tools keep writing the **base layer** (raw values, as in M-AI); an agent run never changes the layer the
+user keys into (`activeLayer` is a protected session field) unless it has the View grant. *Match Range* (IK/FK) is
+refused on clips with more than one layer (its per-frame bake would need the layer solve).
 
 ## 5. UI
 
