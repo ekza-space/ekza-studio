@@ -2,7 +2,16 @@
 // channel targets, the keyed pose of a clip at a frame (never the user's overrides) and the `hiddenByOverrides` report
 // (§5.12). Loaded with the implementation (`agentLoad.ts`); nothing here writes the session.
 import { EkzaError, type Frame } from '@ekza-studio/anim-core';
-import type { ChannelId, ChannelValues, ClipRecord, ControlId, ControlRecord, LayerId, ReadView, Tx } from '@ekza-studio/doc';
+import type {
+  ChannelId,
+  ChannelValues,
+  ClipRecord,
+  ControlId,
+  ControlRecord,
+  LayerId,
+  ReadView,
+  Tx,
+} from '@ekza-studio/doc';
 import { readControlChannels } from '@ekza-studio/rig';
 import { attrChannelsOf, attrDefOf, isTrsChannel } from '../../edit/channelMeta';
 import { SAME_FRAME_EPS } from '../../edit/context';

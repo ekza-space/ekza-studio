@@ -2,7 +2,12 @@
 import { z } from 'zod';
 import { confirmFlag, scoped, writes } from '../../schemas/common';
 import { BUDGETS, defineTool } from '../define';
-import { layerAdd as layerAddRun, layerMergeConfirm, layerMerge as layerMergeRun, layerSet as layerSetRun } from './run';
+import {
+  layerAdd as layerAddRun,
+  layerMergeConfirm,
+  layerMerge as layerMergeRun,
+  layerSet as layerSetRun,
+} from './run';
 
 const layerName = z
   .string()
@@ -67,7 +72,8 @@ export const layerSet = defineTool({
       move: z.enum(['up', 'down']).optional().describe('Move one place up or down (the base stays at the bottom).'),
     })
     .refine(
-      (value) => ['weight', 'mute', 'solo', 'lock', 'name', 'move'].some((field) => value[field as 'weight'] !== undefined),
+      (value) =>
+        ['weight', 'mute', 'solo', 'lock', 'name', 'move'].some((field) => value[field as 'weight'] !== undefined),
       'pass weight, mute, solo, lock, name or move',
     ),
   output: z.object({ layers: z.array(layerOut) }),

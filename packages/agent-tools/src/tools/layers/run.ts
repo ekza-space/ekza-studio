@@ -72,10 +72,13 @@ export async function layerAdd(ctx: AgentToolContext, args: LayerAddArgs): Promi
   });
   const { layer } = valueOf<{ readonly layer: LayerId }>('layer.add', run);
   const added = ctx.app.store.get('layers', layer);
-  return writeResult(ctx, target.clip.id, run, { layer: added?.name ?? layer, layers: layerStack(ctx, target.clip.id) }, [
-    stale,
-    'agent key and pose tools write the base layer; the user keys into the layer they chose',
-  ]);
+  return writeResult(
+    ctx,
+    target.clip.id,
+    run,
+    { layer: added?.name ?? layer, layers: layerStack(ctx, target.clip.id) },
+    [stale, 'agent key and pose tools write the base layer; the user keys into the layer they chose'],
+  );
 }
 
 // ---------- layer_set ----------

@@ -85,7 +85,13 @@ export const addCall = (clip: ClipId, mode: 'additive' | 'override'): OpCall => 
 export const activateCall = (layer: LayerId): OpCall => ({ op: 'layer.setActive', args: { layer } });
 export const setCall = (
   layer: LayerId,
-  fields: { readonly weight?: number; readonly mute?: boolean; readonly solo?: boolean; readonly locked?: boolean; readonly name?: string },
+  fields: {
+    readonly weight?: number;
+    readonly mute?: boolean;
+    readonly solo?: boolean;
+    readonly locked?: boolean;
+    readonly name?: string;
+  },
 ): OpCall => ({ op: 'layer.set', args: { layer, ...fields } });
 export const weightCall = (layer: LayerId, percent: number): OpCall =>
   setCall(layer, { weight: Math.min(100, Math.max(0, Math.round(percent))) / 100 });

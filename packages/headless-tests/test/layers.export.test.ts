@@ -9,10 +9,10 @@
 //   golden bytes back; after the merge the base alone plays what the layers did.
 import { existsSync, readFileSync } from 'node:fs';
 import { type Quat, sha256Hex } from '@ekza-studio/anim-core';
-import type { CharacterId, ClipId, ControlId, LayerId } from '@ekza-studio/doc';
+import type { CharacterId, ClipId, ControlId, HumanBoneName, LayerId } from '@ekza-studio/doc';
 import { type EditorApp, loadMeshKernel } from '@ekza-studio/editor-core';
 import { type ExportArtifact, parseGlb, readVrma } from '@ekza-studio/io';
-import { HUMAN_BONE_NAMES, type HumanBoneName } from '@ekza-studio/rig';
+import { HUMAN_BONE_NAMES } from '@ekza-studio/rig';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { exportCharacter, readyCharacter } from './m6b.writer.support';
 import { BLOCKED, importFixture, realApp, runOk, SIBLINGS_READY, setSceneFrame } from './ops.support';
@@ -84,7 +84,7 @@ async function exportBytes(w: Walk, kind: Kind): Promise<Uint8Array> {
 
 async function hashes(w: Walk): Promise<Record<Kind, string>> {
   const out = {} as Record<Kind, string>;
-  for (const kind of KINDS) out[kind] = await sha256Hex(await exportBytes(w, kind));
+  for (const kind of KINDS) out[kind] = sha256Hex(await exportBytes(w, kind));
   return out;
 }
 
@@ -156,7 +156,13 @@ function armAt(w: Walk, frame: number): Quat {
 }
 
 /** Halo's Rec keys what the person poses: one channel edit per part at the playhead, keyed. */
-async function poseBy(w: Walk, frame: number, control: ControlId, channel: 'rx' | 'rz', degrees: number): Promise<void> {
+async function poseBy(
+  w: Walk,
+  frame: number,
+  control: ControlId,
+  channel: 'rx' | 'rz',
+  degrees: number,
+): Promise<void> {
   setSceneFrame(w.app, frame);
   const value = w.app.evaluation.channelValue(control, channel) + degrees * DEG;
   await runOk(w.app, 'channel.setValues', { edits: [{ control, channel, value }], key: 'force' });
@@ -191,16 +197,16 @@ describe.skipIf(!SIBLINGS_READY)(`animation layers in the exports ${BLOCKED}`, {
     const { app } = realApp({ validator: false });
     const made = await readyCharacter(app);
     const args = { character: made.character, format: 'vrm', clips: 'slots', validate: false };
-    expect(await sha256Hex((await exportCharacter(app, args)).bytes)).toBe(GOLDEN['character-vrm']);
+    expect(sha256Hex((await exportCharacter(app, args)).bytes)).toBe(GOLDEN['character-vrm']);
     const fixes = ((await runOk(app, 'clip.adjustOnLayer')) as { layer: LayerId }).layer;
     const arm = app.store.list('controls').find((c) => c.key === 'fk.upperArm.R' || c.key === 'fk.upperArm.L');
     if (arm === undefined) throw new Error('no arm control');
     setSceneFrame(app, 10);
     await runOk(app, 'channel.setValues', { edits: [{ control: arm.id, channel: 'rz', value: 0.4 }], key: 'force' });
-    const layered = await sha256Hex((await exportCharacter(app, args)).bytes);
+    const layered = sha256Hex((await exportCharacter(app, args)).bytes);
     expect(layered).not.toBe(GOLDEN['character-vrm']);
     await runOk(app, 'layer.set', { layer: fixes, mute: true });
-    expect(await sha256Hex((await exportCharacter(app, args)).bytes)).toBe(GOLDEN['character-vrm']);
+    expect(sha256Hex((await exportCharacter(app, args)).bytes)).toBe(GOLDEN['character-vrm']);
     app.dispose();
   });
 
@@ -238,12 +244,12 @@ describe.skipIf(!SIBLINGS_READY)(`animation layers in the exports ${BLOCKED}`, {
     expect(quatGap(half10, arm10)).toBeGreaterThan(10 * DEG);
     expect(quatGap(half10, fixed10)).toBeGreaterThan(10 * DEG);
     expect((await vrmaGap(w)).worst).toBeLessThan(1e-5);
-    const halfBytes = await sha256Hex(await exportBytes(w, 'vrma'));
+    const halfBytes = sha256Hex(await exportBytes(w, 'vrma'));
     // mute: the Walk's own bytes; unmute: the half-weight bytes again
     await runOk(w.app, 'layer.set', { layer: fixes, mute: true });
-    expect(await sha256Hex(await exportBytes(w, 'vrma'))).toBe(GOLDEN.vrma);
+    expect(sha256Hex(await exportBytes(w, 'vrma'))).toBe(GOLDEN.vrma);
     await runOk(w.app, 'layer.set', { layer: fixes, mute: false });
-    expect(await sha256Hex(await exportBytes(w, 'vrma'))).toBe(halfBytes);
+    expect(sha256Hex(await exportBytes(w, 'vrma'))).toBe(halfBytes);
     expect(baseKeys(w)).toBe(before);
     // merge (at the keys): one layer again, the base changed, the arm at the fixed frames as it played
     const clip = w.app.store.get('clips', w.clip);

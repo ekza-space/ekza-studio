@@ -108,7 +108,11 @@ function changedChannelsOf(app: EditorApp, view: ReadView, control: ControlRecor
     const curve = curveOf(view, clip, control.id, channel, layer?.id);
     if (curve !== undefined && view.query.keysOfCurve(curve.id).length > 0) continue;
     if (layered) {
-      const rest = additive ? (channel === 'sx' || channel === 'sy' || channel === 'sz' ? 1 : 0) : channelDefaultOf(control, channel);
+      const rest = additive
+        ? channel === 'sx' || channel === 'sy' || channel === 'sz'
+          ? 1
+          : 0
+        : channelDefaultOf(control, channel);
       const value = curve?.staticValue;
       if (value !== null && value !== undefined && Math.abs(value - rest) > UNCHANGED) out.add(channel);
       continue;

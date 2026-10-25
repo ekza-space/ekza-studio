@@ -14,7 +14,13 @@ import {
 } from '../../types';
 import { clipFrameOfScene, sceneFpsIn, sceneFrameOf } from '../../workflows/session';
 import { isCurveLocked } from '../../edit/layers';
-import { activeClipRecord, controlsOfCharacter, editLayerIdOf, keyTimes, selectedControls } from '../../workflows/targets';
+import {
+  activeClipRecord,
+  controlsOfCharacter,
+  editLayerIdOf,
+  keyTimes,
+  selectedControls,
+} from '../../workflows/targets';
 import { type AnyOperator, defineOperator, fail, isFiniteNumber, isRecord, OK, optionalArgs } from './define';
 import { pollClipEdit } from './polls';
 

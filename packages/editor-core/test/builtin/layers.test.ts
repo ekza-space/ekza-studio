@@ -31,7 +31,13 @@ function shown(app: EditorApp, frame: number, control: ControlId = WAVE.lowerArm
   return app.evaluation.channelValue(control, channel);
 }
 
-async function pose(app: App, frame: number, value: number, control: ControlId = WAVE.lowerArmL, channel: ChannelId = 'rz') {
+async function pose(
+  app: App,
+  frame: number,
+  value: number,
+  control: ControlId = WAVE.lowerArmL,
+  channel: ChannelId = 'rz',
+) {
   setSceneFrame(app, frame);
   return runOk(app, 'channel.setValues', { edits: [{ control, channel, value }], key: 'force' });
 }
@@ -80,14 +86,18 @@ describe('keying on layers (§3)', () => {
     const fixes = ((await runOk(app, 'clip.adjustOnLayer')) as { layer: LayerId }).layer;
     const base10 = shown(app, 10);
     await pose(app, 10, base10 + 20 * DEG);
-    expect(keysOn(app, fixes, WAVE.lowerArmL, 'rz').map((key) => [key.t, key.v])).toEqual([[10, expect.closeTo(20 * DEG, 12)]]);
+    expect(keysOn(app, fixes, WAVE.lowerArmL, 'rz').map((key) => [key.t, key.v])).toEqual([
+      [10, expect.closeTo(20 * DEG, 12)],
+    ]);
     expect(shown(app, 10)).toBeCloseTo(base10 + 20 * DEG, 12);
     expect(JSON.stringify(baseKeys(app))).toBe(before);
     // key.set on an untouched control keys a zero delta (scale 1).
     setSceneFrame(app, 10);
     await runOk(app, 'select.controls', { ids: [WAVE.upperArmL], mode: 'replace' });
     await runOk(app, 'key.set', { channels: 'all' });
-    const zero = ['tx', 'rx', 'ry', 'rz', 'sx'].map((channel) => keysOn(app, fixes, WAVE.upperArmL, channel as ChannelId)[0]?.v);
+    const zero = ['tx', 'rx', 'ry', 'rz', 'sx'].map(
+      (channel) => keysOn(app, fixes, WAVE.upperArmL, channel as ChannelId)[0]?.v,
+    );
     expect(zero.filter((v) => v !== undefined).every((v) => v === 0 || v === 1)).toBe(true);
     expect(keysOn(app, fixes, WAVE.upperArmL, 'rz')[0]?.v).toBe(0);
     expect(JSON.stringify(baseKeys(app))).toBe(before);
@@ -120,7 +130,10 @@ describe('keying on layers (§3)', () => {
     await runOk(app, 'select.controls', { ids: [WAVE.lowerArmL], mode: 'replace' });
     expect(await reason(app, 'key.set')).toBe('Fixes is muted — unmute it to key');
     const fixKeys = JSON.stringify(keysOn(app, fixes, WAVE.lowerArmL, 'rz'));
-    await runOk(app, 'channel.setValues', { edits: [{ control: WAVE.lowerArmL, channel: 'rz', value: 1 }], key: 'force' });
+    await runOk(app, 'channel.setValues', {
+      edits: [{ control: WAVE.lowerArmL, channel: 'rz', value: 1 }],
+      key: 'force',
+    });
     expect(JSON.stringify(keysOn(app, fixes, WAVE.lowerArmL, 'rz'))).toBe(fixKeys);
     expect(services.toasts.some((toast) => toast.text === 'Fixes is muted — unmute it to key')).toBe(true);
     await runOk(app, 'layer.set', { layer: fixes, mute: false });
@@ -148,10 +161,16 @@ describe('keying on layers (§3)', () => {
     app.prefs.setState({ autoKey: true, autoKeyMode: 'keyed-only' });
     const fixes = ((await runOk(app, 'clip.adjustOnLayer')) as { layer: LayerId }).layer;
     setSceneFrame(app, 20);
-    await runOk(app, 'channel.setValues', { edits: [{ control: WAVE.lowerArmL, channel: 'rz', value: 0.1 }], key: 'auto' });
+    await runOk(app, 'channel.setValues', {
+      edits: [{ control: WAVE.lowerArmL, channel: 'rz', value: 0.1 }],
+      key: 'auto',
+    });
     expect(keysOn(app, fixes, WAVE.lowerArmL, 'rz').map((key) => key.t)).toEqual([20]);
     // A channel no layer animates still takes a static value (the M1 rule), on the fix layer.
-    await runOk(app, 'channel.setValues', { edits: [{ control: WAVE.upperArmL, channel: 'rx', value: 0.2 }], key: 'auto' });
+    await runOk(app, 'channel.setValues', {
+      edits: [{ control: WAVE.upperArmL, channel: 'rx', value: 0.2 }],
+      key: 'auto',
+    });
     const curve = app.store.query.curveFor(WAVE.clip, fixes, WAVE.upperArmL, 'rx');
     expect(curve?.staticValue).toBeCloseTo(0.2, 14);
     expect(app.store.query.curveFor(WAVE.clip, WAVE.layer, WAVE.upperArmL, 'rx')).toBeUndefined();
@@ -166,7 +185,8 @@ describe('keying on layers (§3)', () => {
     await runOk(app, 'layer.set', { layer: over, weight: 0.5 });
     await pose(app, 12, 0.25, WAVE.lowerArmL, 'rx');
     expect(shown(app, 12, WAVE.lowerArmL, 'rx')).toBeCloseTo(0.25, 9);
-    for (const channel of ['rx', 'ry', 'rz'] as const) expect(keysOn(app, over, WAVE.lowerArmL, channel).length).toBeGreaterThan(0);
+    for (const channel of ['rx', 'ry', 'rz'] as const)
+      expect(keysOn(app, over, WAVE.lowerArmL, channel).length).toBeGreaterThan(0);
     // A full-weight override above covers a fix layer under it.
     const under = ((await runOk(app, 'layer.add', { name: 'Under' })) as { layer: LayerId }).layer;
     await runOk(app, 'layer.reorder', { layer: under, to: 1 });
@@ -206,7 +226,9 @@ describe('layer.set, reorder, duplicate, remove', () => {
     expect(layers(app).map((layer) => layer.name)).toEqual(['Base', 'B', 'A']);
     const copy = ((await runOk(app, 'layer.duplicate', { layer: a })) as { layer: LayerId }).layer;
     expect(layers(app).map((layer) => layer.name)).toEqual(['Base', 'B', 'A', 'A copy']);
-    expect(keysOn(app, copy, WAVE.lowerArmL, 'rz').map((key) => key.v)).toEqual(keysOn(app, a, WAVE.lowerArmL, 'rz').map((key) => key.v));
+    expect(keysOn(app, copy, WAVE.lowerArmL, 'rz').map((key) => key.v)).toEqual(
+      keysOn(app, a, WAVE.lowerArmL, 'rz').map((key) => key.v),
+    );
     expect(activeLayer(app)).toBe(copy);
     const keys = app.store.list('keys').length;
     await expectUndoRedoExact(app, 'layer.remove', { layer: copy });
@@ -248,7 +270,9 @@ describe('layer.merge (§4)', () => {
   it('merge all on frames matches every frame; muted layers stay', async () => {
     const app = opsApp();
     await fixed(app);
-    const over = ((await runOk(app, 'layer.add', { mode: 'override', name: 'Over', weight: 0.4 })) as { layer: LayerId }).layer;
+    const over = (
+      (await runOk(app, 'layer.add', { mode: 'override', name: 'Over', weight: 0.4 })) as { layer: LayerId }
+    ).layer;
     await pose(app, 5, 0.7);
     const muted = ((await runOk(app, 'layer.add', { name: 'Muted' })) as { layer: LayerId }).layer;
     await pose(app, 5, 2);

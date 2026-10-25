@@ -191,7 +191,10 @@ function planFrame(app: EditorApp, target: Extract<TweenTarget, { readonly kind:
     const current = target.keyed === true ? null : app.evaluation.clipFrame(character);
     // The session's overrides belong to the active clip's current frame only (a tween in another clip reads curves).
     const atCurrent =
-      single && current !== null && Math.abs(current - t) < 1e-9 && activeClipOf(view, state, character)?.id === clip.id;
+      single &&
+      current !== null &&
+      Math.abs(current - t) < 1e-9 &&
+      activeClipOf(view, state, character)?.id === clip.id;
     for (const channel of new Set(channels)) {
       const curve = view.query.curveFor(clip.id, layer.id, id, channel);
       if (curve === undefined || !curveEditable(curve, control)) continue;

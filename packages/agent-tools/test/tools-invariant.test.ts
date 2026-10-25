@@ -219,7 +219,11 @@ const callArb: fc.Arbitrary<Call> = fc.oneof(
   ),
   fc.tuple(
     fc.constant('layer_set'),
-    fc.record({ clip: fc.constantFrom('c1', 'c2'), layer: fc.constant('Layer 1'), weight: fc.double({ min: 0, max: 1, noNaN: true }) }),
+    fc.record({
+      clip: fc.constantFrom('c1', 'c2'),
+      layer: fc.constant('Layer 1'),
+      weight: fc.double({ min: 0, max: 1, noNaN: true }),
+    }),
   ),
   fc.tuple(fc.constant('layer_merge'), fc.record({ clip: fc.constantFrom('c1', 'c2'), confirm: fc.constant(true) })),
 );

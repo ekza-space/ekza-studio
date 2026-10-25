@@ -11,7 +11,7 @@ import { layerNameProblem, uniqueLayerName } from '../../workflows/layerNames';
 import { orderAfter } from '../../workflows/records';
 import { activeClipRecord } from '../../workflows/targets';
 import type { LayerMode, LayerSetFields } from '../args';
-import { type AnyOperator, all, defineOperator, fail, isActorRun, isFiniteNumber, isRecord, OK, optionalArgs } from './define';
+import { type AnyOperator, all, defineOperator, fail, isFiniteNumber, isRecord, OK, optionalArgs } from './define';
 import { lazyBodies } from './lazyBodies';
 import { pollEditable } from './polls';
 
@@ -42,7 +42,11 @@ function clipArg(app: EditorApp, args: unknown): ClipRecord | string {
 }
 
 /** Writes the active layer of a clip into the session (an agent run never writes the user's session). */
-export function setActiveLayer(ctx: Pick<OperatorContext, 'app'> & Partial<OperatorContext>, clip: ClipId, layer: LayerId): void {
+export function setActiveLayer(
+  ctx: Pick<OperatorContext, 'app'> & Partial<OperatorContext>,
+  clip: ClipId,
+  layer: LayerId,
+): void {
   // MCP-SPEC §4.1 runner rule 6: an agent run changes what the user sees only with the View grant.
   if (ctx.actor !== undefined && ctx.actor !== null && ctx.access !== 'view') return;
   const state = ctx.app.session.getState();
@@ -153,7 +157,12 @@ const clipAdjustOnLayer = defineOperator({
     const clip = clipArg(app, args);
     if (typeof clip === 'string') throw new EkzaError('unsupported', clip);
     const layers = tx.query.layersOfClip(clip.id);
-    const layer = topLayer(app, clip, { name: uniqueLayerName(layers, 'Fixes', true), mode: 'additive', weight: 1 }, layers);
+    const layer = topLayer(
+      app,
+      clip,
+      { name: uniqueLayerName(layers, 'Fixes', true), mode: 'additive', weight: 1 },
+      layers,
+    );
     tx.put('layers', layer);
     setActiveLayer(ctx, clip.id, layer.id);
     return { layer: layer.id };
@@ -192,7 +201,11 @@ function setProblem(app: EditorApp, layer: LayerRecord, fields: Readonly<Record<
   }
   const { weight, mute, solo, locked, mode, name, mask } = fields;
   if (weight !== undefined && (!isFiniteNumber(weight) || weight < 0 || weight > 1)) return 'weight is 0…1';
-  for (const [key, value] of [['mute', mute], ['solo', solo], ['locked', locked]] as const) {
+  for (const [key, value] of [
+    ['mute', mute],
+    ['solo', solo],
+    ['locked', locked],
+  ] as const) {
     if (value !== undefined && typeof value !== 'boolean') return `${key} must be a boolean`;
   }
   if (mode !== undefined) {
@@ -206,7 +219,10 @@ function setProblem(app: EditorApp, layer: LayerRecord, fields: Readonly<Record<
     if (problem !== null) return problem;
   }
   if (mask !== undefined && mask !== null) {
-    if (!Array.isArray(mask) || mask.some((id) => typeof id !== 'string' || app.store.get('controls', id as never) === undefined)) {
+    if (
+      !Array.isArray(mask) ||
+      mask.some((id) => typeof id !== 'string' || app.store.get('controls', id as never) === undefined)
+    ) {
       return 'mask is a list of control ids (or null for every control)';
     }
   }
@@ -230,9 +246,12 @@ function setUndoLabel(args: unknown): string {
       return 'Rename Layer';
     case 'mode':
       return 'Layer Mode';
-    default:
+    case 'mask':
       return 'Layer Mask';
+    case undefined:
+      return 'Layer Settings';
   }
+  return 'Layer Settings';
 }
 
 const layerSet = defineOperator({
@@ -246,7 +265,11 @@ const layerSet = defineOperator({
   poll({ app }, args) {
     const base = pollLayerArg(app, args);
     if (base !== true) return base;
-    const problem = setProblem(app, layerOf(app, args) as LayerRecord, args as unknown as Readonly<Record<string, unknown>>);
+    const problem = setProblem(
+      app,
+      layerOf(app, args) as LayerRecord,
+      args as unknown as Readonly<Record<string, unknown>>,
+    );
     return problem === null ? pollEditable(app) : fail(problem);
   },
   async prepare({ app }, args) {
@@ -275,7 +298,10 @@ const layerSet = defineOperator({
 // ---------- reorder ----------
 
 /** The layers of `layer`'s clip without the base, and its index among them; null when it is the base. */
-function aboveBase(app: EditorApp, layer: LayerRecord): { readonly others: readonly LayerRecord[]; readonly index: number } | null {
+function aboveBase(
+  app: EditorApp,
+  layer: LayerRecord,
+): { readonly others: readonly LayerRecord[]; readonly index: number } | null {
   const layers = app.store.query.layersOfClip(layer.clip);
   if (layers[0]?.id === layer.id) return null;
   const others = layers.slice(1);
@@ -341,7 +367,8 @@ const layerRemove = defineOperator<'layer.remove', LayerBodies>({
   poll({ app }, args) {
     const base = pollLayerArg(app, args);
     if (base !== true) return base;
-    if (isBaseLayer(app.store, layerOf(app, args) as LayerRecord)) return fail('The base layer stays — delete the clip instead');
+    if (isBaseLayer(app.store, layerOf(app, args) as LayerRecord))
+      return fail('The base layer stays — delete the clip instead');
     return pollEditable(app);
   },
   async prepare({ app }, args) {

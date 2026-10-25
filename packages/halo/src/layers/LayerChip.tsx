@@ -28,7 +28,15 @@ const chipClass =
 /** The layers glyph (two stacked sheets). */
 export function LayersGlyph({ size = 16 }: { readonly size?: number }): JSX.Element {
   return (
-    <svg aria-hidden="true" width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.5}>
+    <svg
+      aria-hidden="true"
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+    >
       <path d="M8 2 14 5.2 8 8.4 2 5.2Z" strokeLinejoin="round" />
       <path d="m2 8.4 6 3.2 6-3.2" strokeLinecap="round" strokeLinejoin="round" />
     </svg>

@@ -310,7 +310,9 @@ function petalsOf(
         if (clip !== null && app.store.query.layersOfClip(clip.id).length > 1) {
           out.push({ id: petal.id, label: layerWords.layers, icon: 'layers', action: { local: () => undefined } });
         } else if (clip !== null) {
-          out.push(one([{ op: 'clip.adjustOnLayer', args: { clip: clip.id } }], { label: layerWords.adjust, icon: 'layers' }));
+          out.push(
+            one([{ op: 'clip.adjustOnLayer', args: { clip: clip.id } }], { label: layerWords.adjust, icon: 'layers' }),
+          );
         }
         break;
       default:

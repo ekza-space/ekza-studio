@@ -33,7 +33,8 @@ interface LayersView {
   readonly curves: ReadonlyMap<string, number>;
 }
 
-const selectActive = (s: SessionState) => (s.activeCharacter === null ? null : (s.activeClip[s.activeCharacter] ?? null));
+const selectActive = (s: SessionState) =>
+  s.activeCharacter === null ? null : (s.activeClip[s.activeCharacter] ?? null);
 const selectActiveLayer = (s: SessionState) => s.activeLayer;
 
 function readLayers(app: EditorApp, clip: ClipId | null): LayersView {
@@ -85,7 +86,8 @@ export function LayersPanel({ app, instanceId }: PanelProps): JSX.Element {
   };
   const onRowKey = (layer: LayerRecord, event: KeyboardEvent<HTMLElement>): void => {
     if (event.key === 'F2') setRenaming(layer.id);
-    else if ((event.key === 'Delete' || event.key === 'Backspace') && !isBase(layer)) run('layer.remove', { layer: layer.id });
+    else if ((event.key === 'Delete' || event.key === 'Backspace') && !isBase(layer))
+      run('layer.remove', { layer: layer.id });
     else if (event.key === 'Enter') run('layer.setActive', { layer: layer.id });
     else return;
     event.preventDefault();
@@ -207,7 +209,10 @@ export function LayersPanel({ app, instanceId }: PanelProps): JSX.Element {
           <TrashIcon />
         </button>
       </div>
-      <ul className="m-0 flex min-h-0 flex-1 list-none flex-col overflow-auto p-0" aria-label={`Layers of ${data.clipName}`}>
+      <ul
+        className="m-0 flex min-h-0 flex-1 list-none flex-col overflow-auto p-0"
+        aria-label={`Layers of ${data.clipName}`}
+      >
         {top.map((layer) => {
           const base = isBase(layer);
           const on = layer.id === activeId;
@@ -215,18 +220,9 @@ export function LayersPanel({ app, instanceId }: PanelProps): JSX.Element {
           return (
             <li
               key={layer.id}
-              // oxlint-disable-next-line jsx-a11y/no-noninteractive-element-to-interactive-role -- a row of a list box
-              role="option"
-              aria-selected={on}
-              tabIndex={on ? 0 : -1}
               className={`flex h-7 items-center gap-1.5 border-b border-line px-1.5 ${on ? ROW_SELECTED : ROW_HOVER} ${playing ? '' : 'opacity-60'}`}
               data-testid={`layers-row-${layer.name}`}
               data-active={on ? '' : undefined}
-              onClick={() => {
-                if (!on) run('layer.setActive', { layer: layer.id });
-              }}
-              onKeyDown={(event) => onRowKey(layer, event)}
-              onDoubleClick={() => setRenaming(layer.id)}
             >
               <button
                 type="button"
@@ -282,7 +278,20 @@ export function LayersPanel({ app, instanceId }: PanelProps): JSX.Element {
                   }}
                 />
               ) : (
-                <span className={`min-w-0 flex-1 truncate ${on ? 'font-semibold' : ''}`}>{layer.name}</span>
+                <button
+                  type="button"
+                  className={`h-6 min-w-0 flex-1 cursor-pointer truncate text-left ${on ? 'font-semibold' : ''}`}
+                  aria-pressed={on}
+                  title={on ? 'Keys go into this layer' : 'Click to key into this layer; double-click to rename'}
+                  data-testid={`layers-activate-${layer.name}`}
+                  onClick={() => {
+                    if (!on) run('layer.setActive', { layer: layer.id });
+                  }}
+                  onKeyDown={(event) => onRowKey(layer, event)}
+                  onDoubleClick={() => setRenaming(layer.id)}
+                >
+                  {layer.name}
+                </button>
               )}
               <span className={`w-8 text-right text-[10px] ${MUTED_TEXT}`} title={base ? 'Base' : layer.mode}>
                 {base ? 'Base' : layer.mode === 'additive' ? 'Add' : 'Over'}
@@ -327,8 +336,7 @@ function Weight({
     if (clamped !== value) onCommit(Math.round(clamped * 1000) / 1000);
   };
   return (
-    // oxlint-disable-next-line jsx-a11y/no-static-element-interactions -- stops row activation while editing the weight
-    <span className="flex items-center gap-1" onClick={(event) => event.stopPropagation()}>
+    <span className="flex items-center gap-1">
       <input
         type="range"
         min={0}
@@ -358,6 +366,11 @@ function Weight({
   );
 }
 
+/** Focuses the rename field once, when it mounts. */
+const focusOnce = (input: HTMLInputElement | null): void => {
+  if (input !== null && document.activeElement !== input) input.focus();
+};
+
 function RenameField({ name, onDone }: { readonly name: string; readonly onDone: (name: string | null) => void }) {
   const [text, setText] = useState(name);
   return (
@@ -366,9 +379,7 @@ function RenameField({ name, onDone }: { readonly name: string; readonly onDone:
       aria-label="Layer name"
       data-testid="layers-rename"
       value={text}
-      // biome-ignore lint/a11y/noAutofocus: the field the person double-clicked
-      autoFocus
-      onClick={(event) => event.stopPropagation()}
+      ref={focusOnce}
       onChange={(event) => setText(event.currentTarget.value)}
       onBlur={() => onDone(text.trim())}
       onKeyDown={(event) => {

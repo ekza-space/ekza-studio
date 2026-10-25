@@ -9,15 +9,7 @@ import {
   composeLayerScalar,
   composeLayerTrs,
 } from '@ekza-studio/anim-core';
-import type {
-  ChannelId,
-  ClipId,
-  ControlRecord,
-  CurveRecord,
-  LayerId,
-  LayerRecord,
-  ReadView,
-} from '@ekza-studio/doc';
+import type { ChannelId, ClipId, ControlRecord, CurveRecord, LayerId, LayerRecord, ReadView } from '@ekza-studio/doc';
 import { attrStackAt, controlStackAt, playingLayers } from '@ekza-studio/rig';
 import { internalsOf } from '../app/internals';
 import type { EditorApp } from '../types';
@@ -68,11 +60,18 @@ export function layerKeyProblem(view: ReadView, layer: LayerRecord, control?: Co
   if (layer.mute) return `${named(layer)} is muted — unmute it to key`;
   const all = view.query.layersOfClip(layer.clip);
   if (!playingLayers(all).some((candidate) => candidate.id === layer.id)) {
-    if (all.some((candidate) => candidate.solo) && !layer.solo) return `Another layer is soloed — ${named(layer)} is not playing`;
+    if (all.some((candidate) => candidate.solo) && !layer.solo)
+      return `Another layer is soloed — ${named(layer)} is not playing`;
     return `${named(layer)} has weight 0 — raise it to key`;
   }
   const mask = layer.mask;
-  if (control !== undefined && mask !== undefined && mask !== null && !isBaseLayer(view, layer) && !mask.includes(control.id)) {
+  if (
+    control !== undefined &&
+    mask !== undefined &&
+    mask !== null &&
+    !isBaseLayer(view, layer) &&
+    !mask.includes(control.id)
+  ) {
     return `${named(layer)} does not affect ${control.name}`;
   }
   return null;
@@ -161,10 +160,16 @@ export function solveLayerValues(
 }
 
 /** Why a solved channel is unreachable: the topmost full-weight override above with a curve on it, else the reach. */
-function coverReason(layers: readonly LayerRecord[], index: number, channel: ChannelId, control: ControlRecord): string {
+function coverReason(
+  layers: readonly LayerRecord[],
+  index: number,
+  channel: ChannelId,
+  control: ControlRecord,
+): string {
   for (let j = layers.length - 1; j > index; j--) {
     const above = layers[j] as LayerRecord;
-    if (above.mode === 'override' && above.weight >= 1) return `Override layer ${named(above)} covers ${control.name} ${channel}`;
+    if (above.mode === 'override' && above.weight >= 1)
+      return `Override layer ${named(above)} covers ${control.name} ${channel}`;
   }
   return `${named(layers[index] as LayerRecord)} cannot reach that pose on ${control.name} at its weight`;
 }
@@ -185,7 +190,9 @@ export function compositeValueIn(
     return composeLayerScalar(stack.input, stack.entries);
   }
   const stack = controlStackAt(view, clip, control, value);
-  return composeLayerTrs(stack.input, stack.entries, control.rotateOrder, new Float64Array(LAYER_TRS_SLOTS))[slot] as number;
+  return composeLayerTrs(stack.input, stack.entries, control.rotateOrder, new Float64Array(LAYER_TRS_SLOTS))[
+    slot
+  ] as number;
 }
 
 export { SLOT_CHANNEL };

@@ -344,7 +344,7 @@ export function solveLayerTrs(
     coupled = true;
   }
   for (let c = 0; c < 9; c++) if (!reach[c]) out[c] = Number.NaN;
-  if (coupled && !Number.isNaN(out[3] as number)) verifyRotation(input, layers, index, target, order, out);
+  if (coupled && !Number.isNaN(out[3])) verifyRotation(input, layers, index, target, order, out);
   return coupled;
 }
 
@@ -365,7 +365,9 @@ function verifyRotation(
   out: Float64Array,
 ): void {
   const own = layers[index] as LayerStackEntry;
-  const values = Float64Array.from({ length: 9 }, (_, c) => (c >= 3 && c < 6 ? (out[c] as number) : (own.values[c] as number)));
+  const values = Float64Array.from({ length: 9 }, (_, c) =>
+    c >= 3 && c < 6 ? (out[c] as number) : (own.values[c] as number),
+  );
   const solved = layers.map((layer, i) => (i === index ? { mode: layer.mode, weight: layer.weight, values } : layer));
   const result = composeLayerTrs(input, solved, order, new Float64Array(9));
   const q1 = eulerToQuat([result[3] as number, result[4] as number, result[5] as number], order, [0, 0, 0, 1]);
@@ -436,9 +438,9 @@ function invertLayer(
       probe[4] = b[1];
       probe[5] = b[2];
       overrideRotation(probe, 0, rx, ry, rz, w, order);
-      outRot[0] = probe[3] as number;
-      outRot[1] = probe[4] as number;
-      outRot[2] = probe[5] as number;
+      outRot[0] = probe[3];
+      outRot[1] = probe[4];
+      outRot[2] = probe[5];
     };
     newton3(forward, goal, start, solved);
   }

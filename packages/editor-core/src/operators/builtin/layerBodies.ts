@@ -61,7 +61,10 @@ export function layerRemove(ctx: ApplyContext, args: OperatorArgs<'layer.remove'
   if (wasActive) setActiveLayer(ctx, layer.clip, (layers[index - 1] as LayerRecord).id);
 }
 
-export function layerDuplicate(ctx: ApplyContext, args: OperatorArgs<'layer.duplicate'>): { readonly layer: LayerRecord['id'] } {
+export function layerDuplicate(
+  ctx: ApplyContext,
+  args: OperatorArgs<'layer.duplicate'>,
+): { readonly layer: LayerRecord['id'] } {
   const { app, tx } = ctx;
   if (tx === null) throw new EkzaError('internal', 'layer.duplicate runs in a transaction');
   const source = tx.get('layers', args.layer);
@@ -76,7 +79,10 @@ export function layerDuplicate(ctx: ApplyContext, args: OperatorArgs<'layer.dupl
     // A copy of the base sits above it as a full override: what plays does not change.
     ...(base ? { mode: 'override' as const, weight: 1 } : {}),
     solo: false,
-    order: orderBetween(source.order, layers.map((layer) => layer.order)),
+    order: orderBetween(
+      source.order,
+      layers.map((layer) => layer.order),
+    ),
   };
   tx.put('layers', copy);
   for (const curve of tx.query.curvesOfClip(source.clip)) {
@@ -151,7 +157,12 @@ export function layerMerge(
   const plans = mergePlans(tx, clip, sources);
   const evaluate = curveEvaluator(app, tx);
   const prefs = app.prefs.getState();
-  type Write = { readonly channel: ChannelId; readonly control: ControlRecord; readonly at: Frame | null; readonly value: number };
+  type Write = {
+    readonly channel: ChannelId;
+    readonly control: ControlRecord;
+    readonly at: Frame | null;
+    readonly value: number;
+  };
   const writes: Write[] = [];
   for (const plan of plans) {
     const at = planTimes(tx, clip, plan, sources, target, times);
@@ -162,7 +173,12 @@ export function layerMerge(
       const value = (curve: CurveRecord): number | null => evaluate(curve, frame ?? clip.range.start);
       if (trs.length > 0) {
         const full = controlStackAt(tx, clip.id, plan.control, value, { layers: upToTop });
-        const goal = composeLayerTrs(full.input, full.entries, plan.control.rotateOrder, new Float64Array(LAYER_TRS_SLOTS));
+        const goal = composeLayerTrs(
+          full.input,
+          full.entries,
+          plan.control.rotateOrder,
+          new Float64Array(LAYER_TRS_SLOTS),
+        );
         const below = controlStackAt(tx, clip.id, plan.control, value, { layers: upToTarget });
         const index = below.layers.findIndex((layer) => layer.id === target.id);
         if (index === -1) continue;
@@ -197,7 +213,14 @@ export function layerMerge(
       if (tx.get('curves', curve)?.staticValue !== write.value) tx.patch('curves', curve, { staticValue: write.value });
       continue;
     }
-    writeKeyAt(app, tx, curve, write.at, write.value, newKeyTangents(write.control, write.channel, prefs.defaultTangents));
+    writeKeyAt(
+      app,
+      tx,
+      curve,
+      write.at,
+      write.value,
+      newKeyTangents(write.control, write.channel, prefs.defaultTangents),
+    );
     keys++;
   }
   for (const layer of toDelete) deleteLayer(tx, layer);

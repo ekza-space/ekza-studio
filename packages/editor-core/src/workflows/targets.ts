@@ -129,7 +129,9 @@ export function targetCurves(app: EditorApp, view: ReadView = app.store): readon
   const channels = app.session.getState().selection.channels;
   if (channels.length > 0) {
     const wanted = new Set(channels.map((ref) => `${ref.control}\u0000${ref.channel}`));
-    return baseCurves(view, clip, undefined, layer).filter((curve) => wanted.has(`${curve.control}\u0000${curve.channel}`));
+    return baseCurves(view, clip, undefined, layer).filter((curve) =>
+      wanted.has(`${curve.control}\u0000${curve.channel}`),
+    );
   }
   const selected = selectedControls(app, view);
   if (selected.length > 0) return baseCurves(view, clip, new Set(selected.map((control) => control.id)), layer);

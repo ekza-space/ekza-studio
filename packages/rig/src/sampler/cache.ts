@@ -268,7 +268,9 @@ export function createClipSampler(
       offset: index === undefined || slot === -1 ? -1 : index * CHANNELS_PER_CONTROL + slot,
       slot,
       attr,
-      rest: additive ? layerRestValue(curve, true, def) : (curve.staticValue ?? channelDefaultValue(curve.channel, def)),
+      rest: additive
+        ? layerRestValue(curve, true, def)
+        : (curve.staticValue ?? channelDefaultValue(curve.channel, def)),
     };
   };
 
@@ -313,7 +315,14 @@ export function createClipSampler(
       const attrs: PlanEntry[] = [];
       if (!isBase) {
         const slerps = mode === 'override' && layerWeight(layer, isBase) < 1;
-        type Group = { control: ControlId; offset: number; order: RotateOrder; entries: PlanEntry[]; direct: PlanEntry[]; rotation: PlanEntry[] };
+        type Group = {
+          control: ControlId;
+          offset: number;
+          order: RotateOrder;
+          entries: PlanEntry[];
+          direct: PlanEntry[];
+          rotation: PlanEntry[];
+        };
         let current: Group | null = null;
         for (const entry of entries) {
           if (entry.offset === -1) {
@@ -385,7 +394,7 @@ export function createClipSampler(
           const entry = rotation[i] as PlanEntry;
           scratch[entry.slot] = valueOf(entry, frame);
         }
-        blendOverrideRotation(values, group.offset, scratch[3] as number, scratch[4] as number, scratch[5] as number, layer.weight, group.order);
+        blendOverrideRotation(values, group.offset, scratch[3], scratch[4], scratch[5], layer.weight, group.order);
       }
       const attrs = layer.attrs;
       for (let i = 0; i < attrs.length; i++) {
@@ -413,7 +422,10 @@ export function createClipSampler(
         if (entry.channel !== channel) continue;
         const plan = current.layers[layer] as LayerPlan;
         const y = valueOf(entry, frame);
-        v = v === undefined && plan.base ? y : blendLayerScalar(v ?? attrDefault(control, channel), y, plan.mode, plan.weight);
+        v =
+          v === undefined && plan.base
+            ? y
+            : blendLayerScalar(v ?? attrDefault(control, channel), y, plan.mode, plan.weight);
       }
       return v;
     }

@@ -95,7 +95,10 @@ function addLayer(
         const curve = nextId('crv_') as CurveId;
         tx.put('curves', makeCurve({ id: curve, clip: CLIP, layer, control, channel, pre: opts.pre ?? 'constant' }));
         for (let k = 0; k < (opts.keys ?? 2); k++) {
-          tx.put('keys', makeKey({ id: nextId('k_') as KeyId, clip: CLIP, curve, t: 5 + k * 20, v: value(i, channel, k) }));
+          tx.put(
+            'keys',
+            makeKey({ id: nextId('k_') as KeyId, clip: CLIP, curve, t: 5 + k * 20, v: value(i, channel, k) }),
+          );
         }
       }
     });
@@ -122,7 +125,15 @@ describe('ClipSampler over layers', () => {
             ? slot >= 6
               ? 1
               : 0
-            : curveEngine.evaluate(curveEngine.compile({ keys: f.store.query.keysOfCurve(curve.id), weighted: false, pre: 'constant', post: 'constant' }), frame);
+            : curveEngine.evaluate(
+                curveEngine.compile({
+                  keys: f.store.query.keysOfCurve(curve.id),
+                  weighted: false,
+                  pre: 'constant',
+                  post: 'constant',
+                }),
+                frame,
+              );
         expect(values[index * 9 + slot]).toBe(expected);
         expect(f.sampler.value(control, channel, frame)).toBe(curve === undefined ? undefined : expected);
       }
@@ -176,7 +187,13 @@ describe('ClipSampler over layers', () => {
     const ib = f.program.controlIndex.get(b) as number;
     const order = f.program.controls[ia]?.rotateOrder ?? 'xyz';
     const base = snapshot(f, 15);
-    const over = addLayer(f.store, { mode: 'override', weight: 0.3, order: 'b0' }, [a, b], ['rx', 'ry', 'rz', 'tx'], () => 0.6);
+    const over = addLayer(
+      f.store,
+      { mode: 'override', weight: 0.3, order: 'b0' },
+      [a, b],
+      ['rx', 'ry', 'rz', 'tx'],
+      () => 0.6,
+    );
     const out = snapshot(f, 15);
     const expected = quatSlerp(
       eulerToQuat([base[ia * 9 + 3] as number, base[ia * 9 + 4] as number, base[ia * 9 + 5] as number], order),
@@ -197,12 +214,20 @@ describe('ClipSampler over layers', () => {
     const f = fixture();
     const control = f.controls[4] as ControlId;
     const i = f.program.controlIndex.get(control) as number;
-    addLayer(f.store, { mode: 'additive', order: 'b0' }, [control], ['rz', 'sy'], (_i, channel, k) => (channel === 'sy' ? 1.2 : 0.1 * (k + 1)), { keys: 2 });
+    addLayer(
+      f.store,
+      { mode: 'additive', order: 'b0' },
+      [control],
+      ['rz', 'sy'],
+      (_i, channel, k) => (channel === 'sy' ? 1.2 : 0.1 * (k + 1)),
+      { keys: 2 },
+    );
     const values = snapshot(f, 18);
-    for (const [slot, channel] of TRS.entries()) {
+    const differ = TRS.filter((channel, slot) => {
       const v = f.sampler.value(control, channel, 18);
-      if (v !== undefined) expect(v).toBe(values[i * 9 + slot]);
-    }
+      return v !== undefined && v !== values[i * 9 + slot];
+    });
+    expect(differ).toEqual([]);
     expect(f.sampler.value(control, 'sy', 18)).toBeCloseTo(1.2, 14);
     expect(f.sampler.keyTimes([control])).toEqual([0, 5, 10, 20, 25, 30, 40, 50]);
     const infos = f.sampler.curveInfo(control);
@@ -211,8 +236,20 @@ describe('ClipSampler over layers', () => {
 
   it('controlStackAt composes to what the sampler plays, for every control', () => {
     const f = fixture();
-    addLayer(f.store, { mode: 'additive', weight: 0.7, order: 'b0' }, f.controls.slice(0, 20), ['rx', 'rz'], (i) => 0.05 * i);
-    addLayer(f.store, { mode: 'override', weight: 0.4, order: 'c0' }, f.controls.slice(10, 30), ['ry', 'tx'], (i) => -0.02 * i);
+    addLayer(
+      f.store,
+      { mode: 'additive', weight: 0.7, order: 'b0' },
+      f.controls.slice(0, 20),
+      ['rx', 'rz'],
+      (i) => 0.05 * i,
+    );
+    addLayer(
+      f.store,
+      { mode: 'override', weight: 0.4, order: 'c0' },
+      f.controls.slice(10, 30),
+      ['ry', 'tx'],
+      (i) => -0.02 * i,
+    );
     const cache = createCurveCache(f.store, curveEngine);
     const frame = 21;
     const values = snapshot(f, frame);
@@ -251,15 +288,40 @@ describe('bench: 3 layers on a humanoid rig (ANIM-LAYERS-SPEC §2 budget: ≤ 2�
     const pose = one.program.allocPose();
     // Interleave measurements to share the machine's state; the best of three per case.
     const fix = fixture({ channels: all, keys: 30 });
-    addLayer(fix.store, { mode: 'additive', order: 'b0' }, fix.controls.slice(0, 12), ['rx', 'ry', 'rz'], (i) => 0.01 * i, { keys: 4 });
-    addLayer(fix.store, { mode: 'override', weight: 0.5, order: 'c0' }, fix.controls.slice(20, 32), ['rx', 'ry', 'rz'], (i) => 0.02 * i, { keys: 4 });
+    addLayer(
+      fix.store,
+      { mode: 'additive', order: 'b0' },
+      fix.controls.slice(0, 12),
+      ['rx', 'ry', 'rz'],
+      (i) => 0.01 * i,
+      { keys: 4 },
+    );
+    addLayer(
+      fix.store,
+      { mode: 'override', weight: 0.5, order: 'c0' },
+      fix.controls.slice(20, 32),
+      ['rx', 'ry', 'rz'],
+      (i) => 0.02 * i,
+      { keys: 4 },
+    );
     const additive = fixture({ channels: all, keys: 30 });
     for (const order of ['b0', 'c0']) {
-      addLayer(additive.store, { mode: 'additive', order }, additive.controls, ['rx', 'ry', 'rz'], (i) => 0.01 * i, { keys: 8 });
+      addLayer(additive.store, { mode: 'additive', order }, additive.controls, ['rx', 'ry', 'rz'], (i) => 0.01 * i, {
+        keys: 8,
+      });
     }
     const mixed = fixture({ channels: all, keys: 30 });
-    addLayer(mixed.store, { mode: 'additive', order: 'b0' }, mixed.controls, ['rx', 'ry', 'rz'], (i) => 0.01 * i, { keys: 8 });
-    addLayer(mixed.store, { mode: 'override', weight: 0.5, order: 'c0' }, mixed.controls, ['rx', 'ry', 'rz'], (i) => 0.02 * i, { keys: 8 });
+    addLayer(mixed.store, { mode: 'additive', order: 'b0' }, mixed.controls, ['rx', 'ry', 'rz'], (i) => 0.01 * i, {
+      keys: 8,
+    });
+    addLayer(
+      mixed.store,
+      { mode: 'override', weight: 0.5, order: 'c0' },
+      mixed.controls,
+      ['rx', 'ry', 'rz'],
+      (i) => 0.02 * i,
+      { keys: 8 },
+    );
     const best = { one: Infinity, fix: Infinity, additive: Infinity, mixed: Infinity };
     for (let round = 0; round < 3; round++) {
       best.one = Math.min(best.one, time(one, pose));

@@ -76,12 +76,28 @@ describe('blendLayerTrs', () => {
     fc.assert(
       fc.property(
         fc.constantFrom(...ROTATE_ORDERS),
-        fc.tuple(fc.double({ min: -2, max: 2, noNaN: true }), fc.double({ min: -1.2, max: 1.2, noNaN: true }), fc.double({ min: -2, max: 2, noNaN: true })),
-        fc.tuple(fc.double({ min: -2, max: 2, noNaN: true }), fc.double({ min: -1.2, max: 1.2, noNaN: true }), fc.double({ min: -2, max: 2, noNaN: true })),
+        fc.tuple(
+          fc.double({ min: -2, max: 2, noNaN: true }),
+          fc.double({ min: -1.2, max: 1.2, noNaN: true }),
+          fc.double({ min: -2, max: 2, noNaN: true }),
+        ),
+        fc.tuple(
+          fc.double({ min: -2, max: 2, noNaN: true }),
+          fc.double({ min: -1.2, max: 1.2, noNaN: true }),
+          fc.double({ min: -2, max: 2, noNaN: true }),
+        ),
         fc.double({ min: 0.01, max: 0.99, noNaN: true }),
         (order, a, b, w) => {
           const acc = Float64Array.from([0, 0, 0, ...a, 1, 1, 1]);
-          const layer = Float64Array.from([Number.NaN, Number.NaN, Number.NaN, ...b, Number.NaN, Number.NaN, Number.NaN]);
+          const layer = Float64Array.from([
+            Number.NaN,
+            Number.NaN,
+            Number.NaN,
+            ...b,
+            Number.NaN,
+            Number.NaN,
+            Number.NaN,
+          ]);
           blendLayerTrs(acc, 0, layer, 0, 'override', w, order);
           const expected = quatSlerp(eulerToQuat(a, order), eulerToQuat(b, order), w);
           expect(quatDistance(eulerToQuat(rot(acc), order), expected)).toBeLessThan(1e-12);
@@ -181,23 +197,23 @@ describe('solveLayerTrs', () => {
           const index = pick % layers.length;
           const current = composeLayerTrs(REST, layers, order, new Float64Array(9));
           // A reachable target near the current pose (a person's drag), as the manipulators produce.
-          const target = Float64Array.from(current, (v, c) => (c >= 6 ? v * (delta[c] as number) : v + (delta[c] as number)));
+          const target = Float64Array.from(current, (v, c) =>
+            c >= 6 ? v * (delta[c] as number) : v + (delta[c] as number),
+          );
           const x = new Float64Array(9);
           solveLayerTrs(REST, layers, index, target, order, x);
           const own = layers[index] as LayerStackEntry;
           const values = Float64Array.from(own.values);
-          for (let c = 0; c < 9; c++) {
-            if (!Number.isNaN(x[c] as number)) values[c] = x[c] as number;
-          }
+          for (let c = 0; c < 9; c++) if (!Number.isNaN(x[c])) values[c] = Number(x[c]);
           const solved = layers.map((layer, i) => (i === index ? { ...layer, values } : layer));
           const result = composeLayerTrs(REST, solved, order, new Float64Array(9));
-          for (const c of [0, 1, 2, 6, 7, 8]) {
-            if (Number.isNaN(x[c] as number)) continue;
-            expect(Math.abs((result[c] as number) - (target[c] as number))).toBeLessThan(1e-9);
-          }
-          if (!Number.isNaN(x[3] as number) && !Number.isNaN(x[4] as number) && !Number.isNaN(x[5] as number)) {
-            expect(sameRotation(result, target, order)).toBeLessThan(1e-8);
-          }
+          // every reached translate and scale slot lands on the target; a reached rotation triple too
+          const misses = [0, 1, 2, 6, 7, 8].filter(
+            (c) => !Number.isNaN(x[c]) && !(Math.abs(Number(result[c]) - Number(target[c])) < 1e-9),
+          );
+          expect(misses).toEqual([]);
+          const rotated = !Number.isNaN(x[3]) && !Number.isNaN(x[4]) && !Number.isNaN(x[5]);
+          expect(rotated ? sameRotation(result, target, order) : 0).toBeLessThan(1e-8);
         },
       ),
       { numRuns: 400 },
@@ -219,7 +235,14 @@ describe('solveLayerTrs', () => {
     solveLayerTrs(REST, layers, 1, posed, 'zxy', x);
     expect(x[3]).toBeCloseTo(0.25, 15);
     // At weight 0.5 the delta doubles so that the composite still matches.
-    solveLayerTrs(REST, [layers[0] as LayerStackEntry, { ...layers[1], weight: 0.5 } as LayerStackEntry], 1, posed, 'zxy', x);
+    solveLayerTrs(
+      REST,
+      [layers[0] as LayerStackEntry, { ...layers[1], weight: 0.5 } as LayerStackEntry],
+      1,
+      posed,
+      'zxy',
+      x,
+    );
     expect(x[3]).toBeCloseTo(0.5, 15);
   });
 
@@ -258,7 +281,12 @@ describe('solveLayerTrs', () => {
     target[4] = 0.9;
     const x = new Float64Array(9);
     expect(solveLayerTrs(REST, layers, 1, target, 'yzx', x)).toBe(true);
-    const result = composeLayerTrs(REST, [layers[0] as LayerStackEntry, { ...layers[1], values: x } as LayerStackEntry], 'yzx', new Float64Array(9));
+    const result = composeLayerTrs(
+      REST,
+      [layers[0] as LayerStackEntry, { ...layers[1], values: x } as LayerStackEntry],
+      'yzx',
+      new Float64Array(9),
+    );
     expect(sameRotation(result, target, 'yzx')).toBeLessThan(1e-12);
   });
 });

@@ -150,7 +150,9 @@ export function targetCurves(ctx: OperatorContext, view: ReadView): readonly Cur
   const scoped = selection(ctx);
   if (scoped.channels.length > 0) {
     const wanted = new Set(scoped.channels.map((ref) => `${ref.control}\u0000${ref.channel}`));
-    return baseCurves(view, clip, undefined, layer).filter((curve) => wanted.has(`${curve.control}\u0000${curve.channel}`));
+    return baseCurves(view, clip, undefined, layer).filter((curve) =>
+      wanted.has(`${curve.control}\u0000${curve.channel}`),
+    );
   }
   const selected = selectedControls(ctx, view);
   return selected.length > 0 ? baseCurves(view, clip, new Set(selected.map((control) => control.id)), layer) : [];

@@ -136,6 +136,11 @@ export default function LayersSheet({ ctx }: HaloSheetProps): JSX.Element {
   );
 }
 
+/** Focuses the rename field the person just asked for (once, when it mounts). */
+const focusOnce = (input: HTMLInputElement | null): void => {
+  if (input !== null && document.activeElement !== input) input.focus();
+};
+
 function Row({
   row,
   last,
@@ -176,8 +181,7 @@ function Row({
             aria-label={w.renameLabel}
             data-testid="halo-layer-rename"
             value={name}
-            // biome-ignore lint/a11y/noAutofocus: the field the person just asked for
-            autoFocus
+            ref={focusOnce}
             onChange={(e) => setName(e.currentTarget.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') onRename(name.trim());
