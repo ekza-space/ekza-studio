@@ -156,3 +156,13 @@ Both ends require the exact peer window, origin and session. Allowed pairs are `
 `studio.ekza.io`, their matching HTTPS dev origins, or HTTP localhost/127.0.0.1 Hub ports 7103/7203 and
 Studio port 3100. No wildcard target origin, account token, caller-supplied model URL or automatic publish
 crosses this bridge. Files are capped at 50 MiB. Ordinary Studio sessions do not load the bridge.
+
+
+The development extension advertises `project-v1` and `imported-pbr-base-color/v1` in `ready`.
+Only a receiver advertising project support gets an `open` with `format: ekzanim`; its bounded ZIP/digest
+passes to the ordinary project importer. Recreated editor hosts reconnect with `ready` / `connected` without
+reimporting or replacing the restored document. An explicit project download can be sent as `project`
+(bytes + SHA-256), with `project-saved` acknowledging the same digest only after account storage succeeds.
+An acknowledgement of an older save must not mark a newer local snapshot saved. Hub owns authenticated
+project creation, immutable snapshot storage and compare-and-swap version checks; no account token crosses
+this window channel. Legacy model `open`/`exported` behavior is unchanged.

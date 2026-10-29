@@ -54,3 +54,23 @@ export async function hubVrmBytes(data: Record<string, unknown>): Promise<Uint8A
   if (actual !== sha256) throw new Error('Hub model checksum mismatch');
   return new Uint8Array(bytes);
 }
+
+/** Cloud source projects use the same hash/size boundary, then the normal bounded ZIP importer. */
+export async function hubProjectBytes(data: Record<string, unknown>): Promise<Uint8Array> {
+  const bytes = data['bytes'];
+  const expected = data['sha256'];
+  if (
+    !(bytes instanceof ArrayBuffer) ||
+    bytes.byteLength < 4 ||
+    bytes.byteLength > HUB_MAX_BYTES ||
+    typeof expected !== 'string' ||
+    !HASH.test(expected) ||
+    new DataView(bytes).getUint32(0, true) !== 0x04034b50
+  )
+    throw new Error('Invalid Hub project payload');
+  const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', bytes)), (b) =>
+    b.toString(16).padStart(2, '0'),
+  ).join('');
+  if (hash !== expected) throw new Error('Hub project checksum mismatch');
+  return new Uint8Array(bytes);
+}

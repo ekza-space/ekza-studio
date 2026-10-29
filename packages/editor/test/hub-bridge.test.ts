@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { HUB_CHANNEL, hubConnection, hubEnvelope, hubVrmBytes } from '../src/host/hubProtocol';
+import { HUB_CHANNEL, hubConnection, hubEnvelope, hubProjectBytes, hubVrmBytes } from '../src/host/hubProtocol';
 import { createExportRecorder } from '../src/shell/exports';
 import { sha256Hex } from '../src/services/assets';
 
@@ -38,6 +38,14 @@ describe('Hub handoff trust boundary', () => {
     view.setUint32(8, 50, true);
     await expect(hubVrmBytes({ bytes: bytes.buffer, sha256 })).rejects.toThrow('GLB');
     await expect(hubVrmBytes({ bytes: new ArrayBuffer(2), sha256 })).rejects.toThrow('payload');
+  });
+  it('checks the ZIP transport and exact digest before passing a private project to the bounded importer', async () => {
+    const bytes = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 1, 2, 3, 4]);
+    const sha256 = await sha256Hex(bytes);
+    expect(await hubProjectBytes({ bytes: bytes.buffer, sha256 })).toEqual(bytes);
+    await expect(hubProjectBytes({ bytes: bytes.buffer, sha256: '0'.repeat(64) })).rejects.toThrow('checksum');
+    bytes[0] = 0;
+    await expect(hubProjectBytes({ bytes: bytes.buffer, sha256 })).rejects.toThrow('payload');
   });
   it('observes an explicit export without retaining production project bytes after unsubscribe', async () => {
     const recorder = createExportRecorder(false);

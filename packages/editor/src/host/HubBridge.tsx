@@ -1,7 +1,7 @@
-import { type JSX, useEffect, useState } from 'react';
+import { type JSX, useEffect, useRef, useState } from 'react';
 import type { LastExport } from '../shell/types';
 import type { HostShell } from './types';
-import { HUB_CHANNEL, HUB_MAX_BYTES, hubConnection, hubEnvelope, hubVrmBytes } from './hubProtocol';
+import { HUB_CHANNEL, HUB_MAX_BYTES, hubConnection, hubEnvelope, hubProjectBytes, hubVrmBytes } from './hubProtocol';
 
 /** Lazy, opt-in bridge. The user's Export command still downloads a file; returning it is a separate click. */
 export default function HubBridge({ host }: { readonly host: HostShell }): JSX.Element | null {
@@ -11,6 +11,10 @@ export default function HubBridge({ host }: { readonly host: HostShell }): JSX.E
   );
   const [file, setFile] = useState<LastExport | null>(null);
   const [sent, setSent] = useState(false);
+  const [project, setProject] = useState<LastExport | null>(null);
+  const [projectEnabled, setProjectEnabled] = useState(false);
+  const [projectSaved, setProjectSaved] = useState(false);
+  const projectDigest = useRef<string | null>(null);
   useEffect(() => {
     if (connection === null) return undefined;
     const peer = window.opener as Window | null;
@@ -33,6 +37,21 @@ export default function HubBridge({ host }: { readonly host: HostShell }): JSX.E
         );
         return;
       }
+      if (data['type'] === 'connected') {
+        received = true;
+        setProjectEnabled(data['projectEnabled'] === true);
+        setStatus('Connected to Hub. Save an editable project or export a VRM when ready.');
+        return;
+      }
+      if (data['type'] === 'project-saved') {
+        if (data['sha256'] !== projectDigest.current) {
+          setStatus('An earlier project snapshot was saved. Save the current version when ready.');
+          return;
+        }
+        setStatus('Editable project saved to your Hub account. You can resume it from Workspace.');
+        setProjectSaved(true);
+        return;
+      }
       if (data['type'] === 'saved') {
         setStatus('Export saved in Hub. Return there to review and upload it.');
         setSent(true);
@@ -41,12 +60,14 @@ export default function HubBridge({ host }: { readonly host: HostShell }): JSX.E
       if (data['type'] !== 'open' || received) return;
       received = true;
       setStatus('Checking model…');
-      void hubVrmBytes(data)
+      setProjectEnabled(data['projectEnabled'] === true);
+      const isProject = data['format'] === 'ekzanim';
+      void (isProject ? hubProjectBytes(data) : hubVrmBytes(data))
         .then(async (bytes) => {
           if (!live) return;
           const name =
             typeof data['name'] === 'string' ? data['name'].slice(0, 120).replace(/[\\/]/g, '_') : 'Library avatar';
-          await host.files.openFile(`${name}.vrm`, bytes, { waitForDialog: true });
+          await host.files.openFile(`${name}.${isProject ? 'ekzanim' : 'vrm'}`, bytes, { waitForDialog: true });
           if (!live) return;
           setStatus('Animate, save your project, then export “Bake into model” with slot clips.');
           post({ type: 'opened' });
@@ -60,11 +81,16 @@ export default function HubBridge({ host }: { readonly host: HostShell }): JSX.E
     };
     window.addEventListener('message', receive);
     const ready = () => {
-      if (!received) post({ type: 'ready' });
+      if (!received) post({ type: 'ready', capabilities: ['project-v1', 'imported-pbr-base-color/v1'] });
     };
     ready();
     const timer = window.setInterval(ready, 1000);
     const unsubscribe = host.exports.subscribe((record) => {
+      if (/\.ekzanim$/i.test(record.fileName)) {
+        projectDigest.current = record.sha256;
+        setProject(record.bytes.byteLength <= HUB_MAX_BYTES ? record : null);
+        setProjectSaved(false);
+      }
       if (/\.vrm$/i.test(record.fileName)) {
         if (record.bytes.byteLength > HUB_MAX_BYTES) {
           setFile(null);
@@ -84,6 +110,19 @@ export default function HubBridge({ host }: { readonly host: HostShell }): JSX.E
     };
   }, [connection, host]);
   if (connection === null) return null;
+  const saveProject = () => {
+    if (project === null || connection === null || window.opener === null || (window.opener as Window).closed) {
+      setStatus('Keep the Hub tab open to save. Your local .ekzanim download remains available.');
+      return;
+    }
+    const bytes = project.bytes.slice().buffer;
+    (window.opener as Window).postMessage(
+      { channel: HUB_CHANNEL, session: connection.session, type: 'project', sha256: project.sha256, bytes },
+      connection.origin,
+      [bytes],
+    );
+    setStatus('Saving editable project to Hub…');
+  };
   const send = () => {
     if (file === null) return;
     if (window.opener === null || (window.opener as Window).closed) {
@@ -115,6 +154,16 @@ export default function HubBridge({ host }: { readonly host: HostShell }): JSX.E
       <p className="my-2 text-fg-3">
         Save .ekzanim to keep editable animation tracks. Sending a VRM does not publish it or submit it to a game.
       </p>
+      {projectEnabled ? (
+        <button
+          type="button"
+          className="mb-2 rounded border border-line px-3 py-2 disabled:opacity-50"
+          disabled={project === null || projectSaved}
+          onClick={saveProject}
+        >
+          {projectSaved ? 'Project saved in Hub' : 'Save project to Hub'}
+        </button>
+      ) : null}
       <button
         type="button"
         className="rounded border border-line px-3 py-2 disabled:opacity-50"

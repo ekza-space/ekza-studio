@@ -124,9 +124,9 @@ test('Hub navigation, Studio return, sign-in, private draft and explicit OMOBA s
     }
     return reply({ items: [] });
   });
-  await page.goto(`${hubUrl}/`, { waitUntil: 'domcontentloaded' });
-  await page.getByRole('link', { name: 'Avatar Library', exact: true }).click();
-  await expect(page).toHaveURL(/\/library\//);
+  await page.goto(`${hubUrl}/studio?view=catalog`, { waitUntil: 'domcontentloaded' });
+  await page.getByRole('link', { name: 'Open Avatar Library', exact: true }).click();
+  await expect(page).toHaveURL(/\/(library\/|studio-assets)/);
   await page.goto(`${hubUrl}/library/#${encodeURIComponent(key)}`, { waitUntil: 'domcontentloaded' });
   await page.locator('#open-studio').click();
   await expect(page.getByRole('heading', { name: 'Animate Polybot' })).toBeVisible();

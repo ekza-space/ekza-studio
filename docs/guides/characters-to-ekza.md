@@ -28,6 +28,22 @@ this handoff does not add support for custom in-game animations. Accounts and to
 Studio and Hub. If the popup is blocked, the Hub tab closes, or either deployed app is older, use the downloaded
 VRM with Hub's ordinary upload form.
 
+### Account projects in the paired development integration
+
+After File > Save downloads an editable `.ekzanim`, **Save project to Hub** stores a private account snapshot.
+Sign in in Hub first. Workspace lists saved versions and resumes them after both tabs have closed; after resume,
+File > Save and Save project to Hub update the same project with a version check. This does not publish the source.
+A stale-base response requires reopening the current version; keep the downloaded file before doing so.
+
+Cloud project uploads are bounded to 50 MiB compressed / 128 MiB expanded and share the account storage quota.
+The initial Workspace supports at most 100 private projects; per-project deletion and snapshot pruning remain a
+follow-up, so keep local backups. Exported VRM handoffs still use the temporary browser draft described above
+until an explicit account upload. Source projects and published runtime files remain separate.
+
+Imported **standard PBR/unlit RGB** can be edited with Set/Reset in Attributes or the Simple Palette sheet.
+Alpha/textures remain fixed; MToon/legacy Unity materials show an explicit unsupported state. This capability
+is `imported-pbr-base-color/v1`, not general shader portability or game approval.
+
 ## 1. Before you rig
 
 - **T-pose**: arms straight out along ±X, legs straight down. Quick Rig fits an A-posed model and flags it, but the
