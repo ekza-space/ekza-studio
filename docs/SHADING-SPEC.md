@@ -78,7 +78,9 @@ Static GLB (`file.exportModel`, io author writer). The mesh's material preset de
   swatches with equal shaders share a material. Blinn materials are named `<palette> blinn g<glossiness×100>` (plus the
   specular hex when not white).
 - Budget lints count the materials the export writes (shader groups).
-- VRM and bake-into-model paths (`colourOutput: 'asset'`) are unchanged: they keep the asset's materials.
+- VRM and bake-into-model paths (`colourOutput: 'asset'`) keep the asset's materials. The additive development
+  [imported material colour MVP](IMPORTED-MATERIAL-SPEC.md) is an explicit exception: source-bound standard PBR/unlit
+  base RGB overrides, with unchanged alpha/textures and read-back. It does not enable swatch assignment or MToon editing.
 
 ## 5. Operators and UI
 

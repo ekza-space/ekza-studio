@@ -19,6 +19,8 @@ import { GRAPH_BUFFER_OPERATORS } from './graphBuffer';
 import { IK_OPERATORS } from './ik';
 import { BUILTIN_IMPORTERS } from './importers';
 import { KEY_OPERATORS } from './key';
+import { MATERIAL_OPERATORS } from './materials';
+import { ensureMaterialOverridesTable } from '../../workflows/materialOverrides';
 import { LAYER_OPERATORS } from './layer';
 import { BUILTIN_MENU_ITEMS } from './menus';
 import { MIRROR_ANIMATION_OPERATORS } from './mirrorAnimation';
@@ -44,6 +46,7 @@ export { BUILTIN_EXPORTERS, BUILTIN_IMPORTERS, BUILTIN_MENU_ITEMS };
 /** Every built-in operator definition (§4.9 rows owned by WP-7b, plus the operators other packages requested). */
 export const BUILTIN_OPERATORS: readonly AnyOperator[] = [
   ...FILE_OPERATORS,
+  ...MATERIAL_OPERATORS,
   ...EDIT_OPERATORS,
   ...SELECT_OPERATORS,
   ...KEY_OPERATORS,
@@ -86,7 +89,7 @@ function disposeAll(disposers: Disposer[]): Disposer {
 
 /** Registers the built-in operators; ids already registered (by the host or an extension) are left as they are. */
 export function registerBuiltinOperators(app: EditorApp): Disposer {
-  const disposers: Disposer[] = [];
+  const disposers: Disposer[] = [ensureMaterialOverridesTable()];
   for (const def of [...BUILTIN_OPERATORS, ...modelOperatorExtras()]) {
     if (app.operators.get(def.id) !== undefined) continue;
     disposers.push(app.contribute({ kind: 'operator', def }));

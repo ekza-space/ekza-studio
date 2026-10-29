@@ -6,13 +6,15 @@ import type { ExportRecorder, LastExport } from './types';
 
 export function createExportRecorder(enabled: boolean): ExportRecorder {
   let last: LastExport | null = null;
+  const listeners = new Set<(record: LastExport) => void>();
   return {
     recordDownload(record): void {
-      if (!enabled) return;
+      if (!enabled && listeners.size === 0) return;
       const entry: LastExport = { ...record, sha256: '', lints: [], readBack: null };
-      last = entry;
+      if (enabled) last = entry;
       void sha256Hex(record.bytes).then((sha256) => {
         if (last === entry) last = { ...entry, sha256 };
+        for (const listener of listeners) listener({ ...entry, sha256 });
       });
     },
     recordArtifacts(artifacts: readonly ExportArtifact[]): void {
@@ -29,6 +31,12 @@ export function createExportRecorder(enabled: boolean): ExportRecorder {
       };
     },
     last: () => last,
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
   };
 }
 

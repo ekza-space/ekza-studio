@@ -18,6 +18,7 @@ import {
   type MeshRecord,
 } from '@ekza-studio/doc';
 import type { GlbContainer } from '@ekza-studio/io';
+import { MATERIAL_OVERRIDES_TABLE, materialOverrides } from './materialOverrides';
 import { isAssetCharacter } from '../characters/registry';
 import type { CharacterRuntime, EditorApp, SessionStore } from '../types';
 
@@ -175,6 +176,16 @@ export function createMeshDisplay(deps: {
     let touched = false;
     // A display changes when an edited mesh appears, changes or goes (Make editable alone shows the same model).
     for (const change of batch.changes) {
+      if (String(change.table) === MATERIAL_OVERRIDES_TABLE) {
+        for (const row of [change.before, change.after]) {
+          const character = (row as { character?: CharacterId } | undefined)?.character;
+          if (character !== undefined) {
+            dirty.add(character);
+            touched = true;
+          }
+        }
+        continue;
+      }
       if (change.table !== 'meshes') continue;
       for (const row of [change.before, change.after]) {
         const owner = editedOwner(row);
@@ -194,13 +205,14 @@ export function createMeshDisplay(deps: {
   ];
 
   return {
-    hasEdits: (character) => hasMeshEdits(deps.store, character),
+    hasEdits: (character) => hasMeshEdits(deps.store, character) || materialOverrides(deps.store, character).length > 0,
     containerFor(runtime: CharacterRuntime): Promise<GlbContainer | null> {
       const app = deps.app();
       if (app === null) return Promise.resolve(null);
       const records = characterMeshRecords(deps.store, runtime.id).filter(isEditedMesh);
-      if (records.length === 0) return Promise.resolve(null);
-      const key = `${runtime.container.sha256}:${records.map((r) => `${r.source?.mesh}=${r.data?.manifest}`).join(',')}`;
+      const materials = materialOverrides(deps.store, runtime.id);
+      if (records.length === 0 && materials.length === 0) return Promise.resolve(null);
+      const key = `${runtime.container.sha256}:${records.map((r) => `${r.source?.mesh}=${r.data?.manifest}`).join(',')}:${JSON.stringify(materials)}`;
       const cached = cache.get(runtime.id);
       if (cached?.key === key) return cached.container;
       const container = import('./exportModel').then((lazy) => lazy.displayContainer(app, runtime));

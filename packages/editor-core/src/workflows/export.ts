@@ -32,6 +32,7 @@ import {
   type TrackKey,
 } from '@ekza-studio/rig';
 import type { CharacterRuntime, EditorApp, PollResult } from '../types';
+import { materialOverrides } from './materialOverrides';
 import { nameKey, sanitizeClipName } from './names';
 import { isRestrictedLicense } from './provenance';
 import { fpsValue, isRecord } from './util';
@@ -148,7 +149,8 @@ export function resolveExport(
   if (character === undefined) return fail('The character does not exist');
   const runtime = app.characters.get(character.id);
   if (runtime === undefined) return fail(`${character.name} is still loading`);
-  if (req.clips.length === 0) return fail('Choose at least one clip');
+  if (req.clips.length === 0 && !(kind === 'bake-into-model' && materialOverrides(app.store, character.id).length > 0))
+    return fail('Choose at least one clip');
   const clips: ClipRecord[] = [];
   for (const id of req.clips) {
     const clip = app.store.get('clips', id);

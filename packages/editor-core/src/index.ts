@@ -634,3 +634,5 @@ export * from './genFlow';
 // T5c (STUDIO-TOUCH-SPEC §20.3 item 10): Auto-Rig's derived progress, read by the Auto-Rig wizard and Halo's readiness
 // (tree-shaken here; `/autorig` keeps its checklist chunk lazy).
 export * from './progress';
+
+export * from './workflows/materialOverrides';

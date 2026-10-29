@@ -8,6 +8,12 @@
 // extension lists); a re-bake of such a file rolls geometry and clips back together and re-applies both: meshes edited
 // now are written from their new data, meshes the previous bake replaced are carried over as they are. Bakes without
 // any geometry write v1 and stay byte-identical to M2a outputs.
+import {
+  applyImportedMaterialOverrides,
+  assertMaterialOverridesReadBack,
+  type ImportedMaterialOverride,
+  materialOverrideContainer,
+} from '../materialOverrides';
 import { EkzaError } from '@ekza-studio/anim-core';
 import type { SkeletonDesc, TrackKey } from '@ekza-studio/rig';
 import { parseTrackKey, trackKey } from '../bake/bake';
@@ -66,6 +72,7 @@ export interface SurgeonOptions {
   readonly profile: ExportProfileDef | null;
   /** M6a (§5.22): edited meshes of the model, written by the geometry step before the clips (marker v2). */
   readonly geometry?: readonly PrimitiveEdit[];
+  readonly materials?: readonly ImportedMaterialOverride[];
 }
 
 /** Node indices (SkeletonDesc) and paths animated by the original file's animations that stay after a re-bake. */
@@ -88,6 +95,23 @@ export async function bakeIntoModel(
 ): Promise<ExportArtifact> {
   if (clips.some((clip) => clip.target !== 'raw')) {
     throw new EkzaError('unsupported', 'Baking into the model needs raw-target clips');
+  }
+  // A colour-only export must not roll back a previous animation bake or rewrite its provenance.
+  if (clips.length === 0 && (opts.geometry?.length ?? 0) === 0 && (opts.materials?.length ?? 0) > 0) {
+    assertSelfContained(original.json as unknown as MutableJson);
+    const output = await materialOverrideContainer(original, opts.materials!);
+    assertMaterialOverridesReadBack(output.bytes, opts.materials!);
+    return finalizeArtifact({
+      kind: 'bake-into-model',
+      fileName: opts.fileName,
+      bytes: output.bytes,
+      clips: [],
+      skeleton,
+      profile: opts.profile,
+      writerLints: [],
+      stats: { clips: 0, channels: 0, keys: 0, bytesAppended: 0 },
+      context: { source: original },
+    });
   }
   assertUniqueNames(clips);
   const json = structuredClone(original.json) as unknown as MutableJson;
@@ -232,7 +256,9 @@ export async function bakeIntoModel(
     binLength(json) > 0 || original.bin !== null
       ? [binPrefix(original.bin, appendOffset), geometryBytes, appended]
       : null;
+  applyImportedMaterialOverrides(original, json, opts.materials ?? []);
   const bytes = assembleGlb(JSON.stringify(json), binParts);
+  assertMaterialOverridesReadBack(bytes, opts.materials ?? []);
   return finalizeArtifact({
     kind: 'bake-into-model',
     fileName: opts.fileName,

@@ -64,6 +64,7 @@ interface AttributesView {
 const selectActiveCharacter = (s: SessionState): CharacterId | null => s.activeCharacter;
 const selectWorkspace = (s: SessionState): string => s.workspace;
 const loadModelSections = () => import('./ModelSections');
+const loadImportedMaterials = () => import('./ImportedMaterials');
 const selectActiveClipId = (s: SessionState): ClipId | null =>
   s.activeCharacter === null ? null : (s.activeClip[s.activeCharacter] ?? null);
 
@@ -124,6 +125,15 @@ export function AttributesPanel({ app, instanceId }: PanelProps): JSX.Element {
           <CharacterFields app={app} character={view.character} asset={view.asset} />
         )}
       </Section>
+      {view.character !== null ? (
+        <Section title="Imported materials" testId="attr-section-imported-materials">
+          <LazyBody
+            name="Imported materials"
+            load={loadImportedMaterials}
+            props={{ app, character: view.character.id }}
+          />
+        </Section>
+      ) : null}
       <Section title="Cameras" testId="attr-section-cameras">
         {view.cameras.length === 0 ? (
           <p className={MUTED_TEXT}>No shot camera.</p>

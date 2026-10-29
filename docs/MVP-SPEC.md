@@ -3997,3 +3997,11 @@ Each merge: CI green (`pnpm ci` minus e2e scenarios that depend on unmerged pack
 11. Save `.ekzanim`, reload the page, open it, continue. Manual: storage-blocked window, offline static build,
     forced WebGL context loss (NFR-09/12/13 until their e2e lands).
 12. Undo the last 10 actions one by one; redo them.
+
+
+## Imported material colours (2026-10-30 additive development contract)
+
+[IMPORTED-MATERIAL-SPEC](IMPORTED-MATERIAL-SPEC.md) defines `material.setBaseColor` and `material.resetBaseColor`,
+the optional `ekza.materialOverrides` table, source-bound PBR/unlit RGB preview and deterministic bake. This does
+not introduce an `ekza.package.v1` material fill or grant game compatibility. A material-only bake has no selected
+clips and preserves the source's existing animations and provenance, including previous bake metadata.

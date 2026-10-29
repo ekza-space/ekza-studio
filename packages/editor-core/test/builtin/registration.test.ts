@@ -129,6 +129,8 @@ const MODEL_ONLY_MENUS = /^(create|modify|display|mesh|edit-mesh|mesh-tools|mesh
 
 /** Operators beyond §4.9 requested by other work packages (WP-9 R-1, R-3), with their undo flag. */
 const ADDITIONS: Readonly<Record<string, boolean>> = {
+  'material.setBaseColor': true,
+  'material.resetBaseColor': true,
   'select.channels': false,
   'view.camera.setSettings': true,
   // ANIM-LAYERS (ADR 0026, ANIM-LAYERS-SPEC §4)

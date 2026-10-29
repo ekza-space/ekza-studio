@@ -8,6 +8,42 @@ Ekza" (T3) comes later ([ROADMAP M4a](../ROADMAP.md#m4a--ekza-t1t3--1520-agent-d
 OMOBA uses its VRM humanoid skeleton and plays OMOBA's own motion library on it. The plain GLB export
 (`local/generic`) is for local tests and other engines, not for Ekza.
 
+## Start from the Hub library
+
+With the paired Hub and Studio integration installed, choose **Avatar Library** on the Hub home page,
+select a model, and choose **Open in Studio**. Keep the Hub tab open. Studio opens its normal import dialog;
+the original author and licence stay with the model.
+
+1. Add or edit clips in Animate. Save **.ekzanim** locally to keep editable tracks.
+2. Export **Bake into model**, selecting slot clips. The downloaded **.vrm** includes the model and animations.
+3. Click **Send exported VRM to Hub** in the Studio handoff panel.
+4. Sign in to Hub, check the original credits, and choose **Save private draft**. Sending from Studio alone
+   only stores a temporary copy in this browser; it is not an account upload. Browser copies expire after seven
+   days and retain at most five drafts. Keep your downloaded project and VRM.
+5. In **My uploads**, submit the saved version for publication. After curator approval, choose **Prepare for
+   OMOBA**, then **Submit to OMOBA**. The game owner must approve the submission before players can use it.
+
+OMOBA currently plays its own motions. Your custom clips remain in the editable project and original VRM;
+this handoff does not add support for custom in-game animations. Accounts and tokens are never shared between
+Studio and Hub. If the popup is blocked, the Hub tab closes, or either deployed app is older, use the downloaded
+VRM with Hub's ordinary upload form.
+
+### Account projects in the paired development integration
+
+After File > Save downloads an editable `.ekzanim`, **Save project to Hub** stores a private account snapshot.
+Sign in in Hub first. Workspace lists saved versions and resumes them after both tabs have closed; after resume,
+File > Save and Save project to Hub update the same project with a version check. This does not publish the source.
+A stale-base response requires reopening the current version; keep the downloaded file before doing so.
+
+Cloud project uploads are bounded to 50 MiB compressed / 128 MiB expanded and share the account storage quota.
+The initial Workspace supports at most 100 private projects; per-project deletion and snapshot pruning remain a
+follow-up, so keep local backups. Exported VRM handoffs still use the temporary browser draft described above
+until an explicit account upload. Source projects and published runtime files remain separate.
+
+Imported **standard PBR/unlit RGB** can be edited with Set/Reset in Attributes or the Simple Palette sheet.
+Alpha/textures remain fixed; MToon/legacy Unity materials show an explicit unsupported state. This capability
+is `imported-pbr-base-color/v1`, not general shader portability or game approval.
+
 ## 1. Before you rig
 
 - **T-pose**: arms straight out along ±X, legs straight down. Quick Rig fits an A-posed model and flags it, but the

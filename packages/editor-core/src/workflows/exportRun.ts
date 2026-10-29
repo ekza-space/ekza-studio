@@ -35,6 +35,7 @@ import {
 import { yieldToHost } from './host';
 import { characterEdits } from './exportModel';
 import { EDITOR_VERSION } from './samples';
+import { materialOverrides } from './materialOverrides';
 import { fpsValue } from './util';
 
 /** Integer bake range of a clip (clip frames, inclusive). */
@@ -195,7 +196,7 @@ export async function runExportPipeline(
       { character: character.name, clip: fileClipToken(clips), fps },
       exportExtension(app, req, kind),
     );
-    const opts = { meta: meta(baked, rig), fileName, profile };
+    const opts = { meta: meta(baked, rig), fileName, profile, materials: materialOverrides(app.store, character.id) };
     // M6a (M6A-SPEC §5.22, B8): the character's edited meshes go in through the surgeon's geometry step (marker v2).
     const geometry =
       kind === 'bake-into-model'
