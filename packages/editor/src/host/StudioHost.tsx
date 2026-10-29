@@ -25,6 +25,8 @@ import { HostProvider, useHostUi } from './context';
 import { createHostShell } from './createHost';
 import type { HostShell } from './types';
 
+const HubBridge = lazy(() => import('./HubBridge'));
+
 /** Shown only when the kernel cannot start: its own chunk (AR-D1-2), never part of a working page's route. */
 const KernelUnavailable = lazy(() =>
   import('../shell/KernelUnavailable').then((m) => ({ default: m.KernelUnavailable })),
@@ -189,6 +191,7 @@ function ReadyHost(props: {
   readonly children?: ReactNode;
 }): JSX.Element {
   const { host, onHost } = props;
+  const [hubBridge] = useState(() => new URLSearchParams(window.location.search).has('hub'));
   const root = useRef<HTMLDivElement>(null);
   const [shellReady, setShellReady] = useState(false);
   const [onReady] = useState(() => () => {
@@ -253,6 +256,11 @@ function ReadyHost(props: {
 
   return (
     <HostProvider host={host}>
+      {hubBridge && shellReady ? (
+        <Suspense fallback={null}>
+          <HubBridge host={host} />
+        </Suspense>
+      ) : null}
       <EditorAppProvider app={host.app}>
         <ToastProvider swipeDirection="right" label="Notifications">
           <div

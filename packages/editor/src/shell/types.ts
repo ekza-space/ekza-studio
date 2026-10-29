@@ -149,6 +149,8 @@ export interface ExportRecorder {
   recordDownload(record: { readonly fileName: string; readonly bytes: Uint8Array; readonly mime: string }): void;
   recordArtifacts(artifacts: readonly ExportArtifact[]): void;
   last(): LastExport | null;
+  /** Explicit integrations can observe downloads without retaining every export in production. */
+  subscribe(listener: (record: LastExport) => void): () => void;
 }
 
 // ---------- workspace (dockview adapter) ----------

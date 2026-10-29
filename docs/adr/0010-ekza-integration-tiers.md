@@ -137,3 +137,22 @@ new JSON clip format for Ekza was rejected: VRMA is the standard interchange (02
   the embed protocol above.
 - T1/T3 (M4a) depend only on M1 plus work in other repositories, so they are scheduled independently of
   collaboration auth (M4b); tracking issues in the registry, SDK and game repositories open during M2.
+
+
+## Hub library window handoff (2026-10-30)
+
+The opt-in library flow uses a separate Studio window and the existing `ekza-studio-embed/v1` channel.
+It keeps the T0 file contract; it does not implement T3 account scopes. Hub validates its catalogue key,
+downloads the pinned model, verifies the catalogue byte count and SHA-256, then sends transferable bytes.
+
+Messages carry `channel`, a UUID `session` and `type`: Studio sends `ready`; Hub responds `open` with
+`name`, `bytes: ArrayBuffer` and lowercase `sha256`; Studio validates the bounded GLB and opens the ordinary
+import dialog, then sends `opened` or `error`. An explicit export still downloads locally. A separate user
+click sends `exported` with `fileName`, `bytes` and `sha256`; Hub validates and stores it locally before
+acknowledging `saved` (or `error`). The Hub form handles authentication, attribution, private upload,
+publication review and game submission as separate actions.
+
+Both ends require the exact peer window, origin and session. Allowed pairs are `hub.ekza.io` /
+`studio.ekza.io`, their matching HTTPS dev origins, or HTTP localhost/127.0.0.1 Hub ports 7103/7203 and
+Studio port 3100. No wildcard target origin, account token, caller-supplied model URL or automatic publish
+crosses this bridge. Files are capped at 50 MiB. Ordinary Studio sessions do not load the bridge.
