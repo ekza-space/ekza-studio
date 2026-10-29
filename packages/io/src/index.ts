@@ -113,3 +113,6 @@ export {
 export * from './omoba';
 // GAME-PROTOCOL-SPEC §3–§4, §8.10 (C1): the `ekza.game-contract.v1` reader, its profiles, canonical JSON, the index.
 export * from './contract';
+
+// Hub platform MAT-01: declarative source-bound imported PBR base colour.
+export * from './materialOverrides';

@@ -340,6 +340,7 @@ Specs: [ADR 0005](adr/0005-export-strategy.md), [ADR 0010](adr/0010-ekza-integra
 
 | Feature | What it does | Where | Status |
 |---|---|---|---|
+| Imported PBR base colour | Exact-source PBR/unlit colour overrides; undo, project round trip, preview and material-only export; MToon/opacity/textures unchanged | Pro: Attributes › Imported materials; Simple: Palette sheet | development branch (not released) |
 | Bake into original | Clips written back into the original GLB/VRM — append-only, every original JSON value and buffer byte preserved, safe re-bake | File › Export… (`Mod+E`) | `v0.1.0` |
 | VRMA | One clip per `.vrma` file | Export… | `v0.1.0` |
 | Animation-only GLB | Clips without the mesh | Export… | `v0.1.0` |

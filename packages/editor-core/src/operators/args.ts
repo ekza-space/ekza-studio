@@ -99,6 +99,8 @@ export interface OperatorMap {
   'file.save': { args: { readonly fileName?: string } | void; result: { readonly fileName: string; readonly bytes: number } };
   'file.saveAs': { args: { readonly fileName?: string } | void; result: { readonly fileName: string; readonly bytes: number } };
   'file.saveJson': { args: void; result: { readonly fileName: string; readonly bytes: number } };
+  'material.setBaseColor': { args: { readonly character: CharacterId; readonly baseSha256: string; readonly material: number; readonly materialSha256: string; readonly baseColorFactor: readonly [number, number, number, number] }; result: void };
+  'material.resetBaseColor': { args: { readonly character: CharacterId; readonly material: number }; result: void };
   'file.export': { args: ExportRequest; result: readonly ExportArtifact[] };
   // edit
   'edit.undo': { args: void; result: HistoryResult | null };

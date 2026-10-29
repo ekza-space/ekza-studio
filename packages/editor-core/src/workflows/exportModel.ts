@@ -29,6 +29,7 @@ import {
   type MakeEditableReport,
   type PrimitiveEdit,
   parseGlb,
+  materialOverrideContainer,
   type StaticExportRequest,
   type StaticNode,
   type StaticSwatch,
@@ -44,6 +45,7 @@ import type { CharacterRuntime, DisplayModel, EditorApp, MeshRuntimeRegistry, Mo
 import { loadWritePath } from './export';
 import { assetMeshId, characterMeshRecords, isEditedMesh } from './meshDisplay';
 import { orderAfter } from './records';
+import { materialOverrides } from './materialOverrides';
 import { EDITOR_VERSION } from './samples';
 
 type SceneObject = MeshRecord | GroupRecord;
@@ -396,8 +398,11 @@ export async function displayContainer(
   runtime: CharacterRuntime,
 ): Promise<GlbContainer | null> {
   const edits = await characterEdits(app, runtime.id, { dropTangents: true });
-  if (edits.length === 0) return null;
-  return (await loadWritePath()).rebuildContainer(runtime.container, edits);
+  const materials = materialOverrides(app.store, runtime.id);
+  if (edits.length === 0 && materials.length === 0) return null;
+  const container =
+    edits.length === 0 ? runtime.container : await (await loadWritePath()).rebuildContainer(runtime.container, edits);
+  return materials.length === 0 ? container : materialOverrideContainer(runtime.container, materials, container);
 }
 
 // ---------- Make editable (§5.21) ----------

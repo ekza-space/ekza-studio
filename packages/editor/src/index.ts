@@ -31,3 +31,6 @@ export {
   type ViewportProbe,
 } from './shell/types';
 export type { EkzaStudioTestApi } from './test-api/types';
+
+// Shared lazy material surface for the Pro Attributes panel and Simple Palette sheet.
+export { default as ImportedMaterialPanel } from './panels/attributes/ImportedMaterials';

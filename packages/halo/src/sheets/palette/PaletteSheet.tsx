@@ -5,6 +5,7 @@
 // then the palettes (*New palette*, *Duplicate as a variant*, *Rename*, *Use for the selected shapes*) and *Colours as*
 // (how the export writes the colours). Every change is one operator run: `palette.*`, `select.mesh.bySwatch`,
 // `mesh.paint.remap`, `mesh.setAttributes`.
+import { ImportedMaterialPanel } from '@ekza-studio/editor';
 import type { ColourOutput, SwatchId, SwatchRecord } from '@ekza-studio/doc';
 import { Segmented, SheetGroup, TouchButton, ValueChip } from '@ekza-studio/ui/touch';
 import { type JSX, useState } from 'react';
@@ -148,6 +149,12 @@ export default function PaletteSheet({ ctx }: HaloSheetProps): JSX.Element {
   const palettes = app.store.list('palettes').filter((p) => p.deleted === null);
   return (
     <HaloSheet ctx={ctx} id="palette" title={palette === null ? w.title : `${w.title} · ${palette.name}`}>
+      {app.session.getState().activeCharacter !== null ? (
+        <section data-section="importedMaterials">
+          <SheetGroup>Imported materials</SheetGroup>
+          <ImportedMaterialPanel app={app} character={app.session.getState().activeCharacter!} />
+        </section>
+      ) : null}
       {palette === null ? (
         <TouchButton variant="primary" onClick={() => run('palette.ensureDefault')}>
           {t.usePalette}

@@ -528,6 +528,8 @@ export const DISCLOSURE: Readonly<Record<string, ManifestEntry>> = {
   'palette.assign': on(2, [S('palette')], PAINT),
   'palette.replaceSwatch': on(2, [M('swatch', 'Swatch')], PAINT),
   'palette.setActive': on(0, [T('paint')], PAINT),
+  'material.setBaseColor': on(2, [S('palette', 'importedMaterials')], PAINT),
+  'material.resetBaseColor': on(2, [S('palette', 'importedMaterials')], PAINT),
   'palette.assignMaterial': on(2, [M('swatch', 'Swatch')], { ...PAINT, plain: 'New material' }),
 
   // ===== Rig: characters, skeletons, quick rig (§12, §15.5) =====
