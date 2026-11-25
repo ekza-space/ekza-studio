@@ -2,57 +2,63 @@ import { derivedId, type JointRecord, makeVrmMeta, type SkeletonRecord } from '@
 import { type CharacterMeshIn, type CharacterWriteInput, lintVrmBytes, skeletonFromDoc } from '@ekza-studio/io';
 import { loadMeshIo, manualModelProvenance, readBackCharacter, writeCharacter } from '@ekza-studio/io/write';
 import { withSkin } from '@ekza-studio/mesh-core';
-import { type AvatarPiece, buildAvatar } from './geometry';
-import { type BoneName, JOINTS } from './rig';
-import type { AvatarRecipe } from './style';
+import type { RigJoint } from './rig';
+import { type AvatarRecipe, avatarStyles } from './style';
+import type { AvatarPiece, StylePack } from './types';
+
+type ExportStyles = Pick<typeof avatarStyles, 'getStyle' | 'getRig' | 'buildAvatar'>;
 
 const EXPORTER = 'EKZA Studio Avatar Builder';
-const EXPORT_VERSION = '1.0.0';
+const EXPORT_VERSION = '1.1.0';
 const IDENTITY_PLACEMENT = new Float64Array([1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
 
-const skeletonRecord: SkeletonRecord = {
-  id: derivedId('skeleton', EXPORTER, [], '', 0),
-  character: derivedId('character', EXPORTER, [], '', 0),
-  template: 'vrm-humanoid',
-  templateVersion: 'faceless-humanoid@1',
-  preset: 'custom',
-  symmetry: true,
-  deleted: null,
-};
-
-const jointId = (name: BoneName): JointRecord['id'] => derivedId('joint', EXPORTER, [name], '', 0);
-
-const joints: readonly JointRecord[] = JOINTS.map(({ name, parent, position }, index) => ({
-  id: jointId(name),
-  skeleton: skeletonRecord.id,
-  parent: parent === null ? null : jointId(parent),
-  order: String(index).padStart(2, '0'),
-  name,
-  humanBone: name,
-  restPosition: position,
-  restRotation: [0, 0, 0, 1],
-  tail: null,
-  side: name.startsWith('left') ? 'L' : name.startsWith('right') ? 'R' : 'C',
-  mirror: null,
-  deleted: null,
-  role: 'bone',
-  key: name,
-}));
-
-const jointIndices = new Map(JOINTS.map(({ name }, index) => [name, index]));
-const skinPalette = joints.map(({ id, parent, mirror }) => ({ key: id, parent, mirror }));
+function createExportRig(recipe: AvatarRecipe, style: StylePack, bindPose: readonly RigJoint[]) {
+  const templateVersion = `${style.rigId}@${style.rigVersion}`;
+  const scope = [style.styleId, String(style.styleVersion), templateVersion, style.bodyId];
+  const skeletonRecord: SkeletonRecord = {
+    id: derivedId('skeleton', EXPORTER, scope, '', 0),
+    character: derivedId('character', EXPORTER, [...scope, recipe.archetypeId], '', 0),
+    template: 'vrm-humanoid',
+    templateVersion,
+    preset: 'custom',
+    symmetry: false,
+    deleted: null,
+  };
+  const jointId = (name: RigJoint['name']): JointRecord['id'] =>
+    derivedId('joint', EXPORTER, [skeletonRecord.id, name], '', 0);
+  const joints: readonly JointRecord[] = bindPose.map(({ name, parent, position }, index) => ({
+    id: jointId(name),
+    skeleton: skeletonRecord.id,
+    parent: parent === null ? null : jointId(parent),
+    order: String(index).padStart(4, '0'),
+    name,
+    humanBone: name,
+    restPosition: position,
+    restRotation: [0, 0, 0, 1],
+    tail: null,
+    side: name.startsWith('left') ? 'L' : name.startsWith('right') ? 'R' : 'C',
+    mirror: null,
+    deleted: null,
+    role: 'bone',
+    key: name,
+  }));
+  const jointIndices = new Map(bindPose.map(({ name }, index) => [name, index]));
+  const skinPalette = joints.map(({ id, parent, mirror }) => ({ key: id, parent, mirror }));
+  return { skeletonRecord, joints, jointIndices, skinPalette };
+}
 
 /** Each face has its own vertices so the writer keeps the same flat surface as the preview. */
 function exportMesh(
   pieces: readonly AvatarPiece[],
   hexColor: string,
+  rig: ReturnType<typeof createExportRig>,
   srgb8ToLinear: Awaited<ReturnType<typeof loadMeshIo>>['srgb8ToLinear'],
 ): CharacterMeshIn {
   const sources = pieces.map(({ name, geometry, bone }) => {
     const vertices = geometry.getAttribute('position');
     const indices = geometry.getIndex();
     const count = indices?.count ?? vertices.count;
-    const joint = jointIndices.get(bone);
+    const joint = rig.jointIndices.get(bone);
     if (count === 0 || count % 3 !== 0) throw new Error(`${name} has no valid triangle list.`);
     if (joint === undefined) throw new Error(`${name} references the unknown joint ${bone}.`);
     return { vertices, indices, count, joint };
@@ -99,12 +105,12 @@ function exportMesh(
     faceFlags: new Uint8Array(faces),
     layers: new Map(),
   };
-  const skin = { points: corners, palette: skinPalette, joints: meshJoints, weights };
+  const skin = { points: corners, palette: rig.skinPalette, joints: meshJoints, weights };
 
   const hex = Number.parseInt(hexColor.slice(1), 16);
   const color = srgb8ToLinear([(hex >>> 16) & 255, (hex >>> 8) & 255, hex & 255]);
   return {
-    id: derivedId('mesh', EXPORTER, [hexColor], '', 0),
+    id: derivedId('mesh', EXPORTER, [rig.skeletonRecord.id, hexColor], '', 0),
     name: `Surface ${hexColor}`,
     data: withSkin(data, skin),
     skin,
@@ -125,9 +131,13 @@ function exportMesh(
   };
 }
 
-export async function exportAvatar(recipe: AvatarRecipe): Promise<Uint8Array> {
+export async function exportAvatar(recipe: AvatarRecipe, styles: ExportStyles = avatarStyles): Promise<Uint8Array> {
+  const style = styles.getStyle(recipe);
+  const archetype = style.archetypes.find(({ id }) => id === recipe.archetypeId);
+  if (archetype === undefined) throw new Error('Unknown archetype.');
+  const rig = createExportRig(recipe, style, styles.getRig(recipe));
   const { srgb8ToLinear } = await loadMeshIo();
-  const pieces = buildAvatar(recipe);
+  const pieces = styles.buildAvatar(recipe);
   try {
     const batches = new Map<string, AvatarPiece[]>();
     for (const piece of pieces) {
@@ -137,19 +147,19 @@ export async function exportAvatar(recipe: AvatarRecipe): Promise<Uint8Array> {
       if (batch === undefined) batches.set(color, [piece]);
       else batch.push(piece);
     }
-    const meshes = Array.from(batches, ([color, batch]) => exportMesh(batch, color, srgb8ToLinear));
+    const meshes = Array.from(batches, ([color, batch]) => exportMesh(batch, color, rig, srgb8ToLinear));
     const skeleton = skeletonFromDoc({
-      skeleton: skeletonRecord,
-      joints,
+      skeleton: rig.skeletonRecord,
+      joints: rig.joints,
       meshes: meshes.map(({ id, data, skin }) => ({ id, data, skin, placement: IDENTITY_PLACEMENT })),
     });
     const input: CharacterWriteInput = {
       skeleton,
-      joints,
+      joints: rig.joints,
       meshes,
       palettes: new Map(),
       clips: [],
-      vrm: makeVrmMeta(`Faceless Fantasy — ${recipe.archetypeId}`, {
+      vrm: makeVrmMeta(`${style.label} — ${archetype.label}`, {
         version: EXPORT_VERSION,
         authors: ['EKZA Studio'],
         licensePreset: 'personal',
@@ -158,7 +168,7 @@ export async function exportAvatar(recipe: AvatarRecipe): Promise<Uint8Array> {
       model: manualModelProvenance({
         toolVersion: EXPORT_VERSION,
         rig: 'vrm-humanoid',
-        skeletonTemplate: skeletonRecord.templateVersion,
+        skeletonTemplate: rig.skeletonRecord.templateVersion,
       }),
       heightScale: null,
     };

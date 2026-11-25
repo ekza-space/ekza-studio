@@ -1,46 +1,12 @@
-export type AvatarPalette = {
-  readonly id: string;
-  readonly label: string;
-  readonly primary: string;
-  readonly secondary: string;
-  readonly accent: string;
-  readonly dark: string;
-};
-
-type Part = { readonly id: string; readonly label: string };
-type Slot = Part & {
-  readonly optional?: boolean;
-  readonly parts: readonly Part[];
-};
-type Archetype = Part & {
-  readonly description: string;
-  readonly parts: Readonly<Record<string, readonly (string | null)[]>>;
-  readonly palettes: readonly string[];
-};
-type Rule =
-  | {
-      readonly kind: 'requires';
-      readonly partId: string;
-      readonly slotId: string;
-      readonly oneOf: readonly (string | null)[];
-    }
-  | { readonly kind: 'excludes'; readonly partIds: readonly [string, string] };
-
-export type StylePack = {
-  readonly styleId: string;
-  readonly styleVersion: number;
-  readonly rigId: string;
-  readonly rigVersion: number;
-  readonly bodyId: string;
-  readonly slots: readonly Slot[];
-  readonly archetypes: readonly Archetype[];
-  readonly palettes: readonly AvatarPalette[];
-  readonly rules: readonly Rule[];
-};
+import type { StylePack } from '../../types';
 
 export const facelessFantasy: StylePack = {
+  schemaVersion: 1,
   styleId: 'faceless-fantasy',
   styleVersion: 1,
+  label: 'Faceless Fantasy',
+  description: 'Hooded low-poly adventurers with sculpted cloth and a dark, faceless silhouette.',
+  defaultArchetypeId: 'warrior',
   rigId: 'faceless-humanoid',
   rigVersion: 1,
   bodyId: 'base',
@@ -90,6 +56,7 @@ export const facelessFantasy: StylePack = {
   archetypes: [
     {
       id: 'warrior',
+      sigil: 'hood',
       label: 'Warrior',
       description: 'Angular hood and a sweeping cape.',
       parts: {
@@ -103,6 +70,7 @@ export const facelessFantasy: StylePack = {
     },
     {
       id: 'mage',
+      sigil: 'hat',
       label: 'Mage',
       description: 'Wide brim and a tapered mantle.',
       parts: {
@@ -116,6 +84,7 @@ export const facelessFantasy: StylePack = {
     },
     {
       id: 'healer',
+      sigil: 'halo',
       label: 'Healer',
       description: 'A flared mantle and a floating halo.',
       parts: {
@@ -129,6 +98,7 @@ export const facelessFantasy: StylePack = {
     },
     {
       id: 'ranger',
+      sigil: 'trail-hood',
       label: 'Ranger',
       description: 'A short poncho and a quiver.',
       parts: {

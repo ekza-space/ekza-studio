@@ -24,17 +24,16 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import styles from './AvatarBuilder.module.css';
-import { buildAvatar } from './geometry';
-import { type BoneName, JOINTS } from './rig';
-import type { AvatarRecipe } from './style';
+import type { BoneName } from './rig';
+import { type AvatarRecipe, buildAvatar, getRig } from './style';
 
 export const PREVIEW_MOTIONS = ['Pose', 'Idle', 'Walk'] as const;
 export type PreviewMotion = (typeof PREVIEW_MOTIONS)[number];
 
-const WORLD_ORIGINS = new Map(JOINTS.map(({ name, position }) => [name, new Vector3(...position)]));
-const HEIGHT = (WORLD_ORIGINS.get('head')?.y ?? 1.65) * 1.2;
+// A common stage scale keeps the camera, pedestal and lights stable across rigs.
+const STAGE_HEIGHT = 1.74;
 const FRONT = new Vector3(0.34, 0.13, 1).normalize();
-const CAMERA_TARGET = new Vector3(0, HEIGHT * 0.43, 0);
+const CAMERA_TARGET = new Vector3(0, STAGE_HEIGHT * 0.43, 0);
 
 function isRenderable(object: Object3D): object is Mesh | GridHelper {
   return object instanceof Mesh || object instanceof GridHelper;
@@ -51,7 +50,7 @@ function disposeObjects(group: Group | Scene): void {
 
 function createPedestal(): Group {
   const platform = new Group();
-  const radius = HEIGHT * 0.43;
+  const radius = STAGE_HEIGHT * 0.43;
   const top = new Mesh(
     new CylinderGeometry(radius, radius * 1.015, 0.085, 12),
     new MeshStandardMaterial({ color: '#57564e', flatShading: true, roughness: 0.94 }),
@@ -93,12 +92,18 @@ function createPedestal(): Group {
   return platform;
 }
 
-function setLocalRigPose(bones: ReadonlyMap<BoneName, Group>, motion: PreviewMotion, time: number): void {
+type PreviewRig = {
+  readonly bones: ReadonlyMap<BoneName, Group>;
+  readonly hipsY: number;
+  readonly height: number;
+};
+
+function setLocalRigPose({ bones, hipsY, height }: PreviewRig, motion: PreviewMotion, time: number): void {
   const step = motion === 'Walk' ? Math.sin(time * Math.PI * 2 * 1.28) : 0;
   const idle = motion === 'Idle' ? Math.sin(time * Math.PI * 0.78) : 0;
   const hips = bones.get('hips');
   if (hips !== undefined) {
-    hips.position.y = (WORLD_ORIGINS.get('hips')?.y ?? 0) + Math.abs(step) * HEIGHT * 0.016 + idle * HEIGHT * 0.002;
+    hips.position.y = hipsY + Math.abs(step) * height * 0.016 + idle * height * 0.002;
     hips.rotation.y = step * 0.047;
   }
   const chest = bones.get('spine');
@@ -108,13 +113,14 @@ function setLocalRigPose(bones: ReadonlyMap<BoneName, Group>, motion: PreviewMot
   }
   for (const side of ['left', 'right'] as const) {
     const arm = bones.get(`${side}UpperArm`);
-    const armSign = Math.sign(WORLD_ORIGINS.get(`${side}UpperArm`)?.x ?? 1);
-    const sideStep = (side === 'left' ? 1 : -1) * step;
+    const forearm = bones.get(`${side}LowerArm`);
+    const sideSign = side === 'left' ? 1 : -1;
+    const sideStep = sideSign * step;
     if (arm !== undefined) {
+      const armSign = Math.sign(forearm?.position.x ?? arm.position.x) || sideSign;
       arm.rotation.z = -armSign * (1.13 + idle * 0.023);
       arm.rotation.x = sideStep * 0.19;
     }
-    const forearm = bones.get(`${side}LowerArm`);
     if (forearm !== undefined) forearm.rotation.x = -0.12 - Math.max(0, sideStep) * 0.11;
 
     const thigh = bones.get(`${side}UpperLeg`);
@@ -144,8 +150,8 @@ function createPreview(host: HTMLDivElement, onContextLoss: (lost: boolean) => v
   controls.enablePan = false;
   controls.maxPolarAngle = Math.PI * 0.49;
   controls.minPolarAngle = Math.PI * 0.12;
-  controls.minDistance = HEIGHT * 1.45;
-  controls.maxDistance = HEIGHT * 5;
+  controls.minDistance = STAGE_HEIGHT * 1.45;
+  controls.maxDistance = STAGE_HEIGHT * 5;
   let hasFramed = false;
 
   scene.add(createPedestal());
@@ -154,7 +160,7 @@ function createPreview(host: HTMLDivElement, onContextLoss: (lost: boolean) => v
 
   const key = new DirectionalLight('#fff1d8', 3.15);
   key.position.set(-3, 5.7, 4);
-  key.target.position.set(0, HEIGHT * 0.32, 0);
+  key.target.position.set(0, STAGE_HEIGHT * 0.32, 0);
   key.castShadow = true;
   key.shadow.mapSize.set(1024, 1024);
   key.shadow.camera.left = -2.4;
@@ -169,7 +175,7 @@ function createPreview(host: HTMLDivElement, onContextLoss: (lost: boolean) => v
   scene.add(rim);
 
   let avatar: Group | null = null;
-  let bones = new Map<BoneName, Group>();
+  let previewRig: PreviewRig | null = null;
   let motion: PreviewMotion = 'Pose';
   let start = performance.now();
   let frame = 0;
@@ -180,7 +186,7 @@ function createPreview(host: HTMLDivElement, onContextLoss: (lost: boolean) => v
   };
   const render = (now: number): void => {
     if (!contextLost && (invalidated || motion !== 'Pose')) {
-      setLocalRigPose(bones, motion, (now - start) / 1000);
+      if (previewRig !== null) setLocalRigPose(previewRig, motion, (now - start) / 1000);
       renderer.render(scene, camera);
       invalidated = false;
     }
@@ -192,7 +198,7 @@ function createPreview(host: HTMLDivElement, onContextLoss: (lost: boolean) => v
     renderer.setSize(width, height, false);
     camera.aspect = width / height;
     if (!hasFramed) {
-      camera.position.copy(CAMERA_TARGET).addScaledVector(FRONT, HEIGHT * (camera.aspect < 0.77 ? 2.52 : 2.29));
+      camera.position.copy(CAMERA_TARGET).addScaledVector(FRONT, STAGE_HEIGHT * (camera.aspect < 0.77 ? 2.52 : 2.29));
       hasFramed = true;
     }
     camera.updateProjectionMatrix();
@@ -219,30 +225,42 @@ function createPreview(host: HTMLDivElement, onContextLoss: (lost: boolean) => v
 
   return {
     setAvatar(recipe: AvatarRecipe): void {
+      const joints = getRig(recipe);
+      const origins = new Map(joints.map(({ name, position }) => [name, new Vector3(...position)]));
       const nextAvatar = new Group();
       const nextBones = new Map<BoneName, Group>();
-      for (const joint of JOINTS) {
+      for (const joint of joints) {
         const bone = new Group();
         bone.position.fromArray(joint.position);
         const parent = joint.parent === null ? null : (nextBones.get(joint.parent) ?? null);
         if (parent !== null && joint.parent !== null) {
-          const parentOrigin = WORLD_ORIGINS.get(joint.parent);
+          const parentOrigin = origins.get(joint.parent);
           if (parentOrigin !== undefined) bone.position.sub(parentOrigin);
         }
         (parent ?? nextAvatar).add(bone);
         nextBones.set(joint.name, bone);
       }
+      let bodyBottom = Infinity;
+      let bodyTop = -Infinity;
       for (const piece of buildAvatar(recipe)) {
-        const origin = WORLD_ORIGINS.get(piece.bone);
+        const origin = origins.get(piece.bone);
         const bone = nextBones.get(piece.bone);
         if (origin === undefined || bone === undefined) {
           piece.geometry.dispose();
           continue;
         }
+        if (!piece.previewOnly) {
+          piece.geometry.computeBoundingBox();
+          const bounds = piece.geometry.boundingBox;
+          if (bounds !== null && !bounds.isEmpty()) {
+            bodyBottom = Math.min(bodyBottom, bounds.min.y);
+            bodyTop = Math.max(bodyTop, bounds.max.y);
+          }
+        }
         const material = new MeshStandardMaterial({ color: piece.color, roughness: 0.9, flatShading: true });
-        if (/halo|crystal/i.test(piece.name)) {
+        if (piece.previewGlow !== undefined) {
           material.emissive.set(piece.color);
-          material.emissiveIntensity = 0.19;
+          material.emissiveIntensity = piece.previewGlow;
         }
         const mesh = new Mesh(piece.geometry, material);
         mesh.name = piece.name;
@@ -251,12 +269,19 @@ function createPreview(host: HTMLDivElement, onContextLoss: (lost: boolean) => v
         mesh.receiveShadow = true;
         bone.add(mesh);
       }
+      const floor = Number.isFinite(bodyBottom) ? bodyBottom : 0;
+      const headY = origins.get('head')?.y ?? bodyTop;
+      const measuredHeight = (headY - floor) * 1.2;
+      const height = Number.isFinite(measuredHeight) && measuredHeight > 0 ? measuredHeight : STAGE_HEIGHT;
+      const scale = STAGE_HEIGHT / height;
+      nextAvatar.scale.setScalar(scale);
+      nextAvatar.position.y = -floor * scale;
       if (avatar !== null) {
         scene.remove(avatar);
         disposeObjects(avatar);
       }
       avatar = nextAvatar;
-      bones = nextBones;
+      previewRig = { bones: nextBones, hipsY: nextBones.get('hips')?.position.y ?? 0, height };
       scene.add(avatar);
       invalidate();
     },
@@ -266,7 +291,7 @@ function createPreview(host: HTMLDivElement, onContextLoss: (lost: boolean) => v
       invalidate();
     },
     resetCamera(): void {
-      camera.position.copy(CAMERA_TARGET).addScaledVector(FRONT, HEIGHT * (camera.aspect < 0.77 ? 2.52 : 2.29));
+      camera.position.copy(CAMERA_TARGET).addScaledVector(FRONT, STAGE_HEIGHT * (camera.aspect < 0.77 ? 2.52 : 2.29));
       controls.target.copy(CAMERA_TARGET);
       controls.update();
       invalidate();

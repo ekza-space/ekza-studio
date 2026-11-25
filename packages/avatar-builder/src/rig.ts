@@ -1,20 +1,26 @@
-/** World bind positions, in metres, in the VRM 1.0 +Z-facing T-pose. */
-export const JOINTS = [
-  { name: 'hips', parent: null, position: [0, 0.79, 0] },
-  { name: 'spine', parent: 'hips', position: [0, 1.04, 0] },
-  { name: 'head', parent: 'spine', position: [0, 1.45, 0] },
-  { name: 'leftUpperArm', parent: 'spine', position: [0.21, 1.22, 0] },
-  { name: 'leftLowerArm', parent: 'leftUpperArm', position: [0.44, 1.22, 0] },
-  { name: 'leftHand', parent: 'leftLowerArm', position: [0.64, 1.22, 0] },
-  { name: 'rightUpperArm', parent: 'spine', position: [-0.21, 1.22, 0] },
-  { name: 'rightLowerArm', parent: 'rightUpperArm', position: [-0.44, 1.22, 0] },
-  { name: 'rightHand', parent: 'rightLowerArm', position: [-0.64, 1.22, 0] },
-  { name: 'leftUpperLeg', parent: 'hips', position: [0.1, 0.76, 0] },
-  { name: 'leftLowerLeg', parent: 'leftUpperLeg', position: [0.1, 0.47, 0] },
-  { name: 'leftFoot', parent: 'leftLowerLeg', position: [0.1, 0.14, 0] },
-  { name: 'rightUpperLeg', parent: 'hips', position: [-0.1, 0.76, 0] },
-  { name: 'rightLowerLeg', parent: 'rightUpperLeg', position: [-0.1, 0.47, 0] },
-  { name: 'rightFoot', parent: 'rightLowerLeg', position: [-0.1, 0.14, 0] },
+/** Humanoid hierarchy supported by builder exports and the preview motions. */
+export const VRM_BONES = [
+  { name: 'hips', parent: null },
+  { name: 'spine', parent: 'hips' },
+  { name: 'head', parent: 'spine' },
+  { name: 'leftUpperArm', parent: 'spine' },
+  { name: 'leftLowerArm', parent: 'leftUpperArm' },
+  { name: 'leftHand', parent: 'leftLowerArm' },
+  { name: 'rightUpperArm', parent: 'spine' },
+  { name: 'rightLowerArm', parent: 'rightUpperArm' },
+  { name: 'rightHand', parent: 'rightLowerArm' },
+  { name: 'leftUpperLeg', parent: 'hips' },
+  { name: 'leftLowerLeg', parent: 'leftUpperLeg' },
+  { name: 'leftFoot', parent: 'leftLowerLeg' },
+  { name: 'rightUpperLeg', parent: 'hips' },
+  { name: 'rightLowerLeg', parent: 'rightUpperLeg' },
+  { name: 'rightFoot', parent: 'rightLowerLeg' },
 ] as const;
 
-export type BoneName = (typeof JOINTS)[number]['name'];
+export type BoneName = (typeof VRM_BONES)[number]['name'];
+
+export type RigJoint = {
+  readonly name: BoneName;
+  readonly parent: BoneName | null;
+  readonly position: readonly [number, number, number];
+};

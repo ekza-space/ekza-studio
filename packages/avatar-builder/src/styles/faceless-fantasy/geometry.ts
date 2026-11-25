@@ -8,21 +8,12 @@ import {
   TorusGeometry,
   Vector3,
 } from 'three';
-import type { BoneName } from './rig';
-import { type AvatarRecipe, getPalette } from './style';
-
-export type AvatarPiece = {
-  name: string;
-  geometry: BufferGeometry;
-  color: string;
-  bone: BoneName;
-  previewOnly?: boolean;
-};
+import type { BoneName } from '../../rig';
+import type { AvatarPalette, AvatarPiece, AvatarRecipe } from '../../types';
 
 type Point = readonly [number, number, number];
 type Ring = readonly Point[];
 type Profile = readonly [height: number, width: number, depth: number, z?: number];
-type Palette = ReturnType<typeof getPalette>;
 
 function tint(color: string, toward: string, amount: number): string {
   return `#${new Color(color).lerp(new Color(toward), amount).getHexString()}`;
@@ -110,11 +101,12 @@ function add(
   color: string,
   bone: BoneName,
   previewOnly = false,
+  previewGlow?: number,
 ) {
-  pieces.push({ name, geometry, color, bone, ...(previewOnly ? { previewOnly } : {}) });
+  pieces.push({ name, geometry, color, bone, previewOnly, ...(previewGlow === undefined ? {} : { previewGlow }) });
 }
 
-function addBody(pieces: AvatarPiece[], palette: Palette, headwear: string) {
+function addBody(pieces: AvatarPiece[], palette: AvatarPalette, headwear: string) {
   const ink = tint(palette.dark, '#515267', 0.23);
   const undercloth = tint(palette.dark, '#85869a', 0.33);
   const ivory = tint('#d4cec8', palette.secondary, 0.21);
@@ -300,7 +292,7 @@ const ROUND_OPENING = [
   [-0.084, -0.098],
 ] as const;
 
-function addHood(pieces: AvatarPiece[], part: string, palette: Palette) {
+function addHood(pieces: AvatarPiece[], part: string, palette: AvatarPalette) {
   const angular = part === 'angular-hood';
   const soft = part === 'soft-hood';
   const scout = part === 'scout-hood';
@@ -344,7 +336,7 @@ function addHood(pieces: AvatarPiece[], part: string, palette: Palette) {
   add(pieces, 'Faceless recess', loft([interior, outline(0.056, 0.5, 0.65)], false, true), inside, 'head');
 }
 
-function addHat(pieces: AvatarPiece[], palette: Palette) {
+function addHat(pieces: AvatarPiece[], palette: AvatarPalette) {
   const cowl = {
     ...palette,
     primary: tint(palette.primary, palette.dark, 0.47),
@@ -414,7 +406,7 @@ type Tunic = {
   panel: string;
 };
 
-function addTunic(pieces: AvatarPiece[], part: string, palette: Palette) {
+function addTunic(pieces: AvatarPiece[], part: string, palette: AvatarPalette) {
   const profiles: Record<string, Tunic> = {
     'layered-combat-tunic': { shoulder: 0.239, waist: 0.145, hem: 0.646, width: 0.237, depth: 0.148, panel: '#e8dbcc' },
     'layered-robe': { shoulder: 0.192, waist: 0.143, hem: 0.496, width: 0.281, depth: 0.16, panel: palette.primary },
@@ -524,7 +516,7 @@ type Mantle = {
   points: number;
 };
 
-function addMantle(pieces: AvatarPiece[], part: string, palette: Palette) {
+function addMantle(pieces: AvatarPiece[], part: string, palette: AvatarPalette) {
   const styles: Record<string, Mantle> = {
     'triangular-mantle': {
       points: 8,
@@ -648,7 +640,7 @@ function clothPanel(rows: Ring[]): BufferGeometry {
   return surface(positions);
 }
 
-function addCape(pieces: AvatarPiece[], split: boolean, palette: Palette) {
+function addCape(pieces: AvatarPiece[], split: boolean, palette: AvatarPalette) {
   const rows: Ring[] = [
     [
       [-0.19, 1.259, -0.083],
@@ -733,15 +725,15 @@ function addCape(pieces: AvatarPiece[], split: boolean, palette: Palette) {
   add(pieces, 'Cape clasp', jewel(-0.085, 1.245, 0.145, 0.026, 0.029, 0.019), palette.accent, 'spine');
 }
 
-function addHalo(pieces: AvatarPiece[], palette: Palette) {
+function addHalo(pieces: AvatarPiece[], palette: AvatarPalette) {
   const halo = new TorusGeometry(0.126, 0.012, 5, 18)
     .rotateX(-Math.PI / 2 + Math.PI / 15)
     .rotateZ(Math.PI / 14)
     .translate(0.016, 1.809, -0.003);
-  add(pieces, 'Floating halo', halo, palette.accent, 'head');
+  add(pieces, 'Floating halo', halo, palette.accent, 'head', false, 0.19);
 }
 
-function addQuiver(pieces: AvatarPiece[], palette: Palette) {
+function addQuiver(pieces: AvatarPiece[], palette: AvatarPalette) {
   const bottom: Point = [-0.045, 0.876, -0.187];
   const lip: Point = [0.25, 1.318, -0.214];
   const leather = tint('#7f583d', palette.dark, 0.34);
@@ -764,7 +756,7 @@ function addQuiver(pieces: AvatarPiece[], palette: Palette) {
   }
 }
 
-function addProp(pieces: AvatarPiece[], archetype: string, palette: Palette) {
+function addProp(pieces: AvatarPiece[], archetype: string, palette: AvatarPalette) {
   if (archetype === 'warrior') {
     const blade = garment(
       [
@@ -803,6 +795,7 @@ function addProp(pieces: AvatarPiece[], archetype: string, palette: Palette) {
       '#493653',
       'leftHand',
       true,
+      0.19,
     );
     add(
       pieces,
@@ -820,9 +813,10 @@ function addProp(pieces: AvatarPiece[], archetype: string, palette: Palette) {
         palette.accent,
         'leftHand',
         true,
+        0.19,
       );
     }
-    add(pieces, 'Floating crystal', jewel(0.692, 1.756, 0.085, 0.084, 0.111, 0.07), '#79cde3', 'leftHand', true);
+    add(pieces, 'Floating crystal', jewel(0.692, 1.756, 0.085, 0.084, 0.111, 0.07), '#79cde3', 'leftHand', true, 0.19);
   } else if (archetype === 'ranger') {
     const points: readonly Point[] = [
       [0.752, 0.709, 0.095],
@@ -858,9 +852,8 @@ function addProp(pieces: AvatarPiece[], archetype: string, palette: Palette) {
   }
 }
 
-export function buildAvatar(recipe: AvatarRecipe): AvatarPiece[] {
+export function buildFacelessAvatar(recipe: AvatarRecipe, palette: AvatarPalette): AvatarPiece[] {
   const pieces: AvatarPiece[] = [];
-  const palette = getPalette(recipe);
   const parts = recipe.parts;
   const { headwear, torso, outerwear } = parts;
   if (!headwear || !torso || !outerwear) throw new Error('The outfit is missing a required slot.');

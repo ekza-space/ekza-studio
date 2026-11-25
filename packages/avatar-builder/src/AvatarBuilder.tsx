@@ -2,21 +2,24 @@
 
 import { type ChangeEvent, type JSX, type ReactNode, useEffect, useRef, useState } from 'react';
 import styles from './AvatarBuilder.module.css';
+import { loadStyleDraft, preserveLegacyDraft, restoreActiveDraft, saveDraft, selectActiveStyle } from './drafts';
 import { PREVIEW_MOTIONS, Preview, type PreviewMotion } from './Preview';
 import {
-  ARCHETYPES,
   type AvatarRecipe,
   createRecipe,
+  getArchetypes,
   getPalettes,
   getParts,
+  getSlots,
+  getStyle,
+  listStyles,
   parseRecipe,
   randomize,
-  SLOTS,
   selectPalette,
   selectPart,
 } from './style';
 
-const DRAFT_KEY = 'ekza-avatar-builder-draft-v1';
+type DraftState = 'loading' | 'ready' | 'saved' | 'unavailable';
 
 function saveDownload(file: Blob, filename: string): void {
   const url = URL.createObjectURL(file);
@@ -42,7 +45,7 @@ export function AvatarBuilder({
   const [motion, setMotion] = useState<PreviewMotion>('Idle');
   const [locked, setLocked] = useState<readonly string[]>([]);
   const [busy, setBusy] = useState<'shuffle' | 'vrm' | 'import' | null>(null);
-  const [draftState, setDraftState] = useState<'loading' | 'ready' | 'saved' | 'unavailable'>('loading');
+  const [draftState, setDraftState] = useState<DraftState>('loading');
   const [unreadableDraft, setUnreadableDraft] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ readonly error: boolean; readonly text: string } | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
@@ -52,20 +55,19 @@ export function AvatarBuilder({
     let active = true;
     queueMicrotask(() => {
       if (!active) return;
-      let draft: string | null = null;
       try {
-        draft = window.localStorage.getItem(DRAFT_KEY);
-        if (draft !== null) setRecipe(parseRecipe(draft));
-        setDraftState(draft === null ? 'ready' : 'saved');
-      } catch {
-        setDraftState(draft === null ? 'unavailable' : 'ready');
-        if (draft !== null) {
-          setUnreadableDraft(draft);
+        const draft = restoreActiveDraft(window.localStorage);
+        setRecipe(draft.recipe);
+        setDraftState(draft.state);
+        setUnreadableDraft(draft.unreadable);
+        if (draft.unreadable !== null) {
           setNotice({
             error: true,
             text: 'This draft could not be restored. Download it or open a valid recipe to continue.',
           });
         }
+      } catch {
+        setDraftState('unavailable');
       }
     });
     return () => {
@@ -84,13 +86,25 @@ export function AvatarBuilder({
           unavailable: 'Draft storage unavailable',
         }[draftState];
 
-  const archetype = ARCHETYPES.find((entry) => entry.id === recipe.archetypeId);
-  const filename = `faceless-${recipe.archetypeId}`;
+  const style = getStyle(recipe);
+  const availableStyles = listStyles();
+  const archetypes = getArchetypes(recipe);
+  const archetype = archetypes.find((entry) => entry.id === recipe.archetypeId);
+  const filename = `${recipe.styleId}-${recipe.archetypeId}`;
+  const controlsDisabled = busy !== null || !draftReady;
+
+  function preserveCurrentDraft(storage: Storage): void {
+    if (draftState === 'saved' || unreadableDraft !== null) {
+      preserveLegacyDraft(storage, recipe, unreadableDraft);
+    }
+  }
 
   function replaceRecipe(next: AvatarRecipe): void {
     setRecipe(next);
     try {
-      window.localStorage.setItem(DRAFT_KEY, JSON.stringify(next));
+      const storage = window.localStorage;
+      if (next.styleId !== recipe.styleId) preserveCurrentDraft(storage);
+      saveDraft(storage, next);
       setUnreadableDraft(null);
       setDraftState('saved');
     } catch {
@@ -98,9 +112,36 @@ export function AvatarBuilder({
     }
   }
 
+  function pickStyle(styleId: string): void {
+    if (styleId === recipe.styleId) return;
+    setLocked([]);
+    try {
+      const storage = window.localStorage;
+      preserveCurrentDraft(storage);
+      const next = loadStyleDraft(storage, styleId);
+      selectActiveStyle(storage, styleId);
+      setRecipe(next.recipe);
+      setUnreadableDraft(next.unreadable);
+      setDraftState(next.state);
+      setNotice(
+        next.unreadable === null
+          ? null
+          : {
+              error: true,
+              text: 'This style’s draft could not be restored. The default is open and the previous draft can be downloaded.',
+            },
+      );
+    } catch {
+      setRecipe(createRecipe(undefined, styleId));
+      setUnreadableDraft(null);
+      setDraftState('unavailable');
+      setNotice(null);
+    }
+  }
+
   function pickArchetype(id: string): void {
     if (id === recipe.archetypeId) return;
-    replaceRecipe(createRecipe(id));
+    replaceRecipe(createRecipe(id, recipe.styleId, recipe.styleVersion));
     setLocked([]);
     setNotice(null);
   }
@@ -172,32 +213,53 @@ export function AvatarBuilder({
         <div className={styles.intro}>
           <div>
             <h1>Avatar Builder</h1>
-            <p>Assemble a Faceless Fantasy character and export it as VRM.</p>
+            <p>{availableStyles.length > 1 ? style.description : `${style.label} · ${style.description}`}</p>
           </div>
-          <button
-            type="button"
-            className={styles.primary}
-            disabled={busy !== null || !draftReady}
-            onClick={() => void downloadVrm()}
-          >
-            <span aria-hidden="true" className={styles.downloadIcon}>
-              ↓
-            </span>
-            {busy === 'vrm' ? 'Exporting…' : 'Export VRM'}
-          </button>
+          <div className={styles.introActions}>
+            {availableStyles.length > 1 ? (
+              <div className={`${styles.field} ${styles.stylePicker}`}>
+                <label htmlFor="avatar-style">Style</label>
+                <div className={styles.selectWrap}>
+                  <select
+                    id="avatar-style"
+                    disabled={controlsDisabled}
+                    value={recipe.styleId}
+                    onChange={(event) => pickStyle(event.currentTarget.value)}
+                  >
+                    {availableStyles.map((pack) => (
+                      <option key={pack.styleId} value={pack.styleId}>
+                        {pack.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : null}
+            <button
+              type="button"
+              className={styles.primary}
+              disabled={controlsDisabled}
+              onClick={() => void downloadVrm()}
+            >
+              <span aria-hidden="true" className={styles.downloadIcon}>
+                ↓
+              </span>
+              {busy === 'vrm' ? 'Exporting…' : 'Export VRM'}
+            </button>
+          </div>
         </div>
 
         <fieldset className={styles.presets} aria-label="Character presets">
-          {ARCHETYPES.map((entry) => (
+          {archetypes.map((entry) => (
             <button
               key={entry.id}
               type="button"
               className={styles.preset}
               aria-pressed={entry.id === recipe.archetypeId}
-              disabled={busy !== null || !draftReady}
+              disabled={controlsDisabled}
               onClick={() => pickArchetype(entry.id)}
             >
-              <span className={styles.sigil} data-archetype={entry.id} aria-hidden="true">
+              <span className={styles.sigil} data-sigil={entry.sigil} aria-hidden="true">
                 <span />
               </span>
               <span className={styles.presetLabel}>{entry.label}</span>
@@ -230,7 +292,7 @@ export function AvatarBuilder({
               <button
                 type="button"
                 className={styles.secondary}
-                disabled={busy !== null || !draftReady}
+                disabled={controlsDisabled}
                 onClick={() => void shuffle()}
               >
                 <span aria-hidden="true" className={styles.shuffleIcon}>
@@ -240,8 +302,8 @@ export function AvatarBuilder({
               </button>
             </div>
 
-            <fieldset className={styles.fields} disabled={busy !== null || !draftReady} aria-label="Character parts">
-              {SLOTS.map((slot) => {
+            <fieldset className={styles.fields} disabled={controlsDisabled} aria-label="Character parts">
+              {getSlots(recipe).map((slot) => {
                 const isLocked = locked.includes(slot.id);
                 return (
                   <div key={slot.id} className={styles.field}>
@@ -280,7 +342,7 @@ export function AvatarBuilder({
               })}
             </fieldset>
 
-            <fieldset className={styles.palettes} disabled={busy !== null || !draftReady}>
+            <fieldset className={styles.palettes} disabled={controlsDisabled}>
               <legend>Palette</legend>
               <div className={styles.paletteList}>
                 {getPalettes(recipe).map((palette) => (
@@ -318,7 +380,7 @@ export function AvatarBuilder({
               <button
                 className={styles.textButton}
                 type="button"
-                disabled={busy !== null || !draftReady}
+                disabled={controlsDisabled}
                 onClick={() => fileInput.current?.click()}
               >
                 Open recipe
@@ -326,7 +388,7 @@ export function AvatarBuilder({
               <button
                 className={styles.textButton}
                 type="button"
-                disabled={busy !== null || !draftReady}
+                disabled={controlsDisabled}
                 onClick={() => {
                   saveDownload(
                     new Blob([JSON.stringify(recipe, null, 2)], { type: 'application/json' }),

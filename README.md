@@ -225,6 +225,7 @@ docs/                    research, ADRs, requirements, roadmap, MVP spec, glossa
 
 - Avatar Builder proposals: [browser builder and style pack contract](docs/AVATAR-BUILDER-SPEC.md) and
   [OMOBA's first art pack](docs/AVATAR-STYLE-FACELESS-FANTASY.md).
+  See [adding a style in Studio](docs/AVATAR-BUILDER-SPEC.md#подключение-пакета-в-studio) for the registration steps.
 - [docs/FEATURES.md](docs/FEATURES.md) — feature catalogue by category: what the product has, where it is in the UI
   and since which release (machine-readable: [docs/FEATURES.summary.json](docs/FEATURES.summary.json)).
 - [ARCHITECTURE.md](ARCHITECTURE.md) — layers, packages and dependency rules, data model, evaluation, rig, IO,

@@ -5,7 +5,7 @@ import type { JSX } from 'react';
 
 export const metadata: Metadata = {
   title: 'Avatar Builder',
-  description: 'Build and export a modular Faceless Fantasy character in Ekza Studio.',
+  description: 'Build and export modular VRM characters in Ekza Studio.',
 };
 
 export const viewport: Viewport = {

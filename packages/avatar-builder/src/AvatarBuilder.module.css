@@ -100,6 +100,25 @@
   margin-bottom: 24px;
 }
 
+.introActions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: end;
+  gap: 10px;
+}
+
+.stylePicker {
+  width: min(215px, 49vw);
+}
+
+.introActions .stylePicker select {
+  height: 43px;
+}
+
+.introActions .stylePicker .selectWrap::after {
+  top: 16px;
+}
+
 .intro h1 {
   margin: 0 0 7px;
   font-family: Georgia, "Times New Roman", serif;
@@ -168,7 +187,7 @@
 
 .presets {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr));
   min-width: 0;
   gap: 11px;
   margin: 0 0 15px;
@@ -222,15 +241,15 @@
   background: #262620;
 }
 
-.sigil[data-archetype="mage"] {
+.sigil[data-sigil="hat"] {
   --sigil-color: #a194c1;
 }
 
-.sigil[data-archetype="healer"] {
+.sigil[data-sigil="halo"] {
   --sigil-color: #ddc59c;
 }
 
-.sigil[data-archetype="ranger"] {
+.sigil[data-sigil="trail-hood"] {
   --sigil-color: #9dab7a;
 }
 
@@ -250,24 +269,37 @@
   clip-path: polygon(32% 7%, 85% 15%, 100% 52%, 76% 88%, 16% 96%, 0 56%);
 }
 
-.sigil[data-archetype="mage"] span {
+.sigil:not([data-sigil]) span {
+  width: 12px;
+  height: 12px;
+  transform: rotate(45deg);
+  border: 1px solid var(--gold);
+  background: transparent;
+  clip-path: none;
+}
+
+.sigil:not([data-sigil])::after {
+  display: none;
+}
+
+.sigil[data-sigil="hat"] span {
   width: 24px;
   height: 23px;
   clip-path: polygon(0 61%, 25% 45%, 47% 1%, 62% 9%, 70% 42%, 100% 60%, 74% 75%, 66% 96%, 33% 96%, 26% 76%);
 }
 
-.sigil[data-archetype="mage"]::after {
+.sigil[data-sigil="hat"]::after {
   width: 9px;
   height: 5px;
   transform: translateY(7px);
 }
 
-.sigil[data-archetype="healer"] span {
+.sigil[data-sigil="halo"] span {
   transform: translateY(3px);
   clip-path: polygon(18% 16%, 50% 1%, 78% 15%, 100% 76%, 50% 95%, 0 76%);
 }
 
-.sigil[data-archetype="healer"]::before {
+.sigil[data-sigil="halo"]::before {
   position: absolute;
   top: 4px;
   width: 12px;
@@ -277,12 +309,12 @@
   content: "";
 }
 
-.sigil[data-archetype="healer"]::after {
+.sigil[data-sigil="halo"]::after {
   height: 9px;
   transform: translateY(4px);
 }
 
-.sigil[data-archetype="ranger"] span {
+.sigil[data-sigil="trail-hood"] span {
   clip-path: polygon(2% 43%, 24% 15%, 57% 5%, 86% 27%, 96% 68%, 71% 93%, 15% 83%);
 }
 
@@ -707,6 +739,15 @@
     margin-bottom: 18px;
   }
 
+  .intro:has(.stylePicker) {
+    flex-wrap: wrap;
+  }
+
+  .introActions:has(.stylePicker) {
+    flex-basis: 100%;
+    justify-content: space-between;
+  }
+
   .intro p {
     max-width: 35ch;
     font-size: 13px;
@@ -718,6 +759,7 @@
   }
 
   .presets {
+    grid-template-columns: repeat(auto-fit, minmax(min(62px, 100%), 1fr));
     gap: 5px;
     margin-bottom: 10px;
   }

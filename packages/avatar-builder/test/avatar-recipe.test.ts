@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ARCHETYPES, createRecipe, getPalettes, parseRecipe, randomize, selectPart } from '../src/style';
+import { createRecipe, getArchetypes, getPalettes, parseRecipe, randomize, selectPart } from '../src/style';
 
 describe('avatar recipe', () => {
-  it.each(ARCHETYPES)('round-trips $id and its palette choices', ({ id }) => {
+  it.each(getArchetypes(createRecipe()))('round-trips $id and its palette choices', ({ id }) => {
     const recipe = createRecipe(id);
     expect(parseRecipe(JSON.stringify(recipe))).toEqual(recipe);
     expect(getPalettes(recipe)).toHaveLength(2);
