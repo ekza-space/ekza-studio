@@ -89,6 +89,9 @@ importers:
       '@ekza-studio/autorig':
         specifier: workspace:*
         version: link:../../packages/autorig
+      '@ekza-studio/avatar-builder':
+        specifier: workspace:*
+        version: link:../../packages/avatar-builder
       '@ekza-studio/editor':
         specifier: workspace:*
         version: link:../../packages/editor
@@ -305,6 +308,37 @@ importers:
       '@types/react':
         specifier: 'catalog:'
         version: 19.3.0
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.11(@types/node@24.19.1)(@vitest/browser-playwright@4.1.11)(vite@8.3.2(@types/node@24.19.1)(jiti@2.7.0))
+
+  packages/avatar-builder:
+    dependencies:
+      '@ekza-studio/doc':
+        specifier: workspace:*
+        version: link:../doc
+      '@ekza-studio/io':
+        specifier: workspace:*
+        version: link:../io
+      '@ekza-studio/mesh-core':
+        specifier: workspace:*
+        version: link:../mesh-core
+      react:
+        specifier: 'catalog:'
+        version: 19.3.0
+      three:
+        specifier: 'catalog:'
+        version: 0.186.1
+    devDependencies:
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.19.1
+      '@types/react':
+        specifier: 'catalog:'
+        version: 19.3.0
+      '@types/three':
+        specifier: 'catalog:'
+        version: 0.186.0
       vitest:
         specifier: 'catalog:'
         version: 4.1.11(@types/node@24.19.1)(@vitest/browser-playwright@4.1.11)(vite@8.3.2(@types/node@24.19.1)(jiti@2.7.0))

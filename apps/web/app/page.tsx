@@ -139,6 +139,16 @@ export default function LandingPage(): JSX.Element {
             ))}
           </ul>
           <EntryChooser />
+          {/* oxlint-disable-next-line nextjs/no-html-link-for-pages -- the chooser's tools must work without JS. */}
+          <a
+            href="/avatar-builder"
+            className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-dialog border border-line bg-panel px-4 py-3 text-sm outline-offset-2 hover:border-line-strong hover:bg-hover focus-visible:outline-2 focus-visible:outline-accent-text"
+          >
+            <span className="font-semibold text-accent-text">
+              Avatar Builder <span aria-hidden="true">→</span>
+            </span>
+            <span className="text-fg-3">Assemble a modular character and export VRM.</span>
+          </a>
           <p className="text-sm text-fg-3">Everything runs in your browser. Your files are never uploaded.</p>
         </section>
         <section id="credits" className="flex flex-col gap-3 text-sm text-fg-3">

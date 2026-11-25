@@ -80,6 +80,7 @@ export default function nextConfig(phase: string): NextConfig {
       '@ekza-studio/ui',
       '@ekza-studio/editor',
       '@ekza-studio/autorig',
+      '@ekza-studio/avatar-builder',
       // STUDIO-TOUCH-SPEC §20.1 (T2): Ekza Studio's Simple layout, imported only by `/app`'s entry group.
       '@ekza-studio/halo',
       // M7 G-b: the generation contract (typed client) and, in server builds only, the gateway route.

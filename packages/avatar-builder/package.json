@@ -1,0 +1,29 @@
+{
+  "name": "@ekza-studio/avatar-builder",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Modular character catalog, browser preview and VRM export for Ekza Studio.",
+  "license": "MIT",
+  "sideEffects": ["**/*.css"],
+  "exports": {
+    ".": "./src/AvatarBuilder.tsx"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@ekza-studio/doc": "workspace:*",
+    "@ekza-studio/io": "workspace:*",
+    "@ekza-studio/mesh-core": "workspace:*",
+    "react": "catalog:",
+    "three": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/three": "catalog:",
+    "vitest": "catalog:"
+  }
+}

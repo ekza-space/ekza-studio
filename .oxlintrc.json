@@ -2306,6 +2306,7 @@
                   "!./**",
                   "!../**",
                   "!@ekza-studio/autorig",
+                  "!@ekza-studio/avatar-builder",
                   "!@ekza-studio/editor",
                   "!@ekza-studio/editor/host",
                   "!@ekza-studio/halo",
@@ -2318,7 +2319,7 @@
                   "!react-dom",
                   "!react-dom/**"
                 ],
-                "message": "apps/web may import only: @ekza-studio/autorig, @ekza-studio/editor, @ekza-studio/editor/host (the (studio) layout's StudioHost), @ekza-studio/halo (`/app`'s entry only), @ekza-studio/ui, @ekza-studio/ui/styles.css, next, next/**, react, react/**, react-dom, react-dom/** (ARCHITECTURE \u00a73)."
+                "message": "apps/web may import only: @ekza-studio/autorig, @ekza-studio/avatar-builder, @ekza-studio/editor, @ekza-studio/editor/host (the (studio) layout's StudioHost), @ekza-studio/halo (`/app`'s entry only), @ekza-studio/ui, @ekza-studio/ui/styles.css, next, next/**, react, react/**, react-dom, react-dom/** (ARCHITECTURE \u00a73)."
               },
               {
                 "regex": "^@ekza-studio/[^/]+/[^/]+/",

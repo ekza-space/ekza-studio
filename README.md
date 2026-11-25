@@ -198,6 +198,10 @@ pnpm test:e2e       # Playwright (real Chrome; install a browser with `pnpm exec
 pnpm run ci         # format, lint, typecheck, layering, fixtures, licences, tests, build, e2e (`pnpm ci` is reserved by pnpm)
 ```
 
+Open `http://localhost:3000/avatar-builder` for the Faceless Fantasy prototype. It includes four presets,
+part and palette selection, a pose and motion preview, local JSON recipes and VRM 1.0 export. Preview weapons
+are displayed in the browser only. Use the game integration's regular approval flow for playable assets.
+
 ## Repository layout
 
 ```
@@ -219,6 +223,8 @@ docs/                    research, ADRs, requirements, roadmap, MVP spec, glossa
 
 ## Documentation
 
+- Avatar Builder proposals: [browser builder and style pack contract](docs/AVATAR-BUILDER-SPEC.md) and
+  [OMOBA's first art pack](docs/AVATAR-STYLE-FACELESS-FANTASY.md).
 - [docs/FEATURES.md](docs/FEATURES.md) — feature catalogue by category: what the product has, where it is in the UI
   and since which release (machine-readable: [docs/FEATURES.summary.json](docs/FEATURES.summary.json)).
 - [ARCHITECTURE.md](ARCHITECTURE.md) — layers, packages and dependency rules, data model, evaluation, rig, IO,

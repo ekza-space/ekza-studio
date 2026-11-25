@@ -26,6 +26,7 @@ const MESH_VIEW = scope('mesh-view');
 // MODELING-PLAN §3.1, §7.2 G-a (M7): the lazy WASM adapters (meshoptimizer) and the AI intake chain, run in a worker.
 const MESH_WASM = scope('mesh-wasm');
 const AUTORIG = scope('autorig');
+const AVATAR_BUILDER = scope('avatar-builder');
 // STUDIO-TOUCH-SPEC §20.1 (T2): Ekza Studio's Simple layout (the Halo shell).
 const HALO = scope('halo');
 // M-AI (MCP-SPEC §2): the agent bridge packages.
@@ -283,11 +284,15 @@ export const ALLOWED = {
     dependencies: [ANIM_CORE, DOC, EDITOR_CORE, VIEWPORT, CURVE_EDITOR, UI, EDITOR, GEN_CORE, 'react'],
     devDependencies: [...VITEST, '@types/react'],
   },
+  [AVATAR_BUILDER]: {
+    dependencies: [DOC, IO, MESH_CORE, 'react', 'three'],
+    devDependencies: [...VITEST, '@types/react', '@types/three'],
+  },
   web: {
     // AUTORIG-SPEC §3.1 (D0): `/autorig` mounts the Auto-Rig shell (the only importer of @ekza-studio/autorig);
     // STUDIO-TOUCH-SPEC §20.1 (T2): `/app` mounts the Halo shell (the only importer of @ekza-studio/halo).
     // ADR 0017 §2 (M7 G-b): the generation route of server builds (`app/api/gen/**/route.gen.ts`) mounts the gateway.
-    dependencies: [EDITOR, UI, AUTORIG, HALO, GEN_GATEWAY, ...REACT, ...VRM, 'next', 'three'],
+    dependencies: [EDITOR, UI, AUTORIG, AVATAR_BUILDER, HALO, GEN_GATEWAY, ...REACT, ...VRM, 'next', 'three'],
     // e2e specs may import io and doc (ARCHITECTURE §3).
     devDependencies: [
       ...VITEST,

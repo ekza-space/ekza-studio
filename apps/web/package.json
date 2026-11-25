@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@ekza-studio/autorig": "workspace:*",
+    "@ekza-studio/avatar-builder": "workspace:*",
     "@ekza-studio/editor": "workspace:*",
     "@ekza-studio/gen-gateway": "workspace:*",
     "@ekza-studio/halo": "workspace:*",

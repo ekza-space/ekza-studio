@@ -12,6 +12,7 @@
     { "path": "../../packages/ui/src" },
     { "path": "../../packages/autorig/src" },
     { "path": "../../packages/halo/src" },
-    { "path": "../../packages/gen-gateway/src" }
+    { "path": "../../packages/gen-gateway/src" },
+    { "path": "../../packages/avatar-builder/src" }
   ]
 }
